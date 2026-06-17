@@ -288,6 +288,7 @@ function renderHome() {
   return `
   <div class="hero">
     <div class="hero-bg"></div>
+    <img src="singingwoman.png" class="hero-bg-img" alt="" />
     <div class="container hero-content animate-up">
       <div class="hero-eyebrow">✨ AI 보컬 분석 플랫폼</div>
       <h1 class="hero-title">당신의 목소리를<br><span class="grad-text">AI가 분석합니다</span></h1>
@@ -300,27 +301,7 @@ function renderHome() {
           회원가입
         </button>
       </div>
-      <div class="hero-stats">
-        <div>
-          <div class="stat-num grad-text">12,400+</div>
-          <div class="stat-label">누적 분석 건수</div>
-        </div>
-        <div class="divider-v"></div>
-        <div>
-          <div class="stat-num grad-text">240+</div>
-          <div class="stat-label">전문 트레이너</div>
-        </div>
-        <div class="divider-v"></div>
-        <div>
-          <div class="stat-num grad-text">4.8★</div>
-          <div class="stat-label">평균 만족도</div>
-        </div>
-        <div class="divider-v"></div>
-        <div>
-          <div class="stat-num grad-text">98%</div>
-          <div class="stat-label">분석 정확도</div>
-        </div>
-      </div>
+
     </div>
   </div>
 
