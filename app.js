@@ -287,8 +287,10 @@ function renderNav() {
 function renderHome() {
   return `
   <div class="hero">
-    <div class="hero-bg"></div>
-    <img src="singingwoman.png" class="hero-bg-img" alt="" />
+    <div class="hero-bg">
+      <img src="singingwoman.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0.6;pointer-events:none;" />
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(139,92,246,0.22) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(99,102,241,0.12) 0%,transparent 60%),linear-gradient(to bottom,rgba(6,6,8,0.45) 0%,rgba(6,6,8,0.82) 100%);pointer-events:none;"></div>
+    </div>
     <div class="container hero-content animate-up">
       <div class="hero-eyebrow">✨ AI 보컬 분석 플랫폼</div>
       <h1 class="hero-title">당신의 목소리를<br><span class="grad-text">AI가 분석합니다</span></h1>
