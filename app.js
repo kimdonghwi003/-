@@ -974,7 +974,7 @@ function renderStudentMR() {
                   <div class="text-3" style="font-size:12px">키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
                 </div>
                 <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '완료' : mr.status === 'processing' ? '처리중' : '대기'}</div>
-                ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="showToast('MR 파일 다운로드가 시작됩니다','success')">⬇ 다운로드</button>` : ''}
+                ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="downloadMrFile(${mr.id})">⬇ 다운로드</button>` : ''}
               </div>`).join('')}
           </div>`}
       </div>
@@ -1748,28 +1748,113 @@ function attachMrListeners() {
   }
   const mrForm = document.getElementById('mr-form');
   if (mrForm) {
-    mrForm.addEventListener('submit', e => {
+    mrForm.addEventListener('submit', async e => {
       e.preventDefault();
       const file = mrFile?.files[0];
       if (!file) { showToast('원곡 파일을 선택해주세요', 'error'); return; }
       if (!document.getElementById('copyright-agree')?.checked) { showToast('저작권 가이드라인에 동의해주세요', 'error'); return; }
       const keyShift = parseInt(document.getElementById('key-slider')?.value || '0');
-      showLoading('AI가 보컬을 제거 중입니다...');
-      setTimeout(() => {
-        const mrList = DB.getMrRequests();
-        mrList.push({
-          id: DB.nextId(mrList), studentId: State.currentUser.id,
-          originalFileName: file.name, keyShift, status: 'completed',
-          createdAt: new Date().toISOString().slice(0,10)
-        });
-        DB.setMrRequests(mrList);
-        hideLoading();
-        showToast('MR 생성이 완료되었습니다!', 'success');
-        navigate('student-dashboard', { sub: 'mr' });
-      }, 3000);
+
+      showLoading(keyShift !== 0 ? `키 ${keyShift > 0 ? '+' : ''}${keyShift}반음 적용 중...` : '오디오 처리 중...');
+
+      const mrList = DB.getMrRequests();
+      const newId = DB.nextId(mrList);
+
+      await processMrAudio(file, keyShift, newId);
+
+      mrList.push({
+        id: newId, studentId: State.currentUser.id,
+        originalFileName: file.name, keyShift, status: 'completed',
+        createdAt: new Date().toISOString().slice(0, 10)
+      });
+      DB.setMrRequests(mrList);
+      hideLoading();
+      showToast('MR 생성 완료! 다운로드 버튼을 누르세요.', 'success');
+      navigate('student-dashboard', { sub: 'mr' });
     });
   }
 }
+
+// ── MR 오디오 메모리 저장소 (mrId → { url, name })
+const MrBlobStore = {};
+
+// ── AudioBuffer → 16-bit PCM WAV Blob 변환
+function audioBufferToWavBlob(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sr    = buffer.sampleRate;
+  const len   = buffer.length;
+  const bps   = 2;
+  const ab    = new ArrayBuffer(44 + len * numCh * bps);
+  const view  = new DataView(ab);
+  const ws = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF');
+  view.setUint32(4,  36 + len * numCh * bps, true);
+  ws(8, 'WAVE');  ws(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20,  1, true);
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sr, true);
+  view.setUint32(28, sr * numCh * bps, true);
+  view.setUint16(32, numCh * bps, true);
+  view.setUint16(34, 16, true);
+  ws(36, 'data');
+  view.setUint32(40, len * numCh * bps, true);
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    for (let ch = 0; ch < numCh; ch++) {
+      const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
+// ── 키 조절 오디오 처리 (OfflineAudioContext + playbackRate)
+async function processMrAudio(file, keyShift, mrId) {
+  try {
+    if (keyShift === 0) {
+      // 키 변환 없음 → 원본 파일 직접 blob URL 생성
+      MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
+      return;
+    }
+    const arrayBuf = await file.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded  = await audioCtx.decodeAudioData(arrayBuf);
+    await audioCtx.close();
+
+    const rate   = Math.pow(2, keyShift / 12);
+    const newLen = Math.round(decoded.length / rate);
+    const offCtx = new OfflineAudioContext(decoded.numberOfChannels, newLen, decoded.sampleRate);
+    const src    = offCtx.createBufferSource();
+    src.buffer = decoded;
+    src.playbackRate.value = rate;
+    src.connect(offCtx.destination);
+    src.start(0);
+
+    const rendered = await offCtx.startRendering();
+    const wavBlob  = audioBufferToWavBlob(rendered);
+    const sign     = keyShift > 0 ? '+' : '';
+    const base     = file.name.replace(/\.[^.]+$/, '');
+    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_key${sign}${keyShift}.wav` };
+  } catch (err) {
+    // 실패 시 원본 파일 폴백
+    MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
+  }
+}
+
+// ── MR 파일 다운로드
+window.downloadMrFile = function(mrId) {
+  const data = MrBlobStore[mrId];
+  if (!data) {
+    showToast('파일이 만료되었습니다. MR을 다시 생성해주세요.', 'error');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = data.url; a.download = data.name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('다운로드가 시작됩니다!', 'success');
+};
 
 function attachTrainerProfileListeners() {
   const form = document.getElementById('trainer-profile-form');
