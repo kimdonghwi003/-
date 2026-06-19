@@ -2502,9 +2502,6 @@ async function analyzeSongFile(file) {
         // localtunnel 경고 무시 헤더 추가
         const response = await fetch(`${backendUrl.replace(/\/$/, '')}/analyze`, {
           method: 'POST',
-          headers: {
-            'Bypass-Tunnel-Reminder': 'true'
-          },
           body: formData
         });
         
