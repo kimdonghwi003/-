@@ -739,6 +739,7 @@ function renderStudentApp(params) {
     mr: renderStudentMR,
     trainers: renderStudentTrainers,
     lessons: renderStudentLessons,
+    'song-analysis': renderStudentSongAnalysis,
   };
   const renderer = subContents[sub] || renderStudentHome;
 
@@ -748,6 +749,7 @@ function renderStudentApp(params) {
     { key: 'mr', icon: '🎛', label: 'MR 스튜디오' },
     { key: 'trainers', icon: '👨‍🏫', label: '트레이너' },
     { key: 'lessons', icon: '📅', label: '내 레슨' },
+    { key: 'song-analysis', icon: '🔬', label: '곡 분석' },
   ];
 
   return `
@@ -1530,6 +1532,7 @@ function attachPageListeners(page, params) {
   if (page === 'student-dashboard') {
     const sub = (params && params.sub) || 'home';
     if (sub === 'mr') attachMrListeners();
+    if (sub === 'song-analysis') attachSongAnalysisListeners();
     if (sub === 'profile' || sub === 'trainer-profile') {}
   }
   if (page === 'trainer-dashboard') {
@@ -2265,3 +2268,362 @@ window.toggleScheduleSlot = toggleScheduleSlot;
 window.closeModal = closeModal;
 window.showModal = showModal;
 window.showToast = showToast;
+
+// ══════════════════════════════════════════════
+// SONG ANALYSIS ENGINE
+// ══════════════════════════════════════════════
+
+const SongAnalysisState = { results: [], total: 0, done: 0 };
+
+// ── Iterative Cooley-Tukey FFT (in-place, power-of-2 size)
+function runFFT(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len;
+    const wRe = Math.cos(ang), wIm = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let j = 0; j < (len >> 1); j++) {
+        const uRe = re[i+j], uIm = im[i+j];
+        const vRe = re[i+j+(len>>1)]*curRe - im[i+j+(len>>1)]*curIm;
+        const vIm = re[i+j+(len>>1)]*curIm + im[i+j+(len>>1)]*curRe;
+        re[i+j] = uRe+vRe; im[i+j] = uIm+vIm;
+        re[i+j+(len>>1)] = uRe-vRe; im[i+j+(len>>1)] = uIm-vIm;
+        const tmp = curRe*wRe - curIm*wIm;
+        curIm = curRe*wIm + curIm*wRe;
+        curRe = tmp;
+      }
+    }
+  }
+}
+
+// ── Hz → MIDI 번호
+function freqToMidi(freq) {
+  if (freq <= 0) return -1;
+  return Math.round(12 * Math.log2(freq / 440) + 69);
+}
+
+// ── MIDI 번호 → 음이름 (예: 69 → A4)
+function midiToNoteName(midi) {
+  if (!midi || midi <= 0) return '-';
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const octave = Math.floor(midi / 12) - 1;
+  return names[midi % 12] + octave;
+}
+
+// ── RMS 에너지 계산 (무음 구간 필터링용)
+function getRMS(buf) {
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+  return Math.sqrt(sum / buf.length);
+}
+
+// ── 단일 PCM 세그먼트의 보컬 주파수 감지 (FFT)
+function detectSegmentFreq(samples, sampleRate) {
+  const n = 8192;
+  const re = new Float64Array(n);
+  const im = new Float64Array(n);
+  for (let i = 0; i < n && i < samples.length; i++) {
+    const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1)); // Hanning window
+    re[i] = samples[i] * w;
+  }
+  runFFT(re, im);
+  // 보컬 음역대: 130Hz(C3) ~ 1050Hz(C6)
+  const minBin = Math.floor(130 * n / sampleRate);
+  const maxBin = Math.ceil(1050 * n / sampleRate);
+  let bestMag = 0, bestFreq = 0;
+  for (let k = minBin; k <= maxBin; k++) {
+    const mag = re[k]*re[k] + im[k]*im[k];
+    if (mag > bestMag) { bestMag = mag; bestFreq = k * sampleRate / n; }
+  }
+  return bestFreq;
+}
+
+// ── 최고음 기준 난이도 계산
+function calcDifficulty(highestMidi) {
+  if (!highestMidi || highestMidi <= 0) return { label: '알 수 없음', color: '#6b7280' };
+  if (highestMidi <= 72) return { label: '하  (쉬움)', color: '#34d399' };   // ≤C5
+  if (highestMidi <= 79) return { label: '중  (보통)', color: '#fbbf24' };   // C#5~G5
+  return { label: '상  (어려움)', color: '#f87171' };                         // G#5↑
+}
+
+// ── 오디오 파일 1개 분석
+async function analyzeSongFile(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioBuffer;
+        try {
+          audioBuffer = await audioCtx.decodeAudioData(e.target.result.slice(0));
+        } catch {
+          await audioCtx.close();
+          resolve({ fileName: file.name.replace(/\.[^.]+$/, ''), error: '디코딩 실패', highestMidi: 0 });
+          return;
+        }
+        const sr = audioBuffer.sampleRate;
+        const ch = audioBuffer.getChannelData(0);
+        const dur = audioBuffer.duration;
+        const total = ch.length;
+        const segLen = 8192;
+        // 곡의 30%~85% 구간 8지점 샘플링 (후렴 집중)
+        const points = [0.30, 0.38, 0.46, 0.54, 0.62, 0.70, 0.77, 0.85];
+        let highestMidi = 0, lowestMidi = 999;
+        for (const pt of points) {
+          const start = Math.floor(pt * total);
+          if (start + segLen > total) continue;
+          const seg = ch.slice(start, start + segLen);
+          if (getRMS(seg) < 0.003) continue; // 무음 스킵
+          const freq = detectSegmentFreq(seg, sr);
+          if (freq > 0) {
+            const midi = freqToMidi(freq);
+            if (midi >= 48 && midi <= 84) { // C3~C6
+              if (midi > highestMidi) highestMidi = midi;
+              if (midi < lowestMidi) lowestMidi = midi;
+            }
+          }
+        }
+        await audioCtx.close();
+        const range = (lowestMidi !== 999 && highestMidi > 0) ? highestMidi - lowestMidi : 0;
+        resolve({
+          fileName: file.name.replace(/\.[^.]+$/, ''),
+          duration: Math.round(dur),
+          highestNote: midiToNoteName(highestMidi),
+          lowestNote: lowestMidi !== 999 ? midiToNoteName(lowestMidi) : '-',
+          rangeText: range > 0 ? range + ' 반음' : '-',
+          rangeSemitones: range,
+          difficulty: calcDifficulty(highestMidi),
+          highestMidi,
+          error: null
+        });
+      } catch (err) {
+        resolve({ fileName: file.name.replace(/\.[^.]+$/, ''), error: '분석 오류', highestMidi: 0 });
+      }
+    };
+    reader.onerror = () => resolve({ fileName: file.name, error: '읽기 오류', highestMidi: 0 });
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ── 테이블 행 렌더링
+function renderSongAnalysisTable(results) {
+  const tbody = document.getElementById('sa-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = results.map((r, i) => {
+    if (r.error) {
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:11px 16px;color:var(--text-2);font-size:13px">${i+1}</td>
+        <td style="padding:11px 16px;font-weight:600">${r.fileName}</td>
+        <td colspan="5" style="padding:11px 16px;text-align:center;color:#f87171;font-size:13px">${r.error}</td>
+      </tr>`;
+    }
+    const d = r.difficulty || calcDifficulty(r.highestMidi);
+    const noteColor = r.highestMidi > 79 ? '#f87171' : r.highestMidi > 72 ? '#fbbf24' : '#34d399';
+    const dur = r.duration ? `${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,'0')}` : '-';
+    return `<tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--bg-1)'" onmouseout="this.style.background=''">
+      <td style="padding:11px 16px;color:var(--text-2);font-size:13px">${i+1}</td>
+      <td style="padding:11px 16px;font-weight:600">${r.fileName}</td>
+      <td style="padding:11px 16px;text-align:center;color:var(--text-2);font-size:13px">${dur}</td>
+      <td style="padding:11px 16px;text-align:center;font-family:monospace;font-weight:600;font-size:13px">${r.lowestNote||'-'}</td>
+      <td style="padding:11px 16px;text-align:center;font-family:monospace;font-weight:700;color:${noteColor}">${r.highestNote||'-'}</td>
+      <td style="padding:11px 16px;text-align:center;color:var(--text-2);font-size:13px">${r.rangeText||'-'}</td>
+      <td style="padding:11px 16px;text-align:center">
+        <span style="background:${d.color}22;color:${d.color};border:1px solid ${d.color}44;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap">${d.label}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── 정렬
+window.SongAnalysisSortBy = function(field) {
+  if (!SongAnalysisState.results.length) return;
+  const sorted = [...SongAnalysisState.results].sort((a, b) => {
+    if (field === 'fileName') return (a.fileName||'').localeCompare(b.fileName||'', 'ko');
+    return (b.highestMidi||0) - (a.highestMidi||0); // 최고음순 = 난이도순
+  });
+  renderSongAnalysisTable(sorted);
+};
+
+// ── CSV 다운로드
+function downloadSongAnalysisCSV(results) {
+  const header = ['번호', '곡명', '길이(초)', '최저음', '최고음', '음역대(반음)', '난이도'];
+  const rows = results.map((r, i) => [
+    i+1,
+    `"${(r.fileName||'').replace(/"/g,'""')}"`,
+    r.duration||'',
+    r.lowestNote||'',
+    r.highestNote||'',
+    r.rangeSemitones||'',
+    r.difficulty ? r.difficulty.label.trim() : (r.error||'')
+  ]);
+  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '곡분석결과_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ── 요약 카드 업데이트
+function updateSaStats(results) {
+  const valid = results.filter(r => !r.error && r.highestMidi > 0);
+  const hard = valid.filter(r => r.highestMidi > 79).length;
+  const med  = valid.filter(r => r.highestMidi > 72 && r.highestMidi <= 79).length;
+  const easy = valid.filter(r => r.highestMidi <= 72).length;
+  const topMidi = valid.length ? Math.max(...valid.map(r => r.highestMidi)) : 0;
+  const avgRange = valid.length
+    ? Math.round(valid.reduce((s,r) => s + (r.rangeSemitones||0), 0) / valid.length) : 0;
+  const cards = document.getElementById('sa-summary-cards');
+  if (cards) cards.innerHTML = `
+    <div class="stat-card"><div class="stat-card-label">전체 곡 수</div><div class="stat-card-val">${results.length}</div><div class="stat-card-sub">곡</div></div>
+    <div class="stat-card"><div class="stat-card-label">가장 높은 음</div><div class="stat-card-val" style="font-size:22px;font-family:monospace">${midiToNoteName(topMidi)}</div><div class="stat-card-sub">최고음</div></div>
+    <div class="stat-card"><div class="stat-card-label">난이도 분포</div><div class="stat-card-val" style="font-size:14px">상 ${hard}곡 · 중 ${med}곡 · 하 ${easy}곡</div><div class="stat-card-sub">평균 음역 ${avgRange}반음</div></div>
+  `;
+  const summary = document.getElementById('sa-result-summary');
+  if (summary) summary.textContent = `분석 성공 ${valid.length}곡 · 오류 ${results.length-valid.length}곡 · 평균 음역대 ${avgRange}반음`;
+}
+
+// ── 메인 분석 실행기
+async function runSongAnalysis(files) {
+  const wrap    = document.getElementById('sa-progress-wrap');
+  const bar     = document.getElementById('sa-progress-bar');
+  const count   = document.getElementById('sa-progress-count');
+  const label   = document.getElementById('sa-progress-label');
+  const curFile = document.getElementById('sa-current-file');
+  const results = document.getElementById('sa-results');
+  const upCard  = document.getElementById('sa-upload-card');
+  if (wrap)   wrap.style.display = 'block';
+  if (upCard) upCard.style.opacity = '0.4';
+  SongAnalysisState.results = [];
+  SongAnalysisState.total = files.length;
+  for (let i = 0; i < files.length; i++) {
+    if (curFile) curFile.textContent = `📄 ${files[i].name}`;
+    const res = await analyzeSongFile(files[i]);
+    SongAnalysisState.results.push(res);
+    const pct = Math.round(((i+1)/files.length)*100);
+    if (bar)   bar.style.width = pct+'%';
+    if (count) count.textContent = `${i+1} / ${files.length}`;
+    if (label) label.textContent = `분석 중... ${pct}%`;
+  }
+  if (wrap)   wrap.style.display = 'none';
+  if (upCard) upCard.style.opacity = '1';
+  if (results) results.style.display = 'block';
+  const title = document.getElementById('sa-result-title');
+  if (title) title.textContent = `🎵 분석 완료 — ${files.length}곡`;
+  renderSongAnalysisTable(SongAnalysisState.results);
+  updateSaStats(SongAnalysisState.results);
+  showToast(`${files.length}곡 분석 완료!`, 'success');
+}
+
+// ── 곡 분석 페이지 렌더러
+function renderStudentSongAnalysis() {
+  return `
+  <div class="animate-up">
+    <div class="page-title">🔬 곡 분석</div>
+    <div class="page-sub">MP3 파일을 업로드하면 최고음·음역대·난이도를 자동 분석합니다 (최대 200곡)</div>
+
+    <div class="card card-xl" id="sa-upload-card" style="margin-bottom:24px">
+      <div id="sa-drop-zone" style="min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;border:2px dashed var(--border);border-radius:16px;padding:32px;transition:border-color .2s,background .2s">
+        <input type="file" id="sa-file-input" multiple accept=".mp3,.wav,.m4a,.ogg" style="display:none" />
+        <div style="font-size:52px">🎵</div>
+        <div style="font-size:18px;font-weight:700">MP3 파일을 드래그하거나 클릭하여 선택</div>
+        <div class="text-2" style="font-size:13px">최대 200개 · MP3, WAV, M4A, OGG 지원 · 보컬 주파수 기반 FFT 분석</div>
+        <button class="btn btn-primary" onclick="document.getElementById('sa-file-input').click()">📂 파일 선택</button>
+      </div>
+    </div>
+
+    <div id="sa-progress-wrap" style="display:none;margin-bottom:24px" class="card card-xl">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-weight:700" id="sa-progress-label">분석 중...</div>
+        <div class="text-2" id="sa-progress-count">0 / 0</div>
+      </div>
+      <div style="height:8px;background:var(--bg-2);border-radius:999px;overflow:hidden">
+        <div id="sa-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#6366f1);border-radius:999px;transition:width .3s ease"></div>
+      </div>
+      <div id="sa-current-file" class="text-2" style="margin-top:8px;font-size:12px"></div>
+    </div>
+
+    <div id="sa-results" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:800" id="sa-result-title">분석 완료</div>
+          <div class="text-2" id="sa-result-summary" style="font-size:13px;margin-top:4px"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="SongAnalysisSortBy('fileName')">이름순</button>
+          <button class="btn btn-ghost btn-sm" onclick="SongAnalysisSortBy('highestMidi')">최고음순</button>
+          <button class="btn btn-primary btn-sm" id="sa-csv-btn">⬇ CSV 다운로드</button>
+        </div>
+      </div>
+      <div class="grid-3" id="sa-summary-cards" style="margin-bottom:24px"></div>
+      <div class="card" style="overflow:hidden;padding:0">
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:14px" id="sa-table">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);background:var(--bg-1)">
+                <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--text-2)">#</th>
+                <th style="padding:12px 16px;text-align:left;font-weight:600;color:var(--text-2)">곡명</th>
+                <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--text-2)">길이</th>
+                <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--text-2)">최저음</th>
+                <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--text-2)">최고음 🔺</th>
+                <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--text-2)">음역대</th>
+                <th style="padding:12px 16px;text-align:center;font-weight:600;color:var(--text-2)">난이도</th>
+              </tr>
+            </thead>
+            <tbody id="sa-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── 곡 분석 이벤트 리스너 연결
+function attachSongAnalysisListeners() {
+  const fileInput = document.getElementById('sa-file-input');
+  const dropZone  = document.getElementById('sa-drop-zone');
+  const csvBtn    = document.getElementById('sa-csv-btn');
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const files = Array.from(fileInput.files).slice(0, 200);
+      if (files.length) runSongAnalysis(files);
+    });
+  }
+  if (dropZone) {
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--accent)';
+      dropZone.style.background  = 'rgba(139,92,246,0.06)';
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = '';
+      dropZone.style.background  = '';
+    });
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.style.borderColor = '';
+      dropZone.style.background  = '';
+      const files = Array.from(e.dataTransfer.files)
+        .filter(f => /\.(mp3|wav|m4a|ogg)$/i.test(f.name))
+        .slice(0, 200);
+      if (files.length) runSongAnalysis(files);
+      else showToast('MP3, WAV, M4A, OGG 파일만 지원합니다', 'error');
+    });
+  }
+  if (csvBtn) {
+    csvBtn.addEventListener('click', () => {
+      if (!SongAnalysisState.results.length) { showToast('분석된 결과가 없습니다', 'error'); return; }
+      downloadSongAnalysisCSV(SongAnalysisState.results);
+    });
+  }
+}

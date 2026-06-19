@@ -1,0 +1,219 @@
+================================================================
+  VocalAI — 백엔드 AI 서버 구축 가이드
+  (보컬 분리 + 정밀 음역 분석)
+  작성일: 2026-06-19
+================================================================
+
+▶ 현재 방식(브라우저 FFT)의 한계
+──────────────────────────────────
+- 보컬과 악기를 분리하지 않고 전체 오디오를 FFT 분석
+- 드럼·피아노·기타 고음이 보컬로 오인될 수 있음
+- 정확도: 약 70~80% (발라드 기준)
+
+▶ 백엔드 AI를 쓰면 달라지는 점
+──────────────────────────────────
+- Spleeter / Demucs 같은 AI 모델로 보컬만 정확히 추출
+- 추출된 보컬 트랙만 피치 분석 → 정확도 95%+
+- 서버에서 처리하므로 브라우저 부담 0
+
+
+================================================================
+  1. AI 보컬 분리 모델 비교
+================================================================
+
+┌──────────────────┬────────────────────────────┬──────────────┐
+│ 모델             │ 특징                        │ 라이선스     │
+├──────────────────┼────────────────────────────┼──────────────┤
+│ Spleeter (Deezer)│ 빠름, 2/4/5 stem 지원      │ MIT (무료)   │
+│ Demucs (Meta)    │ 품질 최상, 느림             │ MIT (무료)   │
+│ CREPE            │ 피치 감지 전문 신경망       │ MIT (무료)   │
+│ Basic Pitch (SP) │ 악보 변환까지 가능          │ Apache (무료)│
+└──────────────────┴────────────────────────────┴──────────────┘
+
+★ 추천 조합: Demucs (보컬 분리) + CREPE (피치 분석)
+
+
+================================================================
+  2. 서버 구축 방법 (3가지 옵션)
+================================================================
+
+──────────────────────────────────────────────
+옵션 A. Google Cloud Run (서버리스 — 추천)
+──────────────────────────────────────────────
+
+장점: 요청이 있을 때만 실행, 유지비 거의 0
+단점: 콜드 스타트 약 10~30초
+
+① 준비물
+   - Google Cloud 계정 (무료 크레딧 $300 제공)
+   - Docker 설치
+
+② 폴더 구조
+   /vocal-api
+     Dockerfile
+     main.py
+     requirements.txt
+
+③ requirements.txt 내용
+   fastapi
+   uvicorn
+   demucs
+   crepe
+   librosa
+   numpy
+   python-multipart
+
+④ main.py 핵심 코드 (의사코드)
+   from fastapi import FastAPI, UploadFile
+   import demucs, crepe, librosa
+   
+   app = FastAPI()
+   
+   @app.post("/analyze")
+   async def analyze(file: UploadFile):
+       # 1) 파일 저장
+       audio = await file.read()
+       
+       # 2) Demucs로 보컬 분리
+       vocals = demucs.separate(audio, model="mdx_extra")
+       
+       # 3) CREPE로 피치 분석
+       time, freq, conf, _ = crepe.predict(vocals, sr=44100)
+       
+       # 4) 신뢰도 높은 구간만 추출
+       high_conf = freq[conf > 0.8]
+       highest_hz = max(high_conf)
+       lowest_hz  = min(high_conf)
+       
+       # 5) Hz → 음이름 변환
+       highest_note = hz_to_note(highest_hz)
+       lowest_note  = hz_to_note(lowest_hz)
+       
+       return {
+           "highest_note": highest_note,
+           "lowest_note": lowest_note,
+           "range_semitones": note_diff(highest_note, lowest_note),
+           "difficulty": calc_difficulty(highest_note)
+       }
+
+⑤ Dockerfile
+   FROM python:3.11-slim
+   RUN pip install -r requirements.txt
+   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+⑥ 배포 명령어
+   gcloud run deploy vocal-ai \
+     --source . \
+     --region asia-northeast3 \
+     --memory 4Gi \
+     --cpu 2 \
+     --timeout 300
+
+⑦ 예상 비용
+   - 첫 200만 요청/월: 무료
+   - CPU 0.24vCPU-초 당 $0.0000024
+   - 곡 1개 처리(약 30초): $0.002 → 200곡 = 약 $0.40 (약 550원)
+   - 월 1000곡 처리 기준: 약 2,700원
+
+
+──────────────────────────────────────────────
+옵션 B. AWS Lambda + S3 (서버리스)
+──────────────────────────────────────────────
+
+장점: AWS 생태계와 통합 쉬움
+단점: Lambda 최대 실행 시간 15분 제한, 메모리 최대 10GB
+
+① 서비스 구성
+   S3 버킷 → Lambda (Demucs 처리) → DynamoDB (결과 저장)
+
+② Lambda 설정
+   - 메모리: 4096MB ~ 8192MB
+   - 타임아웃: 900초 (15분)
+   - 런타임: Python 3.11
+   - 레이어: ffmpeg, Demucs 모델 파일
+
+③ 예상 비용 (월 1000곡 기준)
+   - Lambda: 약 $1.50
+   - S3 저장: 약 $0.23 (10GB)
+   - 합계: 약 $1.73 → 약 2,400원/월
+
+
+──────────────────────────────────────────────
+옵션 C. 전용 GPU 서버 (고트래픽 대응)
+──────────────────────────────────────────────
+
+장점: Demucs GPU 처리로 곡 1개 = 약 3초
+단점: 고정 비용 발생
+
+① 추천 사양
+   - GCP: n1-standard-4 + T4 GPU
+   - AWS: g4dn.xlarge
+
+② 비용
+   - GCP T4 인스턴스: 약 $0.35/시간 = 약 $250/월
+   - AWS g4dn.xlarge:  약 $0.526/시간 = 약 $380/월
+   → 월 트래픽 10,000곡 이상일 때 경제적
+
+
+================================================================
+  3. 프론트엔드 연동 방법
+================================================================
+
+현재 app.js의 analyzeSongFile() 함수를 아래와 같이 교체:
+
+// 기존 브라우저 FFT 방식
+async function analyzeSongFile(file) {
+  // ... Web Audio API FFT 코드 ...
+}
+
+// 교체할 백엔드 API 방식
+async function analyzeSongFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await fetch('https://YOUR_BACKEND_URL/analyze', {
+    method: 'POST',
+    body: formData
+  });
+  
+  const result = await response.json();
+  return {
+    fileName: file.name.replace(/\.[^.]+$/, ''),
+    duration: result.duration,
+    highestNote: result.highest_note,
+    lowestNote: result.lowest_note,
+    rangeText: result.range_semitones + ' 반음',
+    rangeSemitones: result.range_semitones,
+    difficulty: calcDifficulty(result.highest_midi),
+    highestMidi: result.highest_midi,
+    error: null
+  };
+}
+
+
+================================================================
+  4. 단계별 구축 순서 (추천)
+================================================================
+
+1단계 (지금): 브라우저 FFT로 서비스 시작 (무료, 이미 구현됨)
+
+2단계 (사용자 100명+): Google Cloud Run 배포
+   - 예산: 월 3,000~10,000원
+   - 소요 시간: 반나절
+
+3단계 (사용자 1,000명+): 전용 GPU 서버 전환
+   - 예산: 월 250,000원~
+   - Demucs + CREPE 조합으로 정확도 95%+
+
+================================================================
+  5. 참고 링크
+================================================================
+
+Demucs GitHub    : https://github.com/facebookresearch/demucs
+CREPE GitHub     : https://github.com/marl/crepe
+Spleeter GitHub  : https://github.com/deezer/spleeter
+Basic Pitch      : https://github.com/spotify/basic-pitch
+Google Cloud Run : https://cloud.google.com/run
+FastAPI 공식 문서 : https://fastapi.tiangolo.com
+
+================================================================
