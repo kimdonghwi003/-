@@ -2486,8 +2486,55 @@ function calcDifficulty(highestMidi) {
   return { label: '상  (어려움)', color: '#f87171' };                         // G#5↑
 }
 
-// ── 오디오 파일 1개 분석 (보컬 채널 전처리 + HPS 피치 + 신뢰도 필터링)
+// ── 오디오 파일 1개 분석 (AI 백엔드 연동 지원 + 로컬 폴백)
 async function analyzeSongFile(file) {
+  // 1. AI 서버 URL이 입력되어 있는지 확인
+  const backendInput = document.getElementById('sa-backend-url');
+  const backendUrl = backendInput ? backendInput.value.trim() : '';
+
+  if (backendUrl) {
+    // ── AI 서버(Colab/FastAPI)로 분석 요청 ──
+    return new Promise(async resolve => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // localtunnel 경고 무시 헤더 추가
+        const response = await fetch(`${backendUrl.replace(/\/$/, '')}/analyze`, {
+          method: 'POST',
+          headers: {
+            'Bypass-Tunnel-Reminder': 'true'
+          },
+          body: formData
+        });
+        
+        if (!response.ok) throw new Error('서버 응답 오류');
+        
+        const data = await response.json();
+        const highestMidi = data.highest_midi || 0;
+        const lowestMidi = data.lowest_midi || 0;
+        const range = (lowestMidi > 0 && highestMidi > 0) ? highestMidi - lowestMidi : 0;
+        
+        resolve({
+          fileName: file.name.replace(/\.[^.]+$/, ''),
+          duration: 0, // 서버에서 내려주면 갱신 가능
+          highestNote: data.vocal_highest_note || '-',
+          lowestNote: lowestMidi > 0 ? midiToNoteName(lowestMidi) : '-',
+          rangeText: range > 0 ? range + ' 반음' : '-',
+          rangeSemitones: range,
+          difficulty: calcDifficulty(highestMidi),
+          highestMidi,
+          lowestMidi,
+          vocalChannel: 'AI Demucs',
+          error: null
+        });
+      } catch (err) {
+        resolve({ fileName: file.name.replace(/\.[^.]+$/, ''), error: 'AI 서버 오류: ' + err.message, highestMidi: 0 });
+      }
+    });
+  }
+
+  // ── 2. 로컬 브라우저 분석 (HPS) - 백엔드 미입력 시 작동 ──
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = async e => {
@@ -2506,61 +2553,39 @@ async function analyzeSongFile(file) {
         const dur   = audioBuffer.duration;
         const total = audioBuffer.length;
 
-        // ① 보컬 채널 추출 (스테레오 → 중앙 채널, 모노 → 그대로)
         const vocalCh = extractVocalChannel(audioBuffer);
         await audioCtx.close();
 
         const segLen = 8192;
-        // ② 20% ~ 95% 구간을 0.5초 간격으로 전체 스캔
         const startOffset = Math.floor(total * 0.20);
         const endOffset   = Math.floor(total * 0.95);
-        const step        = Math.floor(sr * 0.5); // 0.5초 간격
+        const step        = Math.floor(sr * 0.5);
 
-        const detectedMidis  = []; // 유효한 MIDI 값 전체 모음
-        const rmsThreshold   = 0.01; // 간주, 숨소리 등 낮은 에너지 구간 필터링
+        const detectedMidis  = [];
+        const rmsThreshold   = 0.01;
 
         for (let start = startOffset; start < endOffset; start += step) {
           if (start + segLen > total) break;
-
           const seg = vocalCh.slice(start, start + segLen);
-
-          // ③ 무음 및 에너지가 낮은 세그먼트 스킵
           if (getRMS(seg) < rmsThreshold) continue;
-
-          // ④ HPS로 보컬 기본 주파수 감지
           const freq = detectSegmentFreq(seg, sr);
           if (freq <= 0) continue;
-
           const midi = freqToMidi(freq);
-          // ⑤ 보컬 음역대만 허용: C3(48) ~ C7(96)
           if (midi >= 48 && midi <= 96) detectedMidis.push(midi);
         }
 
-        // ⑥ 신뢰도 필터링: 가장 높은 음부터 검사하여 우연한 오작동 필터링
         let highestMidi = 0;
         let lowestMidi  = 999;
 
         if (detectedMidis.length > 0) {
-          // MIDI 값을 내림차순 정렬
           const sorted = [...detectedMidis].sort((a, b) => b - a);
           lowestMidi = sorted[sorted.length - 1];
-
-          // 최고음부터 내려오면서 검증
-          // 인접한 음(±1반음)이 곡 전체에서 최소 3번(약 1.5초 지속) 이상 감지되었으면 진짜 최고음으로 인정
           for (let i = 0; i < sorted.length; i++) {
             const candidate = sorted[i];
             const clusterCount = sorted.filter(m => Math.abs(m - candidate) <= 1).length;
-            
-            if (clusterCount >= 3) {
-              highestMidi = candidate;
-              break;
-            }
+            if (clusterCount >= 3) { highestMidi = candidate; break; }
           }
-
-          // 3번 이상 지속된 음이 전혀 없다면(곡이 짧거나 감지가 잘 안 된 경우)
-          if (highestMidi === 0) {
-            highestMidi = sorted[Math.floor(sorted.length * 0.1)]; // 상위 10% 지점 선택
-          }
+          if (highestMidi === 0) highestMidi = sorted[Math.floor(sorted.length * 0.1)];
         }
 
         const range = (lowestMidi !== 999 && highestMidi > 0) ? highestMidi - lowestMidi : 0;
@@ -2575,7 +2600,7 @@ async function analyzeSongFile(file) {
           difficulty:     calcDifficulty(highestMidi),
           highestMidi,
           lowestMidi:     lowestMidi !== 999 ? lowestMidi : 0,
-          detectedMidis,          // Supabase 업로드용 로우 데이터
+          detectedMidis,
           vocalChannel:   audioBuffer.numberOfChannels >= 2 ? 'center(mid)' : 'mono',
           error:          null
         });
@@ -2706,11 +2731,19 @@ function renderStudentSongAnalysis() {
     <div class="page-sub">MP3 파일을 업로드하면 최고음·음역대·난이도를 자동 분석합니다 (최대 200곡)</div>
 
     <div class="card card-xl" id="sa-upload-card" style="margin-bottom:24px">
+      <div style="margin-bottom:20px;padding:16px;background:var(--bg-1);border-radius:12px;border:1px solid var(--border)">
+        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:var(--accent)">🤖 AI 딥러닝 서버 주소 (선택)</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="sa-backend-url" class="input" placeholder="https://xxxx.loca.lt (코랩 서버 주소 입력)" style="flex:1" />
+        </div>
+        <div class="text-3" style="font-size:12px;margin-top:6px">※ 주소를 입력하면 악기를 완벽히 제거하는 AI 서버 분석이 적용됩니다. 비워두면 빠른 브라우저 자체 분석이 진행됩니다.</div>
+      </div>
+
       <div id="sa-drop-zone" style="min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;border:2px dashed var(--border);border-radius:16px;padding:32px;transition:border-color .2s,background .2s">
         <input type="file" id="sa-file-input" multiple accept=".mp3,.wav,.m4a,.ogg" style="display:none" />
         <div style="font-size:52px">🎵</div>
         <div style="font-size:18px;font-weight:700">MP3 파일을 드래그하거나 클릭하여 선택</div>
-        <div class="text-2" style="font-size:13px">최대 200개 · MP3, WAV, M4A, OGG 지원 · 보컬 주파수 기반 FFT 분석</div>
+        <div class="text-2" style="font-size:13px">최대 200개 · MP3, WAV, M4A, OGG 지원</div>
         <button class="btn btn-primary" onclick="document.getElementById('sa-file-input').click()">📂 파일 선택</button>
       </div>
     </div>
