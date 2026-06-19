@@ -1851,6 +1851,8 @@ async function processMrAudio(file, keyShift, mrId) {
     
     MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${keyStr}.wav` };
   } catch (err) {
+    console.error('MR 오디오 처리 중 오류 발생:', err);
+    alert('오디오 처리 중 오류가 발생했습니다: ' + err.message + '\n(원본 파일이 다운로드됩니다)');
     // 실패 시 원본 파일 폴백
     MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
   }
@@ -2463,7 +2465,7 @@ function detectSegmentFreq(samples, sampleRate) {
   // HPS: 각 빈 k에서 mag[k] × mag[2k] × mag[3k] × mag[4k] 지정
   // 기본주파수는 모든 배수에서 강하게 나타나므로 HPS가 피크를 형성
   const minBin = Math.ceil(130  * n / sampleRate);  // C3 ≈ 130Hz
-  const maxBin = Math.floor(1050 * n / sampleRate);  // C6 ≈ 1047Hz
+  const maxBin = Math.floor(2100 * n / sampleRate); // C7 ≈ 2093Hz (초고음 허용)
 
   let bestHPS = 0, bestFreq = 0;
   for (let k = minBin; k <= maxBin; k++) {
@@ -2532,8 +2534,8 @@ async function analyzeSongFile(file) {
           if (freq <= 0) continue;
 
           const midi = freqToMidi(freq);
-          // ⑤ 보컬 음역대만 허용: C3(48) ~ C6(84)
-          if (midi >= 48 && midi <= 84) detectedMidis.push(midi);
+          // ⑤ 보컬 음역대만 허용: C3(48) ~ C7(96)
+          if (midi >= 48 && midi <= 96) detectedMidis.push(midi);
         }
 
         // ⑥ 신뢰도 필터링: 가장 많이 감지된 구역에서 최고음 선택
