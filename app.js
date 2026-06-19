@@ -2413,22 +2413,52 @@ function getRMS(buf) {
 }
 
 // ── 단일 PCM 세그먼트의 보컬 주파수 감지 (FFT)
+// ── 스테레오 오디오에서 보컬 중앙 채널(중앙 채널 추출, Vocal Isolation)
+// 상업용 녹음은 보컬이 캐터 첫번째에 정위치(Center) 팟되어 있음
+// Mid = (L + R) / 2  으로 보컬만 추출 가능
+function extractVocalChannel(audioBuffer) {
+  if (audioBuffer.numberOfChannels >= 2) {
+    const L   = audioBuffer.getChannelData(0);
+    const R   = audioBuffer.getChannelData(1);
+    const mid = new Float32Array(L.length);
+    for (let i = 0; i < L.length; i++) mid[i] = (L[i] + R[i]) * 0.5;
+    return mid;
+  }
+  // 모노: 그대로 반환
+  return audioBuffer.getChannelData(0);
+}
+
+// ── Harmonic Product Spectrum (HPS) 기반 피치 감지
+// 단순 FFT 피크보다 배음 오판 없이 기본 주파수(Fundamental)'를 정확히 찾음
 function detectSegmentFreq(samples, sampleRate) {
-  const n = 8192;
-  const re = new Float64Array(n);
-  const im = new Float64Array(n);
+  const n    = 8192;
+  const re   = new Float64Array(n);
+  const im   = new Float64Array(n);
+  const half = n >> 1;
+
+  // Hanning 윈도 적용
   for (let i = 0; i < n && i < samples.length; i++) {
-    const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1)); // Hanning window
+    const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1));
     re[i] = samples[i] * w;
   }
   runFFT(re, im);
-  // 보컬 음역대: 130Hz(C3) ~ 1050Hz(C6)
-  const minBin = Math.floor(130 * n / sampleRate);
-  const maxBin = Math.ceil(1050 * n / sampleRate);
-  let bestMag = 0, bestFreq = 0;
+
+  // 제곱 진폭 (sqrt 없이 빠르게 비교)
+  const mag = new Float64Array(half);
+  for (let k = 0; k < half; k++) mag[k] = re[k]*re[k] + im[k]*im[k];
+
+  // HPS: 각 빈 k에서 mag[k] × mag[2k] × mag[3k] × mag[4k] 지정
+  // 기본주파수는 모든 배수에서 강하게 나타나므로 HPS가 피크를 형성
+  const minBin = Math.ceil(130  * n / sampleRate);  // C3 ≈ 130Hz
+  const maxBin = Math.floor(1050 * n / sampleRate);  // C6 ≈ 1047Hz
+
+  let bestHPS = 0, bestFreq = 0;
   for (let k = minBin; k <= maxBin; k++) {
-    const mag = re[k]*re[k] + im[k]*im[k];
-    if (mag > bestMag) { bestMag = mag; bestFreq = k * sampleRate / n; }
+    const k2 = Math.min(k << 1, half - 1);
+    const k3 = Math.min(k * 3,  half - 1);
+    const k4 = Math.min(k << 2, half - 1);
+    const hps = mag[k] * mag[k2] * mag[k3] * mag[k4];
+    if (hps > bestHPS) { bestHPS = hps; bestFreq = k * sampleRate / n; }
   }
   return bestFreq;
 }
@@ -2441,7 +2471,7 @@ function calcDifficulty(highestMidi) {
   return { label: '상  (어려움)', color: '#f87171' };                         // G#5↑
 }
 
-// ── 오디오 파일 1개 분석
+// ── 오디오 파일 1개 분석 (보컬 채널 전처리 + HPS 피치 + 신뢰도 필터링)
 async function analyzeSongFile(file) {
   return new Promise(resolve => {
     const reader = new FileReader();
@@ -2456,46 +2486,93 @@ async function analyzeSongFile(file) {
           resolve({ fileName: file.name.replace(/\.[^.]+$/, ''), error: '디코딩 실패', highestMidi: 0 });
           return;
         }
-        const sr = audioBuffer.sampleRate;
-        const ch = audioBuffer.getChannelData(0);
-        const dur = audioBuffer.duration;
-        const total = ch.length;
-        const segLen = 8192;
-        // 곡의 30%~85% 구간 8지점 샘플링 (후렴 집중)
-        const points = [0.30, 0.38, 0.46, 0.54, 0.62, 0.70, 0.77, 0.85];
-        let highestMidi = 0, lowestMidi = 999;
-        for (const pt of points) {
-          const start = Math.floor(pt * total);
-          if (start + segLen > total) continue;
-          const seg = ch.slice(start, start + segLen);
-          if (getRMS(seg) < 0.003) continue; // 무음 스킵
-          const freq = detectSegmentFreq(seg, sr);
-          if (freq > 0) {
-            const midi = freqToMidi(freq);
-            if (midi >= 48 && midi <= 84) { // C3~C6
-              if (midi > highestMidi) highestMidi = midi;
-              if (midi < lowestMidi) lowestMidi = midi;
-            }
-          }
-        }
+
+        const sr    = audioBuffer.sampleRate;
+        const dur   = audioBuffer.duration;
+        const total = audioBuffer.length;
+
+        // ① 보컬 채널 추출 (스테레오 → 중앙 채널, 모노 → 그대로)
+        const vocalCh = extractVocalChannel(audioBuffer);
         await audioCtx.close();
+
+        const segLen = 8192;
+        // ② 25%~90% 구간에서 14지점 샘플링 (전주소절 시작점 포함)
+        const sampleRatios = [
+          0.20, 0.27, 0.33, 0.40, 0.47, 0.53,
+          0.59, 0.65, 0.71, 0.77, 0.82, 0.87, 0.91, 0.95
+        ];
+
+        const detectedMidis  = []; // 유효한 MIDI 값 전체 모음
+        const rmsThreshold   = 0.005; // 실질적인 분석을 위한 RMS 최소값
+
+        for (const ratio of sampleRatios) {
+          const start = Math.floor(ratio * total);
+          if (start + segLen > total) continue;
+
+          const seg = vocalCh.slice(start, start + segLen);
+
+          // ③ 무음 세그먼트 스킵 (RMS 에너지 검사)
+          if (getRMS(seg) < rmsThreshold) continue;
+
+          // ④ HPS로 보컬 기본 주파수 감지
+          const freq = detectSegmentFreq(seg, sr);
+          if (freq <= 0) continue;
+
+          const midi = freqToMidi(freq);
+          // ⑤ 보컬 음역대만 허용: C3(48) ~ C6(84)
+          if (midi >= 48 && midi <= 84) detectedMidis.push(midi);
+        }
+
+        // ⑥ 신뢰도 필터링: 가장 많이 감지된 구역에서 최고음 선택
+        //    단순 최대값이 아니라, ±2반음 내 클러스터링 후 가장 미양 높은 MIDI 반환
+        let highestMidi = 0;
+        let lowestMidi  = 999;
+
+        if (detectedMidis.length > 0) {
+          // MIDI 값을 내림차순 정렬
+          const sorted = [...detectedMidis].sort((a, b) => b - a);
+
+          // 상위 25% 알리을이자 중에서 클러스터링 (±2반음)
+          // 다른 샘플에서 적어도 1번 이상 나온 값만 신뢰함
+          const topQuartileLen = Math.max(1, Math.ceil(sorted.length * 0.25));
+          const topMidi = sorted[0]; // 감지된 최고음
+
+          // 해당 최고음 ±2반음 내에서 감지된 횟수 카운트
+          const clusterCount = detectedMidis.filter(m => Math.abs(m - topMidi) <= 2).length;
+
+          // 전체 샘플의 15% 이상이 추인하는 음이면 유효
+          if (clusterCount >= Math.max(1, Math.floor(sampleRatios.length * 0.15))) {
+            highestMidi = topMidi;
+          } else {
+            // 클러스터 미평 시, 상위 50% 안에서 최고값 사용
+            const midIdx = Math.floor(sorted.length * 0.5);
+            highestMidi = sorted[Math.min(midIdx, sorted.length - 1)];
+          }
+
+          lowestMidi = sorted[sorted.length - 1];
+        }
+
         const range = (lowestMidi !== 999 && highestMidi > 0) ? highestMidi - lowestMidi : 0;
+
         resolve({
-          fileName: file.name.replace(/\.[^.]+$/, ''),
-          duration: Math.round(dur),
-          highestNote: midiToNoteName(highestMidi),
-          lowestNote: lowestMidi !== 999 ? midiToNoteName(lowestMidi) : '-',
-          rangeText: range > 0 ? range + ' 반음' : '-',
+          fileName:       file.name.replace(/\.[^.]+$/, ''),
+          duration:       Math.round(dur),
+          highestNote:    midiToNoteName(highestMidi),
+          lowestNote:     lowestMidi !== 999 ? midiToNoteName(lowestMidi) : '-',
+          rangeText:      range > 0 ? range + ' 반음' : '-',
           rangeSemitones: range,
-          difficulty: calcDifficulty(highestMidi),
+          difficulty:     calcDifficulty(highestMidi),
           highestMidi,
-          error: null
+          lowestMidi:     lowestMidi !== 999 ? lowestMidi : 0,
+          detectedMidis,          // Supabase 업로드용 로우 데이터
+          vocalChannel:   audioBuffer.numberOfChannels >= 2 ? 'center(mid)' : 'mono',
+          error:          null
         });
       } catch (err) {
-        resolve({ fileName: file.name.replace(/\.[^.]+$/, ''), error: '분석 오류', highestMidi: 0 });
+        resolve({ fileName: file.name.replace(/\.[^.]+$/, ''), error: '분석 오류: ' + err.message, highestMidi: 0 });
       }
     };
-    reader.onerror = () => resolve({ fileName: file.name, error: '읽기 오류', highestMidi: 0 });
+    reader.onerror = () => resolve({ fileName: file.name, error: '파일 읽기 오류', highestMidi: 0 });
     reader.readAsArrayBuffer(file);
   });
 }
