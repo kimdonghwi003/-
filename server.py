@@ -25,7 +25,8 @@ async def analyze_song(file: UploadFile = File(...)):
         
     try:
         print(f"[{file.filename}] 보컬 분리 시작...")
-        subprocess.run(["python", "-m", "demucs.separate", "-n", "htdemucs", "-d", "cuda", temp_filename], check=True)
+        import sys
+        subprocess.run([sys.executable, "-m", "demucs.separate", "-n", "htdemucs", "-d", "cuda", temp_filename], check=True)
         
         vocal_path = f"separated/htdemucs/{temp_filename.rsplit('.', 1)[0]}/vocals.wav"
         
