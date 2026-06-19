@@ -2511,22 +2511,20 @@ async function analyzeSongFile(file) {
         await audioCtx.close();
 
         const segLen = 8192;
-        // ② 25%~90% 구간에서 14지점 샘플링 (전주소절 시작점 포함)
-        const sampleRatios = [
-          0.20, 0.27, 0.33, 0.40, 0.47, 0.53,
-          0.59, 0.65, 0.71, 0.77, 0.82, 0.87, 0.91, 0.95
-        ];
+        // ② 20% ~ 95% 구간을 0.5초 간격으로 전체 스캔
+        const startOffset = Math.floor(total * 0.20);
+        const endOffset   = Math.floor(total * 0.95);
+        const step        = Math.floor(sr * 0.5); // 0.5초 간격
 
         const detectedMidis  = []; // 유효한 MIDI 값 전체 모음
-        const rmsThreshold   = 0.005; // 실질적인 분석을 위한 RMS 최소값
+        const rmsThreshold   = 0.01; // 간주, 숨소리 등 낮은 에너지 구간 필터링
 
-        for (const ratio of sampleRatios) {
-          const start = Math.floor(ratio * total);
-          if (start + segLen > total) continue;
+        for (let start = startOffset; start < endOffset; start += step) {
+          if (start + segLen > total) break;
 
           const seg = vocalCh.slice(start, start + segLen);
 
-          // ③ 무음 세그먼트 스킵 (RMS 에너지 검사)
+          // ③ 무음 및 에너지가 낮은 세그먼트 스킵
           if (getRMS(seg) < rmsThreshold) continue;
 
           // ④ HPS로 보컬 기본 주파수 감지
@@ -2538,33 +2536,31 @@ async function analyzeSongFile(file) {
           if (midi >= 48 && midi <= 96) detectedMidis.push(midi);
         }
 
-        // ⑥ 신뢰도 필터링: 가장 많이 감지된 구역에서 최고음 선택
-        //    단순 최대값이 아니라, ±2반음 내 클러스터링 후 가장 미양 높은 MIDI 반환
+        // ⑥ 신뢰도 필터링: 가장 높은 음부터 검사하여 우연한 오작동 필터링
         let highestMidi = 0;
         let lowestMidi  = 999;
 
         if (detectedMidis.length > 0) {
           // MIDI 값을 내림차순 정렬
           const sorted = [...detectedMidis].sort((a, b) => b - a);
+          lowestMidi = sorted[sorted.length - 1];
 
-          // 상위 25% 알리을이자 중에서 클러스터링 (±2반음)
-          // 다른 샘플에서 적어도 1번 이상 나온 값만 신뢰함
-          const topQuartileLen = Math.max(1, Math.ceil(sorted.length * 0.25));
-          const topMidi = sorted[0]; // 감지된 최고음
-
-          // 해당 최고음 ±2반음 내에서 감지된 횟수 카운트
-          const clusterCount = detectedMidis.filter(m => Math.abs(m - topMidi) <= 2).length;
-
-          // 전체 샘플의 15% 이상이 추인하는 음이면 유효
-          if (clusterCount >= Math.max(1, Math.floor(sampleRatios.length * 0.15))) {
-            highestMidi = topMidi;
-          } else {
-            // 클러스터 미평 시, 상위 50% 안에서 최고값 사용
-            const midIdx = Math.floor(sorted.length * 0.5);
-            highestMidi = sorted[Math.min(midIdx, sorted.length - 1)];
+          // 최고음부터 내려오면서 검증
+          // 인접한 음(±1반음)이 곡 전체에서 최소 3번(약 1.5초 지속) 이상 감지되었으면 진짜 최고음으로 인정
+          for (let i = 0; i < sorted.length; i++) {
+            const candidate = sorted[i];
+            const clusterCount = sorted.filter(m => Math.abs(m - candidate) <= 1).length;
+            
+            if (clusterCount >= 3) {
+              highestMidi = candidate;
+              break;
+            }
           }
 
-          lowestMidi = sorted[sorted.length - 1];
+          // 3번 이상 지속된 음이 전혀 없다면(곡이 짧거나 감지가 잘 안 된 경우)
+          if (highestMidi === 0) {
+            highestMidi = sorted[Math.floor(sorted.length * 0.1)]; // 상위 10% 지점 선택
+          }
         }
 
         const range = (lowestMidi !== 999 && highestMidi > 0) ? highestMidi - lowestMidi : 0;
