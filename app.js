@@ -1810,33 +1810,46 @@ function audioBufferToWavBlob(buffer) {
   return new Blob([ab], { type: 'audio/wav' });
 }
 
-// ── 키 조절 오디오 처리 (OfflineAudioContext + playbackRate)
+// ── 보컬 제거 (위상 반전, OOPS) 및 키 조절 오디오 처리
 async function processMrAudio(file, keyShift, mrId) {
   try {
-    if (keyShift === 0) {
-      // 키 변환 없음 → 원본 파일 직접 blob URL 생성
-      MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
-      return;
-    }
     const arrayBuf = await file.arrayBuffer();
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const decoded  = await audioCtx.decodeAudioData(arrayBuf);
     await audioCtx.close();
 
+    // ① 보컬 제거 (위상 반전: L - R)
+    // 센터에 위치한 보컬을 상쇄하여 반주만 남김 (스테레오 곡 한정)
+    if (decoded.numberOfChannels >= 2) {
+      const L = decoded.getChannelData(0);
+      const R = decoded.getChannelData(1);
+      for (let i = 0; i < L.length; i++) {
+        const diff = (L[i] - R[i]) * 0.7; // 상쇄 후 볼륨 보정
+        L[i] = diff;
+        R[i] = diff; // 양쪽 채널에 동일하게 적용하여 듀얼 모노 MR 생성
+      }
+    }
+
+    // ② 키 조절 (OfflineAudioContext + playbackRate)
     const rate   = Math.pow(2, keyShift / 12);
     const newLen = Math.round(decoded.length / rate);
     const offCtx = new OfflineAudioContext(decoded.numberOfChannels, newLen, decoded.sampleRate);
+    
     const src    = offCtx.createBufferSource();
     src.buffer = decoded;
     src.playbackRate.value = rate;
     src.connect(offCtx.destination);
     src.start(0);
 
+    // ③ 최종 WAV 인코딩 및 저장
     const rendered = await offCtx.startRendering();
     const wavBlob  = audioBufferToWavBlob(rendered);
+    
     const sign     = keyShift > 0 ? '+' : '';
+    const keyStr   = keyShift !== 0 ? `_key${sign}${keyShift}` : '';
     const base     = file.name.replace(/\.[^.]+$/, '');
-    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_key${sign}${keyShift}.wav` };
+    
+    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${keyStr}.wav` };
   } catch (err) {
     // 실패 시 원본 파일 폴백
     MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
