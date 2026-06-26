@@ -4,21 +4,128 @@
 
 'use strict';
 
+// ── Supabase Cloud Configuration ──
+const SUPABASE_URL = 'https://xynhsxfssdabuatxenpn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_3atEJCdQdk5GiH6oircGAQ_ghqdPUPd';
+if (window.supabase) {
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
 // ══════════════════════════════════════════════
-// 1. DB (localStorage)
+// 1. DB (Hybrid Storage & Cloud Sync)
 // ══════════════════════════════════════════════
 const DB = {
   _get(k) { try { return JSON.parse(localStorage.getItem('vocalai_' + k)) || null; } catch { return null; } },
   _set(k, v) { localStorage.setItem('vocalai_' + k, JSON.stringify(v)); },
 
+  async initCloud() {
+    if (!window.supabaseClient) return;
+    try {
+      // 1. Load students from Cloud DB
+      const { data: stds } = await window.supabaseClient.from('students').select('*');
+      if (stds && stds.length > 0) {
+        const mappedStds = stds.map(s => ({
+          id: Number(s.id),
+          email: s.email,
+          password: s.password_hash || '',
+          nickname: s.nickname || '',
+          preferredGenres: s.preferred_genres || [],
+          oauthProvider: s.oauth_provider || 'none',
+          isActive: s.is_active !== false,
+          createdAt: s.created_at ? s.created_at.slice(0, 10) : '2026-06-01'
+        }));
+        this._set('students', mappedStds);
+      }
+
+      // 2. Load trainers from Cloud DB
+      const { data: trs } = await window.supabaseClient.from('trainers').select('*');
+      if (trs && trs.length > 0) {
+        const mappedTrs = trs.map(t => ({
+          id: Number(t.id),
+          email: t.email,
+          password: t.password_hash || '',
+          name: t.name || '',
+          profileEmoji: t.profile_image_url || '🎤',
+          intro: t.introduction || '',
+          careerYears: t.career_years || 0,
+          lessonPrice: t.lesson_price || 0,
+          specialties: t.specialties || [],
+          approvalStatus: t.approval_status || 'approved',
+          oauthProvider: t.oauth_provider || 'none',
+          isActive: t.is_active !== false,
+          averageRating: Number(t.average_rating) || 4.8,
+          totalReviews: t.total_reviews || 0,
+          createdAt: t.created_at ? t.created_at.slice(0, 10) : '2026-01-10'
+        }));
+        this._set('trainers', mappedTrs);
+      }
+
+      // 3. Load global_emails registry
+      const { data: ems } = await window.supabaseClient.from('global_emails').select('*');
+      if (ems && ems.length > 0) {
+        const emObj = {};
+        ems.forEach(e => { emObj[e.email] = e.account_type; });
+        this._set('emails', emObj);
+      }
+    } catch(err) {
+      console.warn('Supabase Cloud Sync Init Failed, fallback to local:', err);
+    }
+  },
+
   getStudents() { return this._get('students') || []; },
-  setStudents(v) { this._set('students', v); },
+  setStudents(v) { 
+    this._set('students', v); 
+    const latest = v[v.length - 1];
+    if (latest && window.supabaseClient) {
+      window.supabaseClient.from('students').upsert({
+        id: latest.id,
+        email: latest.email,
+        password_hash: latest.password,
+        nickname: latest.nickname,
+        preferred_genres: latest.preferredGenres || [],
+        oauth_provider: latest.oauthProvider || 'none',
+        is_active: true
+      }, { onConflict: 'email' }).catch(err => console.error('Cloud Sync Error (student):', err));
+    }
+  },
+
   getTrainers() { return this._get('trainers') || []; },
-  setTrainers(v) { this._set('trainers', v); },
+  setTrainers(v) { 
+    this._set('trainers', v); 
+    const latest = v[v.length - 1];
+    if (latest && window.supabaseClient) {
+      window.supabaseClient.from('trainers').upsert({
+        id: latest.id,
+        email: latest.email,
+        password_hash: latest.password,
+        name: latest.name,
+        profile_image_url: latest.profileEmoji || '🎤',
+        introduction: latest.intro || '',
+        career_years: latest.careerYears || 0,
+        lesson_price: latest.lessonPrice || 0,
+        specialties: latest.specialties || [],
+        approval_status: latest.approvalStatus || 'pending',
+        oauth_provider: 'none',
+        is_active: true
+      }, { onConflict: 'email' }).catch(err => console.error('Cloud Sync Error (trainer):', err));
+    }
+  },
+
   getAdmins() { return this._get('admins') || []; },
   setAdmins(v) { this._set('admins', v); },
+
   getEmails() { return this._get('emails') || {}; },
-  setEmails(v) { this._set('emails', v); },
+  setEmails(v) { 
+    this._set('emails', v); 
+    if (window.supabaseClient) {
+      Object.entries(v).forEach(([email, type]) => {
+        window.supabaseClient.from('global_emails').upsert({
+          email,
+          account_type: type
+        }, { onConflict: 'email' }).catch(() => {});
+      });
+    }
+  },
   getSubmissions() { return this._get('submissions') || []; },
   setSubmissions(v) { this._set('submissions', v); },
   getAnalyses() { return this._get('analyses') || []; },
@@ -2328,7 +2435,8 @@ function hideLoading() {
 // ══════════════════════════════════════════════
 // 17. INIT
 // ══════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await DB.initCloud();
   DB.seed();
   Auth.restoreSession();
 
