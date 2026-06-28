@@ -70,7 +70,7 @@ const DB = {
 
       // 4. Load songs from Cloud DB
       const { data: sngs } = await window.supabaseClient.from('songs').select('*');
-      if (sngs && sngs.length > 0) {
+      if (sngs && sngs.length >= 50) {
         const mappedSongs = sngs.map(s => ({
           id: Number(s.id),
           title: s.title,
@@ -153,22 +153,21 @@ const DB = {
   setSongs(v) { 
     this._set('songs', v); 
     if (window.supabaseClient && v && v.length > 0) {
-      v.forEach(s => {
-        window.supabaseClient.from('songs').upsert({
-          id: s.id,
-          title: s.title,
-          artist: s.artist,
-          genre: s.genre,
-          lowest_note: s.lowestNote || '1옥도(C3)',
-          highest_note: s.highestNote || '2옥도(C4)',
-          difficulty: s.difficulty || 'medium',
-          difficulty_score: s.difficultyScore || 5,
-          highest_midi: s.highestMidi || 60,
-          gender: s.gender || 'X',
-          emoji: s.emoji || '🎵',
-          is_active: true
-        }, { onConflict: 'id' }).catch(() => {});
-      });
+      const batch = v.map(s => ({
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+        genre: s.genre,
+        lowest_note: s.lowestNote || '1옥도(C3)',
+        highest_note: s.highestNote || '2옥도(C4)',
+        difficulty: s.difficulty || 'medium',
+        difficulty_score: s.difficultyScore || 5,
+        highest_midi: s.highestMidi || 60,
+        gender: s.gender || 'X',
+        emoji: s.emoji || '🎵',
+        is_active: true
+      }));
+      window.supabaseClient.from('songs').upsert(batch, { onConflict: 'id' }).catch(() => {});
     }
   },
   getBookings() { return this._get('bookings') || []; },
@@ -2617,8 +2616,8 @@ function hideLoading() {
 // ══════════════════════════════════════════════
 // 17. INIT
 // ══════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', async () => {
-  await DB.initCloud();
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. 네트워크 대기 없이 즉시 로컬 캐시 기반으로 화면을 0초 만에 렌더링 (검정 화면 완벽 방지)
   DB.seed();
   Auth.restoreSession();
 
@@ -2636,6 +2635,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     navigate('home');
   }
+
+  // 2. 화면이 뜬 후 백그라운드에서 클라우드 DB 동기화 진행
+  DB.initCloud().then(() => {
+    if (State.currentPage === 'home' || State.currentPage === 'student-dashboard') {
+      renderNav();
+      const app = document.getElementById('app');
+      const pages = {
+        home: renderHome,
+        'student-dashboard': renderStudentApp,
+        'trainer-dashboard': renderTrainerApp,
+        'admin-dashboard': renderAdminDashboard,
+      };
+      if (pages[State.currentPage]) {
+        const sub = State.dashPage || 'home';
+        app.innerHTML = pages[State.currentPage]({ sub });
+        attachPageListeners(State.currentPage, { sub });
+      }
+    }
+  }).catch(err => console.warn('Cloud sync error:', err));
 });
 
 // Expose globals needed in onclick handlers
