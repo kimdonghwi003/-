@@ -562,3 +562,19 @@ INSERT INTO songs (title, artist, genre, lowest_note, highest_note, difficulty) 
   ('비',             '윤종신',   '발라드', 'A3', 'D5', 'easy'),
   ('봄날',            'BTS',     '팝',    'C4', 'E5', 'medium')
 ON CONFLICT DO NOTHING;
+
+-- =============================================================
+-- 14. 프론트엔드 API 동기화를 위한 Row Level Security 비활성화
+-- =============================================================
+ALTER TABLE students DISABLE ROW LEVEL SECURITY;
+ALTER TABLE trainers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE admins DISABLE ROW LEVEL SECURITY;
+ALTER TABLE global_emails DISABLE ROW LEVEL SECURITY;
+ALTER TABLE songs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE submissions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE vocal_analyses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE bookings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE schedules DISABLE ROW LEVEL SECURITY;
+ALTER TABLE payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews DISABLE ROW LEVEL SECURITY;
+
