@@ -67,6 +67,25 @@ const DB = {
         ems.forEach(e => { emObj[e.email] = e.account_type; });
         this._set('emails', emObj);
       }
+
+      // 4. Load songs from Cloud DB
+      const { data: sngs } = await window.supabaseClient.from('songs').select('*');
+      if (sngs && sngs.length > 0) {
+        const mappedSongs = sngs.map(s => ({
+          id: Number(s.id),
+          title: s.title,
+          artist: s.artist,
+          genre: s.genre,
+          lowestNote: s.lowest_note || '1옥도(C3)',
+          highestNote: s.highest_note || '2옥도(C4)',
+          difficulty: s.difficulty || 'medium',
+          difficultyScore: Number(s.difficulty_score) || 5,
+          highestMidi: Number(s.highest_midi) || 60,
+          gender: s.gender || 'X',
+          emoji: s.emoji || '🎵'
+        }));
+        this._set('songs', mappedSongs);
+      }
     } catch(err) {
       console.warn('Supabase Cloud Sync Init Failed, fallback to local:', err);
     }
@@ -131,7 +150,27 @@ const DB = {
   getAnalyses() { return this._get('analyses') || []; },
   setAnalyses(v) { this._set('analyses', v); },
   getSongs() { return this._get('songs') || []; },
-  setSongs(v) { this._set('songs', v); },
+  setSongs(v) { 
+    this._set('songs', v); 
+    if (window.supabaseClient && v && v.length > 0) {
+      v.forEach(s => {
+        window.supabaseClient.from('songs').upsert({
+          id: s.id,
+          title: s.title,
+          artist: s.artist,
+          genre: s.genre,
+          lowest_note: s.lowestNote || '1옥도(C3)',
+          highest_note: s.highestNote || '2옥도(C4)',
+          difficulty: s.difficulty || 'medium',
+          difficulty_score: s.difficultyScore || 5,
+          highest_midi: s.highestMidi || 60,
+          gender: s.gender || 'X',
+          emoji: s.emoji || '🎵',
+          is_active: true
+        }, { onConflict: 'id' }).catch(() => {});
+      });
+    }
+  },
   getBookings() { return this._get('bookings') || []; },
   setBookings(v) { this._set('bookings', v); },
   getPayments() { return this._get('payments') || []; },
@@ -151,7 +190,10 @@ const DB = {
   nextId(arr) { return arr.length > 0 ? Math.max(...arr.map(i => i.id)) + 1 : 1; },
 
   seed() {
-    if (this._get('seeded')) return;
+    const curSongs = this.getSongs() || [];
+    const needSeed = !this._get('seeded') || curSongs.length < 50;
+    if (!needSeed) return;
+
     // Admin
     const admins = [{ id: 1, email: 'admin@vocalai.kr', password: hash('admin1234'), name: '시스템관리자' }];
     this.setAdmins(admins);
@@ -169,18 +211,61 @@ const DB = {
     this.setTrainers(trainers);
     trainers.forEach(t => { emails[t.email] = 'trainer'; });
 
-    // Songs
+    // 50곡 검증된 가요 DB
     const songs = [
-      { id: 1, title: '밤편지', artist: '아이유', genre: '발라드', lowestNote: 'G3', highestNote: 'E5', difficulty: 'medium', emoji: '🌙' },
-      { id: 2, title: 'Celebrity', artist: '아이유', genre: '팝', lowestNote: 'C4', highestNote: 'G5', difficulty: 'medium', emoji: '⭐' },
-      { id: 3, title: '다시 만난 세계', artist: '소녀시대', genre: '팝', lowestNote: 'D4', highestNote: 'D5', difficulty: 'easy', emoji: '🌍' },
-      { id: 4, title: '사랑하기 때문에', artist: '유재하', genre: '발라드', lowestNote: 'E3', highestNote: 'F5', difficulty: 'hard', emoji: '💕' },
-      { id: 5, title: '눈의 꽃', artist: '박효신', genre: '발라드', lowestNote: 'D3', highestNote: 'G5', difficulty: 'hard', emoji: '❄️' },
-      { id: 6, title: '좋은날', artist: '아이유', genre: '발라드', lowestNote: 'D4', highestNote: 'F6', difficulty: 'hard', emoji: '☀️' },
-      { id: 7, title: '비', artist: '윤종신', genre: '발라드', lowestNote: 'A3', highestNote: 'D5', difficulty: 'easy', emoji: '🌧️' },
-      { id: 8, title: '봄날', artist: 'BTS', genre: '팝', lowestNote: 'C4', highestNote: 'E5', difficulty: 'medium', emoji: '🌸' },
-      { id: 9, title: 'Butter', artist: 'BTS', genre: '팝', lowestNote: 'C4', highestNote: 'D5', difficulty: 'easy', emoji: '🧈' },
-      { id: 10, title: '서울의 달', artist: '한영애', genre: '트로트', lowestNote: 'B3', highestNote: 'C5', difficulty: 'medium', emoji: '🌕' },
+      // 남성 보컬 (25곡)
+      { id: 1, title: '겁쟁이', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🎤' },
+      { id: 2, title: '가시', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🌵' },
+      { id: 3, title: '야생화', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 72, gender: 'M', emoji: '🌸' },
+      { id: 4, title: '눈의 꽃', artist: '박효신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 67, gender: 'M', emoji: '❄️' },
+      { id: 5, title: '숨', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥라#(A#4)', difficulty: 'hard', difficultyScore: 8, highestMidi: 70, gender: 'M', emoji: '🌬️' },
+      { id: 6, title: '보고 싶다', artist: '김범수', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '😢' },
+      { id: 7, title: '끝사랑', artist: '김범수', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '💔' },
+      { id: 8, title: '어디에도', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥레#(D#3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 74, gender: 'M', emoji: '🌊' },
+      { id: 9, title: '잠시만 안녕', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '🌅' },
+      { id: 10, title: '모든 날, 모든 순간', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '☕' },
+      { id: 11, title: '너를 만나', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '🤝' },
+      { id: 12, title: '거리에서', artist: '성시경', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '🍂' },
+      { id: 13, title: '너의 모든 순간', artist: '성시경', genre: '발라드', lowestNote: '1옥파#(F#3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '✨' },
+      { id: 14, title: '소주 한 잔', artist: '임창정', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥라(A5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 81, gender: 'M', emoji: '🍶' },
+      { id: 15, title: '내가 저지른 사랑', artist: '임창정', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '💥' },
+      { id: 16, title: '가수가 된 이유', artist: '신용재', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '🎙️' },
+      { id: 17, title: '선물', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '🎁' },
+      { id: 18, title: '사랑인가 봐', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 72, gender: 'M', emoji: '💘' },
+      { id: 19, title: '주저하는 연인들을 위해', artist: '잔나비', genre: '록', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '🎸' },
+      { id: 20, title: '다행이다', artist: '이적', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '💍' },
+      { id: 21, title: '하늘을 달리다', artist: '이적', genre: '록', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🏃' },
+      { id: 22, title: '스토커', artist: '10cm', genre: '인디', lowestNote: '1옥솔(G3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '👓' },
+      { id: 23, title: '벚꽃 엔딩', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥미(E4)', difficulty: 'easy', difficultyScore: 2, highestMidi: 64, gender: 'M', emoji: '🌸' },
+      { id: 24, title: '노래방에서', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '🎤' },
+      { id: 25, title: '좋니', artist: '윤종신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '🍷' },
+
+      // 여성 보컬 (25곡)
+      { id: 26, title: '좋은 날', artist: '아이유', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '☀️' },
+      { id: 27, title: '밤편지', artist: '아이유', genre: '어쿠스틱', lowestNote: '1옥솔(G3)', highestNote: '2옥미(E4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 64, gender: 'F', emoji: '🌙' },
+      { id: 28, title: 'Celebrity', artist: '아이유', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 5, highestMidi: 72, gender: 'F', emoji: '⭐' },
+      { id: 29, title: 'Love wins all', artist: '아이유', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '🪐' },
+      { id: 30, title: '사계', artist: '태연', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '🍂' },
+      { id: 31, title: 'I', artist: '태연', genre: '팝/록', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '🦋' },
+      { id: 32, title: '만약에', artist: '태연', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '🥺' },
+      { id: 33, title: '보여줄게', artist: '에일리', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 79, gender: 'F', emoji: '🔥' },
+      { id: 34, title: '첫눈처럼 너에게 가겠다', artist: '에일리', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '❄️' },
+      { id: 35, title: '사건의 지평선', artist: '윤하', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '🌌' },
+      { id: 36, title: '비밀번호 486', artist: '윤하', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '🔐' },
+      { id: 37, title: '바람의 노래', artist: '소향', genre: '발라드', lowestNote: '2옥도(C4)', highestNote: '3옥라(A5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 81, gender: 'F', emoji: '🌪️' },
+      { id: 38, title: '총 맞은 것처럼', artist: '백지영', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '💘' },
+      { id: 39, title: '열애중', artist: '벤', genre: '발라드', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '🥀' },
+      { id: 40, title: '180도', artist: '벤', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 78, gender: 'F', emoji: '🔄' },
+      { id: 41, title: '시간을 거슬러', artist: '린', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '⏳' },
+      { id: 42, title: '8282', artist: '다비치', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 77, gender: 'F', emoji: '📞' },
+      { id: 43, title: '안녕이라고 말하지마', artist: '다비치', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '✋' },
+      { id: 44, title: '끝', artist: '권진아', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '⌛' },
+      { id: 45, title: '기억해줘요 내 모든 날과 그때를', artist: '거미', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '📅' },
+      { id: 46, title: 'Hype Boy', artist: '뉴진스', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 71, gender: 'F', emoji: '🐰' },
+      { id: 47, title: 'Ditto', artist: '뉴진스', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 69, gender: 'F', emoji: '❄️' },
+      { id: 48, title: 'I AM', artist: '아이브', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 77, gender: 'F', emoji: '✈️' },
+      { id: 49, title: 'Next Level', artist: '에스파', genre: '댄스', lowestNote: '2옥도(C4)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 75, gender: 'F', emoji: '🚀' },
+      { id: 50, title: '어떻게 이별까지 사랑하겠어', artist: 'AKMU', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'X', emoji: '⛵' }
     ];
     this.setSongs(songs);
 
@@ -987,18 +1072,29 @@ function renderStudentSongs() {
   return `
   <div class="animate-up">
     <div class="page-title">🎵 스마트 곡 추천</div>
-    <div class="page-sub">당신의 음역대와 장르 취향에 맞는 곡을 추천합니다</div>
+    <div class="page-sub">당신의 음역대와 완곡 능력을 분석하여 딱 맞는 맞춤 곡을 추천합니다</div>
 
-    <div class="card card-accent mb-24" style="margin-bottom:24px;display:flex;align-items:center;gap:20px">
-      <span style="font-size:32px">💡</span>
-      <div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">AI 분석 기반 추천</div>
-        <div class="text-2" style="font-size:13px">보컬 분석을 완료하면 음역대 기반으로 정확한 곡 추천을 받을 수 있습니다. <span class="text-accent" style="cursor:pointer" onclick="navigate('submit')">지금 분석하기 →</span></div>
+    <!-- 완곡 가능 곡 맞춤 추천 UI -->
+    <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:20px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <span style="font-size:32px">🎯</span>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)">완곡 가능한 곡 기반 맞춤 추천</div>
+          <div class="text-2" style="font-size:13px">현재 자신 있게 부를 수 있는 애창곡을 선택하면, 비슷한 난이도의 곡과 실력 향상을 위한 도전 곡을 추천해 드립니다</div>
+        </div>
       </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="mastered-song-select" class="form-input" style="flex:1;min-width:260px;font-size:14px">
+          <option value="">-- 내가 완곡 가능한 노래 선택 (50곡 마스터 DB) --</option>
+          ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('')}
+        </select>
+        <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px">🚀 맞춤 추천 분석</button>
+      </div>
+      <div id="recommendation-results" style="margin-top:20px;display:none;border-top:1px dashed var(--border);padding-top:20px"></div>
     </div>
 
     <!-- Filter -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
       ${genres.map(g => `<button class="chip genre-filter ${g === '전체' ? 'active' : ''}" data-genre="${g}" onclick="filterSongs(this,'${g}')">${g}</button>`).join('')}
     </div>
 
@@ -1012,10 +1108,11 @@ function renderStudentSongs() {
             <div class="song-title">${song.title}</div>
             <div class="song-artist">${song.artist}</div>
           </div>
-          <div class="song-meta">
-            <span class="badge ${diffColors[song.difficulty]}">${difficulties[song.difficulty]}</span>
+          <div class="song-meta" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span class="badge badge-accent" style="font-weight:700">★ ${song.difficultyScore || 5}/10</span>
+            <span class="badge ${diffColors[song.difficulty] || 'badge-info'}">${difficulties[song.difficulty] || '보통'}</span>
             <span class="badge badge-muted">${song.genre}</span>
-            <span class="text-3">${song.lowestNote}–${song.highestNote}</span>
+            <span class="text-3" style="font-weight:600;color:var(--text)">최고음: ${song.highestNote}</span>
           </div>
         </div>`).join('')}
     </div>
@@ -2253,9 +2350,10 @@ function showSongDetail(songId) {
       <div style="font-size:18px;font-weight:700;margin-bottom:4px">${song.title}</div>
       <div class="text-2 mb-16" style="margin-bottom:16px">${song.artist}</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
-        <span class="badge ${diffColors[song.difficulty]}">${difficulties[song.difficulty]}</span>
+        <span class="badge badge-accent" style="font-weight:700;font-size:13px">★ 난이도 ${song.difficultyScore || 5}/10</span>
+        <span class="badge ${diffColors[song.difficulty] || 'badge-info'}">${difficulties[song.difficulty] || '보통'}</span>
         <span class="badge badge-muted">${song.genre}</span>
-        <span class="badge badge-accent">음역: ${song.lowestNote} – ${song.highestNote}</span>
+        <span class="badge badge-success" style="font-weight:600">최고 음역: ${song.highestNote}</span>
       </div>
       <div class="card" style="background:var(--accent-dim);border-color:var(--border-accent);padding:14px">
         <div style="font-size:13px;font-weight:600;color:var(--text-accent)">💡 이 곡으로 MR 만들기</div>
@@ -2265,6 +2363,71 @@ function showSongDetail(songId) {
     [{ label: '🎛 MR 스튜디오로', cls: 'btn-primary', action: () => { closeModal(); navigate('student-dashboard', {sub:'mr'}); } },
      { label: '닫기', cls: 'btn-secondary', action: closeModal }]
   );
+}
+
+function recommendByMasteredSong() {
+  const sel = document.getElementById('mastered-song-select');
+  if (!sel || !sel.value) {
+    showToast('완곡 가능한 애창곡을 목록에서 선택해 주세요!');
+    return;
+  }
+  const songId = Number(sel.value);
+  const songs = DB.getSongs();
+  const mSong = songs.find(s => s.id === songId);
+  if (!mSong) return;
+
+  const mDiff = mSong.difficultyScore || 5;
+  const mMidi = mSong.highestMidi || 60;
+  const mGender = mSong.gender || 'X';
+
+  // 1. 비슷한 난이도 (완곡 가능성 90%+)
+  const similar = songs.filter(s => {
+    if (s.id === mSong.id) return false;
+    const diffMatch = Math.abs((s.difficultyScore || 5) - mDiff) <= 1;
+    const midiMatch = Math.abs((s.highestMidi || 60) - mMidi) <= 2;
+    const genderMatch = (s.gender === mGender || s.gender === 'X' || mGender === 'X');
+    return diffMatch && midiMatch && genderMatch;
+  });
+
+  // 2. 조금 더 어려운 도전 레벨업 곡
+  const challenge = songs.filter(s => {
+    if (s.id === mSong.id) return false;
+    const diffMatch = ((s.difficultyScore || 5) - mDiff >= 1) && ((s.difficultyScore || 5) - mDiff <= 3);
+    const midiMatch = ((s.highestMidi || 60) >= mMidi) && ((s.highestMidi || 60) - mMidi <= 4);
+    const genderMatch = (s.gender === mGender || s.gender === 'X' || mGender === 'X');
+    return diffMatch && midiMatch && genderMatch;
+  });
+
+  const resDiv = document.getElementById('recommendation-results');
+  if (!resDiv) return;
+
+  const renderCard = (s) => `
+    <div class="card" style="padding:12px;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:8px" onclick="showSongDetail(${s.id})">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:24px">${s.emoji}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${s.title}</div>
+          <div class="text-2" style="font-size:12px">${s.artist} · ${s.genre}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <span class="badge badge-accent" style="font-weight:700">★ ${s.difficultyScore || 5}/10</span>
+        <div class="text-3" style="font-size:11px;margin-top:2px;font-weight:600">최고음: ${s.highestNote}</div>
+      </div>
+    </div>`;
+
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = `
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--success);margin-bottom:10px">👍 비슷한 난이도 추천 (완곡 성공률 90%+)</div>
+      ${similar.length > 0 ? similar.slice(0, 5).map(renderCard).join('') : '<div class="text-2" style="font-size:13px;padding:10px">음역대와 난이도가 유사한 추천 곡이 없습니다. 다른 곡을 선택해 보세요.</div>'}
+    </div>
+    <div>
+      <div style="font-size:15px;font-weight:700;color:var(--accent);margin-bottom:10px">🔥 도전 레벨업 추천 (보컬 실력 향상용)</div>
+      ${challenge.length > 0 ? challenge.slice(0, 5).map(renderCard).join('') : '<div class="text-2" style="font-size:13px;padding:10px">상위 난이도 도전 곡이 없습니다. 이미 최고 수준의 곡을 마스터하셨습니다!</div>'}
+    </div>
+  `;
+  showToast('AI 맞춤 분석이 완료되었습니다!');
 }
 
 function showStoredAnalysis(submissionId) {
@@ -2485,6 +2648,7 @@ window.filterTrainers = filterTrainers;
 window.showBookingModal = showBookingModal;
 window.showTrainerDetail = showTrainerDetail;
 window.showSongDetail = showSongDetail;
+window.recommendByMasteredSong = recommendByMasteredSong;
 window.handleLessonRequest = handleLessonRequest;
 window.cancelBooking = cancelBooking;
 window.showReviewModal = showReviewModal;

@@ -260,15 +260,27 @@ CREATE TABLE IF NOT EXISTS songs (
     title           VARCHAR(255)    NOT NULL,
     artist          VARCHAR(255)    NOT NULL,
     genre           VARCHAR(100)    NOT NULL,
-    lowest_note     VARCHAR(10)     NOT NULL,
-    highest_note    VARCHAR(10)     NOT NULL,
+    lowest_note     VARCHAR(20)     NOT NULL,
+    highest_note    VARCHAR(20)     NOT NULL,
     difficulty      difficulty_level NOT NULL DEFAULT 'medium',
+    difficulty_score SMALLINT       NOT NULL DEFAULT 5,
+    highest_midi    SMALLINT        NOT NULL DEFAULT 60,
+    gender          VARCHAR(10)     NOT NULL DEFAULT 'X',
+    emoji           VARCHAR(10)     NOT NULL DEFAULT '🎵',
     album_art_url   VARCHAR(512),
     youtube_url     VARCHAR(512),
     is_active       BOOLEAN         NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
+
+-- 기존 테이블이 존재할 경우를 대비한 컬럼 추가 구문
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS difficulty_score SMALLINT DEFAULT 5;
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS highest_midi SMALLINT DEFAULT 60;
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS gender VARCHAR(10) DEFAULT 'X';
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS emoji VARCHAR(10) DEFAULT '🎵';
+ALTER TABLE songs ALTER COLUMN lowest_note TYPE VARCHAR(20);
+ALTER TABLE songs ALTER COLUMN highest_note TYPE VARCHAR(20);
 
 CREATE TRIGGER trg_songs_updated_at
   BEFORE UPDATE ON songs
