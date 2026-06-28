@@ -104,7 +104,7 @@ const DB = {
         preferred_genres: latest.preferredGenres || [],
         oauth_provider: latest.oauthProvider || 'none',
         is_active: true
-      }, { onConflict: 'email' }).catch(err => console.error('Cloud Sync Error (student):', err));
+      }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (student):', err));
     }
   },
 
@@ -126,7 +126,7 @@ const DB = {
         approval_status: latest.approvalStatus || 'pending',
         oauth_provider: 'none',
         is_active: true
-      }, { onConflict: 'email' }).catch(err => console.error('Cloud Sync Error (trainer):', err));
+      }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (trainer):', err));
     }
   },
 
@@ -141,7 +141,7 @@ const DB = {
         window.supabaseClient.from('global_emails').upsert({
           email,
           account_type: type
-        }, { onConflict: 'email' }).catch(() => {});
+        }, { onConflict: 'email' }).then(null, () => {});
       });
     }
   },
@@ -167,7 +167,7 @@ const DB = {
         emoji: s.emoji || '🎵',
         is_active: true
       }));
-      window.supabaseClient.from('songs').upsert(batch, { onConflict: 'id' }).catch(() => {});
+      window.supabaseClient.from('songs').upsert(batch, { onConflict: 'id' }).then(null, () => {});
     }
   },
   getBookings() { return this._get('bookings') || []; },
@@ -1352,10 +1352,11 @@ function renderTrainerApp(params) {
   const navItems = [
     { key: 'home', icon: '🏠', label: '대시보드' },
     { key: 'requests', icon: '📬', label: '레슨 요청' },
+    { key: 'students', icon: '🎓', label: '학생 실력 관리' },
     { key: 'schedule', icon: '📅', label: '스케줄 관리' },
     { key: 'profile', icon: '👤', label: '프로필 수정' },
   ];
-  const subContents = { home: renderTrainerHome, requests: renderTrainerRequests, schedule: renderTrainerSchedule, profile: renderTrainerProfile };
+  const subContents = { home: renderTrainerHome, requests: renderTrainerRequests, students: renderTrainerStudents, schedule: renderTrainerSchedule, profile: renderTrainerProfile };
   const renderer = subContents[sub] || renderTrainerHome;
 
   return `
@@ -1587,6 +1588,112 @@ function renderTrainerProfile() {
         <button type="submit" class="btn btn-primary btn-full">프로필 저장</button>
       </form>
     </div>
+  </div>`;
+}
+
+function renderTrainerStudents() {
+  const t = State.currentUser;
+  const students = DB.getStudents();
+  const submissions = DB.getSubmissions();
+  const analyses = DB.getAnalyses();
+  const bookings = DB.getBookings().filter(b => b.trainerId === t.id);
+
+  return `
+  <div class="animate-up">
+    <div class="page-title">🎓 학생 실력 및 AI 분석 리포트 관리</div>
+    <div class="page-sub">수강생들의 완곡 가능 곡, AI 보컬 분석 리포트 내역, 피드백 및 약점을 종합적으로 조회합니다</div>
+
+    ${students.length === 0 ? `
+    <div class="empty-state">
+      <div class="empty-icon">🎓</div>
+      <div class="empty-title">등록된 학생이 없습니다</div>
+    </div>` : `
+    <div style="display:flex;flex-direction:column;gap:20px">
+      ${students.map(st => {
+        const stSubs = submissions.filter(s => s.studentId === st.id);
+        const stBookings = bookings.filter(b => b.studentId === st.id);
+        const latestSub = stSubs.length > 0 ? stSubs[stSubs.length - 1] : null;
+        const latestAna = latestSub ? analyses.find(a => a.submissionId === latestSub.id) : null;
+        const masteredStr = st.masteredSongTitle || '선택하지 않음 (학생이 AI 맞춤 추천에서 선택 시 연동됨)';
+
+        return `
+        <div class="card" style="padding:24px;border:1px solid var(--border);background:var(--bg-1)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="avatar avatar-lg" style="background:var(--grad-primary);font-size:24px">${st.nickname ? st.nickname[0] : '👤'}</div>
+              <div>
+                <div style="font-size:18px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
+                  ${st.nickname || '익명 학생'}
+                  <span class="badge badge-accent" style="font-size:11px">가입일: ${st.createdAt || '2026-03-01'}</span>
+                  ${stBookings.length > 0 ? `<span class="badge badge-success" style="font-size:11px">레슨 횟수 ${stBookings.length}회</span>` : ''}
+                </div>
+                <div class="text-2" style="font-size:13px;margin-top:2px">이메일: ${st.email}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${(st.preferredGenres || []).map(g => `<span class="badge badge-muted">🎵 ${g}</span>`).join('')}
+            </div>
+          </div>
+
+          <!-- 완곡 가능한 애창곡 섹션 -->
+          <div style="background:var(--bg-2);padding:14px 18px;border-radius:10px;margin-bottom:16px;border-left:4px solid var(--success)">
+            <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:4px">🎯 완곡 가능 애창곡 (마스터 곡)</div>
+            <div style="font-size:15px;font-weight:600;color:var(--text)">${masteredStr}</div>
+          </div>
+
+          <!-- AI 보컬 분석 리포트 요약 -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="font-size:14px;font-weight:700;color:var(--accent)">🤖 AI 보컬 분석 리포트 내역 (총 ${stSubs.length}건)</div>
+              ${latestSub ? `<button class="btn btn-primary btn-sm" onclick="showStoredAnalysis(${latestSub.id})">🔍 최신 AI 리포트 상세조회</button>` : ''}
+            </div>
+
+            ${!latestAna ? `
+              <div class="text-3" style="font-size:13px;padding:12px;background:var(--bg-2);border-radius:8px">아직 AI 보컬 분석을 진행한 내역이 없습니다.</div>
+            ` : `
+              <div style="background:var(--bg-2);padding:16px;border-radius:10px;border:1px solid var(--border)">
+                <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                  <div style="text-align:center;padding:10px 16px;background:var(--bg-0);border-radius:8px;border:1px solid var(--border-accent)">
+                    <div style="font-size:24px;font-weight:900;color:var(--accent)">${latestAna.overall}점</div>
+                    <div class="text-3" style="font-size:11px;font-weight:600">AI 종합점수</div>
+                  </div>
+                  <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;text-align:center">
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">음정 정확도</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.pitch}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">박자 안정성</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.rhythm}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">성량 조절</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.volume}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">음색 매력도</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.timbre}점</div></div>
+                  </div>
+                </div>
+
+                <!-- 약점 및 요구사항 태그 -->
+                ${(latestAna.weakAreas && latestAna.weakAreas.length > 0) ? `
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+                  <span style="font-size:12px;font-weight:700;color:var(--danger)">💡 집중 훈련 필요 약점:</span>
+                  ${latestAna.weakAreas.map(w => `<span class="badge badge-danger">${w}</span>`).join('')}
+                </div>` : ''}
+
+                <!-- AI 피드백 요약 -->
+                <div style="font-size:13px;color:var(--text);background:var(--bg-0);padding:12px;border-radius:8px;line-height:1.5">
+                  <strong>💬 AI 피드백 요약:</strong> ${latestAna.pitchFeedback} ${latestAna.rhythmFeedback}
+                </div>
+
+                <!-- 이전 녹음 분석 리스트 -->
+                ${stSubs.length > 1 ? `
+                <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)">
+                  <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px">📜 이전 분석 히스토리:</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    ${stSubs.slice(0, -1).reverse().map(sub => {
+                      const ana = analyses.find(a => a.submissionId === sub.id);
+                      return `<span class="chip" style="font-size:12px;cursor:pointer" onclick="showStoredAnalysis(${sub.id})">🎵 ${sub.fileName} (${ana ? ana.overall + '점' : '분석중'})</span>`;
+                    }).join('')}
+                  </div>
+                </div>` : ''}
+              </div>
+            `}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`}
   </div>`;
 }
 
@@ -2374,6 +2481,18 @@ function recommendByMasteredSong() {
   const songs = DB.getSongs();
   const mSong = songs.find(s => s.id === songId);
   if (!mSong) return;
+
+  if (State.currentUser && State.userType === 'student') {
+    const students = DB.getStudents();
+    const idx = students.findIndex(s => s.id === State.currentUser.id);
+    if (idx >= 0) {
+      students[idx].masteredSongId = mSong.id;
+      students[idx].masteredSongTitle = `${mSong.artist} - ${mSong.title} (최고음: ${mSong.highestNote}, 난이도 ★${mSong.difficultyScore||5})`;
+      DB.setStudents(students);
+      State.currentUser = students[idx];
+      Auth._saveSession();
+    }
+  }
 
   const mDiff = mSong.difficultyScore || 5;
   const mMidi = mSong.highestMidi || 60;
