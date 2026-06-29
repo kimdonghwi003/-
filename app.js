@@ -689,6 +689,9 @@ function renderHome() {
         <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('submit')">
           무료로 분석 시작
         </button>
+        <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'login'})">
+          로그인
+        </button>
         <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'signup'})">
           회원가입
         </button>
@@ -770,6 +773,7 @@ function renderHome() {
         <p class="text-2 mb-24">로그인 없이도 음성 정밀 분석이 가능합니다</p>
         <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-primary btn-lg" onclick="navigate('submit')">무료 분석 시작</button>
+          <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'login'})">로그인</button>
           <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'signup'})">회원가입</button>
         </div>
         <p class="text-3 mt-12" style="font-size:12px">
