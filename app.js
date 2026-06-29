@@ -479,16 +479,16 @@ function renderHome() {
   return `
   <div class="hero">
     <div class="hero-bg">
-      <img src="singingwoman.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0.6;pointer-events:none;" />
-      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(139,92,246,0.22) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(99,102,241,0.12) 0%,transparent 60%),linear-gradient(to bottom,rgba(6,6,8,0.45) 0%,rgba(6,6,8,0.82) 100%);pointer-events:none;"></div>
+      <img src="singingwoman.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0.25;pointer-events:none;" />
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(13,148,136,0.15) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(16,185,129,0.1) 0%,transparent 60%),linear-gradient(to bottom,rgba(255,255,255,0.4) 0%,rgba(255,255,255,0.95) 100%);pointer-events:none;"></div>
     </div>
     <div class="container hero-content animate-up">
-      <div class="hero-eyebrow">✨ AI 보컬 분석 플랫폼</div>
-      <h1 class="hero-title">당신의 목소리를<br><span class="grad-text">AI가 분석합니다</span></h1>
-      <p class="hero-sub">음성 파일 하나만 업로드하면 AI가 음정·박자·성량·음색을 분석하고,<br>맞춤 트레이너를 연결해 드립니다. <strong>로그인 없이 바로 시작하세요.</strong></p>
+      <div class="hero-eyebrow">보컬 정밀 분석 및 교육 매칭 플랫폼</div>
+      <h1 class="hero-title">당신의 목소리를<br><span class="grad-text">과학적으로 분석합니다</span></h1>
+      <p class="hero-sub">음성 파일 하나만 업로드하면 음정·박자·성량·음색을 정밀 분석하고,<br>맞춤 트레이너를 연결해 드립니다. <strong>로그인 없이 바로 시작하세요.</strong></p>
       <div class="hero-cta">
         <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('submit')">
-          🎙 무료로 분석 시작 →
+          무료로 분석 시작
         </button>
         <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'signup'})">
           회원가입
@@ -503,29 +503,29 @@ function renderHome() {
     <div class="container">
       <div class="text-center mb-24" style="margin-bottom:56px">
         <h2 style="font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:12px">핵심 기능</h2>
-        <p class="text-2" style="font-size:16px">AI 기술로 보컬 실력을 과학적으로 향상시켜 드립니다</p>
+        <p class="text-2" style="font-size:16px">음성 분석 기술로 보컬 실력을 체계적으로 향상시켜 드립니다</p>
       </div>
       <div class="grid-3">
         <div class="card card-xl" style="animation:slideUp 0.5s ease 0.1s both">
-          <div class="feature-icon">🧠</div>
-          <h3 class="feature-title">AI 보컬 정밀 분석</h3>
-          <p class="feature-desc">음정·박자·성량·음색 4개 항목을 AI가 정밀 분석하여 시각화 리포트를 제공합니다. <strong>로그인 없이도 이용 가능합니다.</strong></p>
+          <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:12px">FEATURE 01</div>
+          <h3 class="feature-title">보컬 정밀 분석</h3>
+          <p class="feature-desc">음정·박자·성량·음색 4개 항목을 정밀 분석하여 시각화 리포트를 제공합니다. <strong>로그인 없이도 이용 가능합니다.</strong></p>
           <div class="mt-16">
             <button class="btn btn-primary btn-sm" onclick="navigate('submit')">지금 분석하기</button>
           </div>
         </div>
         <div class="card card-xl" style="animation:slideUp 0.5s ease 0.2s both">
-          <div class="feature-icon">🎛</div>
+          <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:12px">FEATURE 02</div>
           <h3 class="feature-title">맞춤형 연습 도우미</h3>
-          <p class="feature-desc">원하는 음역대에 맞게 키를 조절하고, AI 보컬 제거 기술로 연습용 MR을 즉시 생성합니다.</p>
+          <p class="feature-desc">원하는 음역대에 맞게 키를 조절하고, 보컬 제거 기술로 연습용 MR을 즉시 생성합니다.</p>
           <div class="mt-16">
             <button class="btn btn-secondary btn-sm" onclick="navigate('student-auth',{tab:'signup'})">회원가입 후 이용</button>
           </div>
         </div>
         <div class="card card-xl" style="animation:slideUp 0.5s ease 0.3s both">
-          <div class="feature-icon">👨‍🏫</div>
-          <h3 class="feature-title">트레이너 매칭</h3>
-          <p class="feature-desc">AI 분석 결과의 약점을 바탕으로 최적의 보컬 트레이너를 추천하고, 온라인 1:1 레슨을 예약합니다.</p>
+          <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:12px">FEATURE 03</div>
+          <h3 class="feature-title">전문 트레이너 매칭</h3>
+          <p class="feature-desc">분석 결과의 취약점을 바탕으로 최적의 전문 보컬 트레이너를 추천하고, 온라인 1:1 레슨을 예약합니다.</p>
           <div class="mt-16">
             <button class="btn btn-secondary btn-sm" onclick="navigate('student-auth',{tab:'signup'})">매칭 시작하기</button>
           </div>
@@ -539,20 +539,19 @@ function renderHome() {
     <div class="container">
       <div class="text-center" style="margin-bottom:56px">
         <h2 style="font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:12px">이용 방법</h2>
-        <p class="text-2">4단계로 보컬 실력을 레벨업하세요</p>
+        <p class="text-2">4단계 체계적인 보컬 실력 향상 과정</p>
       </div>
       <div style="display:flex;flex-direction:column;gap:32px;max-width:680px;margin:0 auto">
         ${[
-          ['01', '🎙', '음성 파일 업로드', '연습한 노래나 아카펠라 파일을 업로드하세요. MP3, WAV, M4A 형식을 지원합니다. 로그인 없이도 가능합니다.'],
-          ['02', '🤖', 'AI 분석 리포트 확인', 'AI가 음정, 박자, 성량, 음색을 분석하여 상세한 점수와 피드백을 제공합니다.'],
-          ['03', '🎵', '맞춤 곡 추천 & MR 제작', '분석된 음역대를 바탕으로 도전 가능한 곡을 추천하고, 연습용 MR을 생성합니다.'],
-          ['04', '👨‍🏫', '전문 트레이너와 레슨', '보완이 필요한 항목의 전문가와 연결되어 온라인 1:1 맞춤 레슨을 받으세요.']
-        ].map(([num, emoji, title, desc]) => `
+          ['01', '음성 파일 업로드', '연습한 노래나 아카펠라 파일을 업로드하세요. MP3, WAV, M4A 형식을 지원합니다. 로그인 없이도 가능합니다.'],
+          ['02', '정밀 분석 리포트 확인', '음정, 박자, 성량, 음색을 분석하여 상세한 점수와 보완 가이드를 제공합니다.'],
+          ['03', '맞춤 곡 추천 & MR 제작', '검증된 음역대를 바탕으로 도전 가능한 가요를 추천하고, 연습용 MR을 생성합니다.'],
+          ['04', '전문 트레이너 맞춤 레슨', '보완이 필요한 항목의 전문 트레이너와 연결되어 온라인 1:1 맞춤 교육을 받으세요.']
+        ].map(([num, title, desc]) => `
           <div class="flex gap-24 items-center">
             <div class="step-num">${num}</div>
             <div class="card" style="flex:1;padding:20px 24px">
               <div class="flex gap-12 items-center">
-                <span style="font-size:28px">${emoji}</span>
                 <div>
                   <div style="font-size:16px;font-weight:700;margin-bottom:4px">${title}</div>
                   <div class="text-2" style="font-size:14px">${desc}</div>
@@ -569,14 +568,14 @@ function renderHome() {
     <div class="container text-center">
       <div class="card card-accent card-xl" style="max-width:700px;margin:0 auto">
         <h2 style="font-size:28px;font-weight:900;margin-bottom:12px">지금 바로 시작해보세요</h2>
-        <p class="text-2 mb-24">로그인 없이도 AI 보컬 분석이 가능합니다</p>
+        <p class="text-2 mb-24">로그인 없이도 음성 정밀 분석이 가능합니다</p>
         <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-primary btn-lg" onclick="navigate('submit')">🎙 무료 분석 시작</button>
+          <button class="btn btn-primary btn-lg" onclick="navigate('submit')">무료 분석 시작</button>
           <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'signup'})">회원가입</button>
         </div>
         <p class="text-3 mt-12" style="font-size:12px">
-          트레이너이신가요? <span class="text-accent" style="cursor:pointer" onclick="navigate('trainer-auth',{tab:'signup'})">트레이너 등록 →</span>
-          &nbsp;|&nbsp; 관리자 <span class="text-accent" style="cursor:pointer" onclick="navigate('admin-auth')">로그인 →</span>
+          트레이너이신가요? <span class="text-accent" style="cursor:pointer" onclick="navigate('trainer-auth',{tab:'signup'})">트레이너 등록</span>
+          &nbsp;|&nbsp; 관리자 <span class="text-accent" style="cursor:pointer" onclick="navigate('admin-auth')">로그인</span>
         </p>
       </div>
     </div>
@@ -585,7 +584,7 @@ function renderHome() {
   <footer style="border-top:1px solid var(--border);padding:32px 0;text-align:center">
     <div class="container">
       <div class="nav-logo" style="font-size:18px;margin-bottom:8px">VocalAI</div>
-      <p class="text-3" style="font-size:13px">© 2026 VocalAI. AI 기반 보컬 트레이닝 플랫폼.</p>
+      <p class="text-3" style="font-size:13px">© 2026 VocalAI. 보컬 정밀 분석 및 트레이닝 매칭 플랫폼.</p>
     </div>
   </footer>`;
 }
@@ -599,10 +598,9 @@ function renderSubmit() {
     <div class="container" style="max-width:680px">
       <div class="animate-up">
         <div class="text-center mb-24" style="margin-bottom:40px">
-          <span style="font-size:48px">🎙</span>
-          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-top:12px;margin-bottom:8px">AI 보컬 분석</h1>
-          <p class="text-2">음성 파일을 업로드하고 AI 분석 리포트를 받으세요</p>
-          <div class="badge badge-accent mt-12">✅ 로그인 없이 이용 가능</div>
+          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-top:12px;margin-bottom:8px">보컬 음성 분석</h1>
+          <p class="text-2">음성 파일을 업로드하고 정밀 분석 리포트를 받으세요</p>
+          <div class="badge badge-accent mt-12">로그인 없이 이용 가능</div>
         </div>
 
         <div class="card card-xl">
@@ -612,7 +610,6 @@ function renderSubmit() {
               <label class="form-label">음성 파일 <span class="text-danger">*</span></label>
               <div class="drop-zone" id="drop-zone">
                 <input type="file" id="audio-file" accept=".mp3,.wav,.m4a,.ogg" />
-                <span class="drop-icon">🎵</span>
                 <div style="font-size:16px;font-weight:600;margin-bottom:8px">파일을 드래그하거나 클릭해 업로드</div>
                 <div class="text-2" style="font-size:13px">MP3, WAV, M4A, OGG 지원 · 최대 50MB</div>
                 <div id="file-name" style="margin-top:12px;font-size:14px;color:var(--text-accent);display:none"></div>
@@ -633,7 +630,7 @@ function renderSubmit() {
             </div>
 
             <button type="submit" class="btn btn-primary btn-full btn-lg">
-              🚀 AI 분석 시작
+              분석 시작
             </button>
             <p class="text-center text-3 mt-12" style="font-size:12px">
               분석 결과는 24시간 후 자동 삭제됩니다 (비회원)<br>
@@ -651,7 +648,7 @@ function renderSubmit() {
 // ══════════════════════════════════════════════
 function renderAnalysis(params) {
   const a = params.analysis;
-  if (!a) return `<div class="page-wrap container"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">분석 결과를 찾을 수 없습니다</div><button class="btn btn-primary" onclick="navigate('submit')">다시 시작</button></div></div>`;
+  if (!a) return `<div class="page-wrap container"><div class="empty-state"><div class="empty-title">분석 결과를 찾을 수 없습니다</div><button class="btn btn-primary" onclick="navigate('submit')">다시 시작</button></div></div>`;
 
   const scoreColor = (s) => s >= 80 ? 'var(--success)' : s >= 60 ? 'var(--warning)' : 'var(--danger)';
   const scoreLabel = (s) => s >= 85 ? '탁월함' : s >= 70 ? '양호함' : s >= 55 ? '보통' : '개선 필요';
@@ -662,8 +659,8 @@ function renderAnalysis(params) {
       <div class="animate-up">
         <!-- Header -->
         <div class="text-center mb-24" style="margin-bottom:40px">
-          <div class="badge badge-success" style="margin-bottom:16px">✅ 분석 완료</div>
-          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">AI 보컬 분석 리포트</h1>
+          <div class="badge badge-success" style="margin-bottom:16px">분석 완료</div>
+          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">보컬 정밀 분석 리포트</h1>
           <p class="text-2">파일: <strong>${a.fileName}</strong> · 분석 시간: ${a.processTime}초</p>
         </div>
 
@@ -678,14 +675,13 @@ function renderAnalysis(params) {
         <!-- 4 Score Cards -->
         <div class="score-cards mb-24" style="margin-bottom:24px">
           ${[
-            ['🎵', '음정', a.pitch, '음정 정확도'],
-            ['⏱', '박자', a.rhythm, '리듬·타이밍'],
-            ['📢', '성량', a.volume, '음량 다이나믹'],
-            ['🎨', '음색', a.timbre, '톤·음색']
-          ].map(([icon, label, score, desc]) => `
+            ['음정', a.pitch, '음정 정확도'],
+            ['박자', a.rhythm, '리듬·타이밍'],
+            ['성량', a.volume, '음량 다이나믹'],
+            ['음색', a.timbre, '톤·음색']
+          ].map(([label, score, desc]) => `
             <div class="score-card">
-              <div class="score-card-icon">${icon}</div>
-              <div class="score-card-label">${label}</div>
+              <div class="score-card-label" style="font-size:14px;margin-bottom:4px">${label}</div>
               <div class="score-card-num" style="color:${scoreColor(score)}">${score}</div>
               <div style="font-size:11px;color:var(--text-3);margin-top:2px">${desc}</div>
               <div class="score-card-bar mt-8" style="margin-top:8px">
@@ -703,12 +699,12 @@ function renderAnalysis(params) {
             <canvas id="radar-chart" width="280" height="280"></canvas>
           </div>
           <div class="card" style="padding:28px">
-            <div style="font-size:15px;font-weight:700;margin-bottom:20px">📝 세부 피드백</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:20px">세부 피드백</div>
             ${[
-              ['🎵 음정', a.pitchFeedback],
-              ['⏱ 박자', a.rhythmFeedback],
-              ['📢 성량', a.volumeFeedback],
-              ['🎨 음색', a.timbreFeedback]
+              ['음정', a.pitchFeedback],
+              ['박자', a.rhythmFeedback],
+              ['성량', a.volumeFeedback],
+              ['음색', a.timbreFeedback]
             ].map(([label, fb]) => `
               <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
                 <div style="font-size:13px;font-weight:700;margin-bottom:6px">${label}</div>
@@ -720,17 +716,17 @@ function renderAnalysis(params) {
         <!-- Weak Areas & Trainer Matching -->
         ${a.weakAreas && a.weakAreas.length > 0 ? `
         <div class="card card-accent mb-24" style="margin-bottom:24px">
-          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🎯 보완 필요 항목</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">보완 필요 항목</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
             ${a.weakAreas.map(w => `<span class="badge badge-warning">${w}</span>`).join('')}
           </div>
           <p class="text-2" style="font-size:14px;margin-bottom:16px">위 항목을 전문으로 하는 트레이너를 추천해 드릴 수 있습니다.</p>
-          ${State.userType === 'student' ? `<button class="btn btn-primary btn-sm" onclick="navigate('student-dashboard',{sub:'trainers',weakAreas:'${a.weakAreas.join(',')}'})">맞춤 트레이너 보기 →</button>` : `<button class="btn btn-secondary btn-sm" onclick="navigate('student-auth',{tab:'signup'})">회원가입 후 트레이너 연결</button>`}
+          ${State.userType === 'student' ? `<button class="btn btn-primary btn-sm" onclick="navigate('student-dashboard',{sub:'trainers',weakAreas:'${a.weakAreas.join(',')}'})">맞춤 트레이너 보기</button>` : `<button class="btn btn-secondary btn-sm" onclick="navigate('student-auth',{tab:'signup'})">회원가입 후 트레이너 연결</button>`}
         </div>` : ''}
 
         <!-- CTA for non-logged-in -->
         ${!State.currentUser ? `
-        <div class="card" style="background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(99,102,241,0.05));border-color:var(--border-accent);padding:32px;text-align:center">
+        <div class="card" style="background:linear-gradient(135deg,rgba(13,148,136,0.06),rgba(16,185,129,0.03));border-color:var(--border-accent);padding:32px;text-align:center">
           <h3 style="font-size:20px;font-weight:800;margin-bottom:8px">더 많은 기능을 이용해 보세요</h3>
           <p class="text-2 mb-24" style="margin-bottom:24px">회원가입하면 분석 히스토리 저장, 맞춤 곡 추천, MR 제작, 트레이너 레슨 예약이 가능합니다</p>
           <div style="display:flex;gap:12px;justify-content:center">
@@ -1087,7 +1083,7 @@ function renderStudentSongs() {
           <option value="">-- 내가 완곡 가능한 노래 선택 (50곡 마스터 DB) --</option>
           ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('')}
         </select>
-        <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px">🚀 맞춤 추천 분석</button>
+        <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px">맞춤 추천 분석</button>
       </div>
       <div id="recommendation-results" style="margin-top:20px;display:none;border-top:1px dashed var(--border);padding-top:20px"></div>
     </div>
@@ -1102,7 +1098,7 @@ function renderStudentSongs() {
       ${songs.map((song, i) => `
         <div class="song-item" data-genre="${song.genre}" onclick="showSongDetail(${song.id})">
           <div class="song-num">${String(i+1).padStart(2,'0')}</div>
-          <div class="song-thumb">${song.emoji}</div>
+          <div class="song-thumb" style="font-size:13px;font-weight:700;color:var(--accent)">♪</div>
           <div class="song-info">
             <div class="song-title">${song.title}</div>
             <div class="song-artist">${song.artist}</div>
@@ -1122,19 +1118,18 @@ function renderStudentMR() {
   const mrList = DB.getMrRequests().filter(r => r.studentId === State.currentUser.id);
   return `
   <div class="animate-up">
-    <div class="page-title">🎛 MR 스튜디오</div>
-    <div class="page-sub">원곡에서 AI가 보컬을 제거하고, 원하는 키로 조절한 MR을 생성합니다</div>
+    <div class="page-title">MR 스튜디오</div>
+    <div class="page-sub">원곡에서 보컬을 제거하고, 원하는 키로 조절한 MR을 생성합니다</div>
 
     <div class="grid-2 mb-24" style="margin-bottom:32px">
       <!-- MR Generation Form -->
       <div class="card card-xl">
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">🎵 MR 생성</h3>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">MR 생성</h3>
         <form id="mr-form">
           <div class="form-group mb-16" style="margin-bottom:16px">
             <label class="form-label">원곡 파일</label>
             <div class="drop-zone" id="mr-drop" style="padding:32px">
               <input type="file" id="mr-file" accept=".mp3,.wav,.m4a" />
-              <span style="font-size:32px;display:block;margin-bottom:8px">🎼</span>
               <div style="font-size:14px;font-weight:600">파일 업로드</div>
               <div id="mr-file-name" class="text-accent" style="font-size:13px;margin-top:8px;display:none"></div>
             </div>
@@ -1148,36 +1143,35 @@ function renderStudentMR() {
             </div>
           </div>
           <div class="card" style="background:var(--warning-dim);border-color:rgba(245,158,11,0.3);padding:16px;margin-bottom:20px">
-            <div style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--warning)">⚠️ 저작권 안내</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--warning)">저작권 안내</div>
             <div style="font-size:12px;color:var(--text-2);line-height:1.6">생성된 MR은 개인 노래 연습 목적으로만 사용 가능합니다. 외부 유출 및 상업적 이용은 엄격히 금지됩니다.</div>
             <label class="check-group" style="margin-top:12px">
               <input type="checkbox" id="copyright-agree" required />
               <label for="copyright-agree" style="font-size:13px;color:var(--text-1)">저작권 가이드라인에 동의합니다</label>
             </label>
           </div>
-          <button type="submit" class="btn btn-primary btn-full">🎛 MR 생성하기</button>
+          <button type="submit" class="btn btn-primary btn-full">MR 생성하기</button>
         </form>
       </div>
 
       <!-- MR List -->
       <div>
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">📋 MR 목록</h3>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">MR 목록</h3>
         ${mrList.length === 0 ? `
           <div class="empty-state" style="padding:48px 24px">
-            <div class="empty-icon">🎼</div>
             <div class="empty-title">생성된 MR이 없습니다</div>
             <div class="empty-desc">원곡 파일을 업로드해 MR을 만들어보세요</div>
           </div>` : `
           <div style="display:flex;flex-direction:column;gap:12px">
             ${mrList.map(mr => `
               <div class="card card-sm flex gap-16 items-center">
-                <span style="font-size:24px">🎼</span>
+                <span style="font-size:14px;font-weight:800;color:var(--accent)">MR</span>
                 <div style="flex:1">
                   <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
                   <div class="text-3" style="font-size:12px">키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
                 </div>
                 <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '완료' : mr.status === 'processing' ? '처리중' : '대기'}</div>
-                ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="downloadMrFile(${mr.id})">⬇ 다운로드</button>` : ''}
+                ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="downloadMrFile(${mr.id})">다운로드</button>` : ''}
               </div>`).join('')}
           </div>`}
       </div>
@@ -1191,12 +1185,12 @@ function renderStudentTrainers(params) {
 
   return `
   <div class="animate-up">
-    <div class="page-title">👨‍🏫 트레이너 찾기</div>
-    <div class="page-sub">AI 분석 결과를 바탕으로 맞춤 트레이너를 추천합니다</div>
+    <div class="page-title">트레이너 매칭</div>
+    <div class="page-sub">분석 결과를 바탕으로 최적의 맞춤 트레이너를 추천합니다</div>
 
     ${weakAreasParam.length > 0 ? `
     <div class="card card-accent mb-24" style="margin-bottom:24px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px">🎯 AI 추천 – 보완 필요 항목 기반</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px">추천 – 보완 필요 항목 기반</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${weakAreasParam.map(w => `<span class="badge badge-warning">${w}</span>`).join('')}
       </div>
@@ -1227,7 +1221,7 @@ function renderTrainerCard(t, highlightSpecialties = []) {
   return `
   <div class="trainer-card" data-name="${t.name}" data-specialties="${t.specialties.join(',')}">
     <div class="trainer-card-header">
-      <div class="avatar avatar-lg">${t.profileEmoji}</div>
+      <div class="avatar avatar-lg" style="background:var(--accent-dim);color:var(--accent);font-weight:800;display:flex;align-items:center;justify-content:center;border-radius:50%;width:56px;height:56px;font-size:20px">${t.name[0]}</div>
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
           <h3 style="font-size:17px;font-weight:800">${t.name}</h3>
@@ -2451,7 +2445,7 @@ function showSongDetail(songId) {
   if (!song) return;
   const difficulties = { easy: '쉬움', medium: '보통', hard: '어려움' };
   const diffColors = { easy: 'badge-success', medium: 'badge-info', hard: 'badge-danger' };
-  showModal(`${song.emoji} ${song.title}`, `
+  showModal(`${song.artist} - ${song.title}`, `
     <div>
       <div style="font-size:18px;font-weight:700;margin-bottom:4px">${song.title}</div>
       <div class="text-2 mb-16" style="margin-bottom:16px">${song.artist}</div>
@@ -2462,11 +2456,11 @@ function showSongDetail(songId) {
         <span class="badge badge-success" style="font-weight:600">최고 음역: ${song.highestNote}</span>
       </div>
       <div class="card" style="background:var(--accent-dim);border-color:var(--border-accent);padding:14px">
-        <div style="font-size:13px;font-weight:600;color:var(--text-accent)">💡 이 곡으로 MR 만들기</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-accent)">이 곡으로 MR 만들기</div>
         <div class="text-2" style="font-size:12px;margin-top:4px">MR 스튜디오에서 원곡 파일을 업로드하면 연습용 MR을 생성할 수 있습니다</div>
       </div>
     </div>`,
-    [{ label: '🎛 MR 스튜디오로', cls: 'btn-primary', action: () => { closeModal(); navigate('student-dashboard', {sub:'mr'}); } },
+    [{ label: 'MR 스튜디오로 이동', cls: 'btn-primary', action: () => { closeModal(); navigate('student-dashboard', {sub:'mr'}); } },
      { label: '닫기', cls: 'btn-secondary', action: closeModal }]
   );
 }
