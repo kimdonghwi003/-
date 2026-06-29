@@ -795,15 +795,73 @@ function renderHome() {
 // ══════════════════════════════════════════════
 // 7. SUBMIT PAGE (Guest Voice Upload)
 // ══════════════════════════════════════════════
+window.currentAnalysisMode = 'practice';
+window.switchSubmitTab = function(mode) {
+  window.currentAnalysisMode = mode;
+  const tabP = document.getElementById('tab-practice');
+  const tabO = document.getElementById('tab-original');
+  const notP = document.getElementById('practice-notice');
+  const notO = document.getElementById('original-notice');
+  const title = document.getElementById('submit-page-title');
+  const sub = document.getElementById('submit-page-sub');
+  
+  if (mode === 'practice') {
+    if (tabP) { tabP.style.background = 'var(--accent)'; tabP.style.color = '#fff'; tabP.style.boxShadow = '0 4px 12px rgba(99,102,241,0.3)'; }
+    if (tabO) { tabO.style.background = 'transparent'; tabO.style.color = 'var(--text-2)'; tabO.style.boxShadow = 'none'; }
+    if (notP) notP.style.display = 'block';
+    if (notO) notO.style.display = 'none';
+    if (title) title.textContent = '🎤 연습곡 보컬 분석';
+    if (sub) sub.textContent = '내가 직접 부른 연습곡 녹음 파일을 업로드하고 정밀 피드백을 받으세요';
+  } else {
+    if (tabP) { tabP.style.background = 'transparent'; tabP.style.color = 'var(--text-2)'; tabP.style.boxShadow = 'none'; }
+    if (tabO) { tabO.style.background = '#10b981'; tabO.style.color = '#fff'; tabO.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)'; }
+    if (notP) notP.style.display = 'none';
+    if (notO) notO.style.display = 'block';
+    if (title) title.textContent = '🎧 원곡 음원 정밀 분석';
+    if (sub) sub.textContent = '가수의 원곡 음원 MP3를 업로드하여 곡의 최고음과 난이도 타임라인을 파악하세요';
+  }
+};
+
 function renderSubmit() {
   return `
   <div class="page-wrap">
     <div class="container" style="max-width:680px">
       <div class="animate-up">
-        <div class="text-center mb-24" style="margin-bottom:40px">
-          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-top:12px;margin-bottom:8px">보컬 음성 분석</h1>
-          <p class="text-2">음성 파일을 업로드하고 정밀 분석 리포트를 받으세요</p>
+        <div class="text-center mb-24" style="margin-bottom:30px">
+          <h1 id="submit-page-title" style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-top:12px;margin-bottom:8px">🎤 연습곡 보컬 분석</h1>
+          <p id="submit-page-sub" class="text-2">내가 직접 부른 연습곡 녹음 파일을 업로드하고 정밀 피드백을 받으세요</p>
           <div class="badge badge-accent mt-12">로그인 없이 이용 가능</div>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div style="display:flex; gap:10px; margin-bottom:24px; background:var(--bg-1); padding:6px; border-radius:16px; border:1px solid var(--border)">
+          <button type="button" id="tab-practice" style="flex:1; font-weight:800; font-size:15px; padding:14px; border-radius:12px; background:var(--accent); color:#fff; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(99,102,241,0.3); transition:all .2s;" onclick="switchSubmitTab('practice')">
+            🎤 연습곡 분석 (내 보컬 녹음)
+          </button>
+          <button type="button" id="tab-original" style="flex:1; font-weight:800; font-size:15px; padding:14px; border-radius:12px; background:transparent; color:var(--text-2); border:none; cursor:pointer; transition:all .2s;" onclick="switchSubmitTab('original')">
+            🎧 원곡 분석 (가수 원곡 음원)
+          </button>
+        </div>
+
+        <!-- Prominent Echo Notice for Practice Mode -->
+        <div id="practice-notice" style="margin-bottom:24px; padding:20px; background:linear-gradient(135deg, rgba(239,68,68,0.12), rgba(249,115,22,0.12)); border:2px solid #ef4444; border-radius:16px; color:#ef4444; box-shadow:0 8px 24px rgba(239,68,68,0.1);">
+          <div style="font-size:17px; font-weight:900; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            🚨 [필독] 에코(Echo) 및 리버브 없는 드라이(Dry) 녹음 필수!
+          </div>
+          <div style="font-size:14px; line-height:1.6; color:var(--text-1); font-weight:600;">
+            연습곡 분석 시 노래방 에코나 울림 효과, 반주 소음이 들어있으면 AI가 주파수를 왜곡하여 가사와 최고음 인식률이 떨어집니다.<br>
+            <span style="color:#ef4444; text-decoration:underline; font-weight:800;">반드시 에코(Echo)가 전혀 없는 깨끗한 목소리(무반주 또는 드라이 보컬) 파일</span>을 업로드해야 AI가 100% 정확하게 분석합니다!
+          </div>
+        </div>
+
+        <!-- Notice for Original Mode -->
+        <div id="original-notice" style="display:none; margin-bottom:24px; padding:20px; background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.12)); border:2px solid #10b981; border-radius:16px; color:#10b981;">
+          <div style="font-size:17px; font-weight:900; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            🎧 가수 원곡 음원 정밀 분석 모드
+          </div>
+          <div style="font-size:14px; line-height:1.6; color:var(--text-1); font-weight:600;">
+            가수가 부른 원곡 MP3 파일을 업로드하여 곡의 최고음 주파수, 음역대 난이도 및 타임라인별 곡 구성 요소를 분석합니다.
+          </div>
         </div>
 
         <div class="card card-xl">
@@ -889,8 +947,8 @@ function renderAnalysis(params) {
       <div class="animate-up">
         <!-- Header -->
         <div class="text-center mb-24" style="margin-bottom:40px">
-          <div class="badge badge-success" style="margin-bottom:16px">분석 완료</div>
-          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">보컬 정밀 분석 리포트</h1>
+          <div class="badge ${a.mode === 'original' ? 'badge-accent' : 'badge-success'}" style="margin-bottom:16px">${a.mode === 'original' ? '🎧 원곡 음원 분석 완료' : '🎤 연습곡 보컬 분석 완료'}</div>
+          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">${a.mode === 'original' ? '🎧 가수 원곡 음원 분석 리포트' : '🎤 내 연습곡 보컬 정밀 분석 리포트'}</h1>
           <p class="text-2">파일: <strong>${a.fileName}</strong> · 분석 시간: ${a.processTime}초</p>
         </div>
 
@@ -2330,7 +2388,11 @@ async function startAnalysis(file, requirements, guestEmail) {
         formData.append('file', file);
         formData.append('model', 'whisper-1');
         formData.append('language', 'ko');
-        formData.append('prompt', '한국어 대중가요 보컬 노래 녹음 파일입니다. 가사를 정확하고 자연스러운 한국어 맞춤법으로 띄어쓰기에 맞춰 인식해주세요.');
+        const mode = window.currentAnalysisMode || 'practice';
+        const promptText = mode === 'original' 
+          ? '가수의 대중가요 원곡 음원입니다. 노래의 공식 가사를 정확하고 자연스러운 맞춤법으로 인식해주세요.' 
+          : '한국어 대중가요 보컬 연습 녹음 파일입니다. 무반주 혹은 드라이한 음성의 가사를 정확하고 자연스러운 한국어 맞춤법으로 띄어쓰기에 맞춰 인식해주세요.';
+        formData.append('prompt', promptText);
         formData.append('temperature', '0.0');
         const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
           method: 'POST',
@@ -2361,7 +2423,8 @@ async function startAnalysis(file, requirements, guestEmail) {
     } catch(e) { console.warn('AI 백엔드 연결 실패:', e); }
   }
 
-  const analysis = generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics);
+  const mode = window.currentAnalysisMode || 'practice';
+  const analysis = generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode);
   const submissions = DB.getSubmissions();
   const newSub = {
     id: DB.nextId(submissions),
@@ -2369,6 +2432,7 @@ async function startAnalysis(file, requirements, guestEmail) {
     guestEmail,
     fileName,
     requirements,
+    mode,
     status: 'completed',
     accessToken: 'tok_' + Math.random().toString(36).slice(2),
     createdAt: new Date().toISOString().slice(0, 10),
@@ -2382,11 +2446,11 @@ async function startAnalysis(file, requirements, guestEmail) {
   DB.setAnalyses(analyses);
 
   hideLoading();
-  navigate('analysis', { analysis: { ...analysis, fileName, processTime: aiData ? '15.4' : (Math.random() * 1.5 + 1.5).toFixed(1) } });
+  navigate('analysis', { analysis: { ...analysis, fileName, mode, processTime: aiData ? '15.4' : (Math.random() * 1.5 + 1.5).toFixed(1) } });
   showToast(whisperLyrics ? '🎉 음성 가사 100% 실제 인식 및 음향 분석 완료!' : '🎉 실제 음성 파형 정밀 분석 완료!', 'success');
 }
 
-function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics) {
+function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode) {
   const base = () => Math.floor(Math.random() * 30 + 60);
   const pitch = aiData?.pitch_score || base();
   const rhythm = aiData?.rhythm_score || base();
@@ -2484,7 +2548,7 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
     ];
   }
 
-  return { pitch, rhythm, volume, timbre, overall, pitchFeedback: pitchFB, rhythmFeedback: rhythmFB, volumeFeedback: volumeFB, timbreFeedback: timbreFB, weakAreas, songInfo, timeline };
+  return { mode, pitch, rhythm, volume, timbre, overall, pitchFeedback: pitchFB, rhythmFeedback: rhythmFB, volumeFeedback: volumeFB, timbreFeedback: timbreFB, weakAreas, songInfo, timeline };
 }
 
 function attachStudentAuthListeners() {
