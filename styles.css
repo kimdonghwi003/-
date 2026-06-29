@@ -179,7 +179,7 @@ ul, ol { list-style: none; }
 .nav-link {
   padding: 6px 14px;
   border-radius: var(--r-md);
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-2);
   transition: var(--transition);
@@ -582,10 +582,10 @@ ul, ol { list-style: none; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: var(--r-md);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   color: var(--text-2);
   transition: var(--transition);
   cursor: pointer;
@@ -752,7 +752,7 @@ ul, ol { list-style: none; }
 .divider-label { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
 .divider-label span { font-size: 12px; color: var(--text-3); white-space: nowrap; }
 .divider-label::before, .divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-full); background: var(--bg-3); border: 1px solid var(--border); font-size: 13px; color: var(--text-2); cursor: pointer; transition: var(--transition); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--r-full); background: var(--bg-3); border: 1px solid var(--border); font-size: 16px; font-weight: 600; color: var(--text-2); cursor: pointer; transition: var(--transition); }
 .chip:hover, .chip.active { background: var(--accent-dim); border-color: var(--border-accent); color: var(--text-accent); }
 .vertical-center { display: flex; flex-direction: column; justify-content: center; }
 

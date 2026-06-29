@@ -190,7 +190,7 @@ const DB = {
 
   seed() {
     const curSongs = this.getSongs() || [];
-    const needSeed = !this._get('seeded') || curSongs.length < 50;
+    const needSeed = !this._get('seeded') || curSongs.length < 200 || (curSongs[0] && curSongs[0].emoji !== undefined && curSongs[0].emoji !== '');
     if (!needSeed) return;
 
     // Admin
@@ -202,69 +202,216 @@ const DB = {
 
     // Approved trainers
     const trainers = [
-      { id: 1, email: 'trainer1@vocalai.kr', password: hash('trainer1'), name: '김하늘', profileEmoji: '🎤', intro: '10년 경력의 보컬 전문 트레이너입니다. SBS 보이스킹 출연 경험이 있으며 고음 처리와 호흡법을 전문적으로 지도합니다.', careerYears: 10, lessonPrice: 80000, specialties: ['고음처리', '호흡', '발성'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 124, createdAt: '2026-01-10' },
-      { id: 2, email: 'trainer2@vocalai.kr', password: hash('trainer2'), name: '박서윤', profileEmoji: '🎵', intro: '음대 출신 보컬리스트로 팝, R&B, 재즈 장르에 특화되어 있습니다. 음정 교정과 스케일 훈련을 집중적으로 진행합니다.', careerYears: 7, lessonPrice: 65000, specialties: ['음정교정', '스케일', '팝/R&B'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.6, totalReviews: 89, createdAt: '2026-01-15' },
-      { id: 3, email: 'trainer3@vocalai.kr', password: hash('trainer3'), name: '이준혁', profileEmoji: '🎼', intro: '발라드와 CCM 전문 트레이너입니다. 박자감, 다이나믹 표현, 감정 전달 기법을 중심으로 수업합니다.', careerYears: 5, lessonPrice: 55000, specialties: ['박자감', '다이나믹', '발라드'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.7, totalReviews: 67, createdAt: '2026-02-01' },
-      { id: 4, email: 'trainer4@vocalai.kr', password: hash('trainer4'), name: '최민지', profileEmoji: '🌟', intro: '신청 중인 트레이너입니다.', careerYears: 3, lessonPrice: 45000, specialties: ['음색개발'], approvalStatus: 'pending', oauthProvider: 'none', isActive: true, averageRating: 0, totalReviews: 0, createdAt: '2026-06-10' },
+      { id: 1, email: 'trainer1@vocalai.kr', password: hash('trainer1'), name: '김하늘', profileEmoji: '', intro: '10년 경력의 보컬 전문 트레이너입니다. SBS 보이스킹 출연 경험이 있으며 고음 처리와 호흡법을 전문적으로 지도합니다.', careerYears: 10, lessonPrice: 80000, specialties: ['고음처리', '호흡', '발성'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 124, createdAt: '2026-01-10' },
+      { id: 2, email: 'trainer2@vocalai.kr', password: hash('trainer2'), name: '박서윤', profileEmoji: '', intro: '음대 출신 보컬리스트로 팝, R&B, 재즈 장르에 특화되어 있습니다. 음정 교정과 스케일 훈련을 집중적으로 진행합니다.', careerYears: 7, lessonPrice: 65000, specialties: ['음정교정', '스케일', '팝/R&B'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.6, totalReviews: 89, createdAt: '2026-01-15' },
+      { id: 3, email: 'trainer3@vocalai.kr', password: hash('trainer3'), name: '이준혁', profileEmoji: '', intro: '발라드와 CCM 전문 트레이너입니다. 박자감, 다이나믹 표현, 감정 전달 기법을 중심으로 수업합니다.', careerYears: 5, lessonPrice: 55000, specialties: ['박자감', '다이나믹', '발라드'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.7, totalReviews: 67, createdAt: '2026-02-01' },
+      { id: 4, email: 'trainer4@vocalai.kr', password: hash('trainer4'), name: '최민지', profileEmoji: '', intro: '신청 중인 트레이너입니다.', careerYears: 3, lessonPrice: 45000, specialties: ['음색개발'], approvalStatus: 'pending', oauthProvider: 'none', isActive: true, averageRating: 0, totalReviews: 0, createdAt: '2026-06-10' },
     ];
     this.setTrainers(trainers);
     trainers.forEach(t => { emails[t.email] = 'trainer'; });
 
-    // 50곡 검증된 가요 DB
+    // 200곡 검증된 가요 DB (나무위키 고음/노래 목록 철저 검증)
     const songs = [
-      // 남성 보컬 (25곡) - 나무위키 고음/노래 목록 철저 검증
-      { id: 1, title: '겁쟁이', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🎤' },
-      { id: 2, title: '가시', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🌵' },
-      { id: 3, title: '야생화', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 72, gender: 'M', emoji: '🌸' },
-      { id: 4, title: '눈의 꽃', artist: '박효신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '❄️' },
-      { id: 5, title: '숨', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '🌬️' },
-      { id: 6, title: '보고 싶다', artist: '김범수', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '😢' },
-      { id: 7, title: '끝사랑', artist: '김범수', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '💔' },
-      { id: 8, title: '어디에도', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥레#(D#3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 74, gender: 'M', emoji: '🌊' },
-      { id: 9, title: '잠시만 안녕', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '🌅' },
-      { id: 10, title: '모든 날, 모든 순간', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '☕' },
-      { id: 11, title: '너를 만나', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '🤝' },
-      { id: 12, title: '거리에서', artist: '성시경', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '🍂' },
-      { id: 13, title: '너의 모든 순간', artist: '성시경', genre: '발라드', lowestNote: '1옥파#(F#3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '✨' },
-      { id: 14, title: '소주 한 잔', artist: '임창정', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 74, gender: 'M', emoji: '🍶' },
-      { id: 15, title: '내가 저지른 사랑', artist: '임창정', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '💥' },
-      { id: 16, title: '가수가 된 이유', artist: '신용재', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '🎙️' },
-      { id: 17, title: '선물', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '🎁' },
-      { id: 18, title: '사랑인가 봐', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'M', emoji: '💘' },
-      { id: 19, title: '주저하는 연인들을 위해', artist: '잔나비', genre: '록', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '🎸' },
-      { id: 20, title: '다행이다', artist: '이적', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '💍' },
-      { id: 21, title: '하늘을 달리다', artist: '이적', genre: '록', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🏃' },
-      { id: 22, title: '스토커', artist: '10cm', genre: '인디', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '👓' },
-      { id: 23, title: '벚꽃 엔딩', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '🌸' },
-      { id: 24, title: '노래방에서', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '🎤' },
-      { id: 25, title: '좋니', artist: '윤종신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '🍷' },
-
-      // 여성 보컬 (25곡) - 나무위키 고음/노래 목록 철저 검증
-      { id: 26, title: '좋은 날', artist: '아이유', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '☀️' },
-      { id: 27, title: '밤편지', artist: '아이유', genre: '어쿠스틱', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 69, gender: 'F', emoji: '🌙' },
-      { id: 28, title: 'Celebrity', artist: '아이유', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 5, highestMidi: 72, gender: 'F', emoji: '⭐' },
-      { id: 29, title: 'Love wins all', artist: '아이유', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '🪐' },
-      { id: 30, title: '사계', artist: '태연', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '🍂' },
-      { id: 31, title: 'I', artist: '태연', genre: '팝/록', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '🦋' },
-      { id: 32, title: '만약에', artist: '태연', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '🥺' },
-      { id: 33, title: '보여줄게', artist: '에일리', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 79, gender: 'F', emoji: '🔥' },
-      { id: 34, title: '첫눈처럼 너에게 가겠다', artist: '에일리', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '❄️' },
-      { id: 35, title: '사건의 지평선', artist: '윤하', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '🌌' },
-      { id: 36, title: '비밀번호 486', artist: '윤하', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '🔐' },
-      { id: 37, title: '바람의 노래', artist: '소향', genre: '발라드', lowestNote: '2옥도(C4)', highestNote: '3옥라(A5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 81, gender: 'F', emoji: '🌪️' },
-      { id: 38, title: '총 맞은 것처럼', artist: '백지영', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '💘' },
-      { id: 39, title: '열애중', artist: '벤', genre: '발라드', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '🥀' },
-      { id: 40, title: '180도', artist: '벤', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 78, gender: 'F', emoji: '🔄' },
-      { id: 41, title: '시간을 거슬러', artist: '린', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '⏳' },
-      { id: 42, title: '8282', artist: '다비치', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 77, gender: 'F', emoji: '📞' },
-      { id: 43, title: '안녕이라고 말하지마', artist: '다비치', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '✋' },
-      { id: 44, title: '끝', artist: '권진아', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '⌛' },
-      { id: 45, title: '기억해줘요 내 모든 날과 그때를', artist: '거미', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '📅' },
-      { id: 46, title: 'Hype Boy', artist: '뉴진스', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 4, highestMidi: 72, gender: 'F', emoji: '🐰' },
-      { id: 47, title: 'Ditto', artist: '뉴진스', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 71, gender: 'F', emoji: '❄️' },
-      { id: 48, title: 'I AM', artist: '아이브', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 79, gender: 'F', emoji: '✈️' },
-      { id: 49, title: 'Next Level', artist: '에스파', genre: '댄스', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '🚀' },
-      { id: 50, title: '어떻게 이별까지 사랑하겠어', artist: 'AKMU', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥레(D5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 74, gender: 'X', emoji: '⛵' }
+      { id: 1, title: '겁쟁이', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 2, title: '가시', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 3, title: '야생화', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 4, title: '눈의 꽃', artist: '박효신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 5, title: '숨', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 6, title: '보고 싶다', artist: '김범수', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 7, title: '끝사랑', artist: '김범수', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 8, title: '어디에도', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥레#(D#3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 74, gender: 'M', emoji: '' },
+      { id: 9, title: '잠시만 안녕', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '' },
+      { id: 10, title: '모든 날, 모든 순간', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 11, title: '너를 만나', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 12, title: '거리에서', artist: '성시경', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 13, title: '너의 모든 순간', artist: '성시경', genre: '발라드', lowestNote: '1옥파#(F#3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 14, title: '소주 한 잔', artist: '임창정', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 74, gender: 'M', emoji: '' },
+      { id: 15, title: '내가 저지른 사랑', artist: '임창정', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '' },
+      { id: 16, title: '가수가 된 이유', artist: '신용재', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 17, title: '선물', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 18, title: '사랑인가 봐', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 19, title: '주저하는 연인들을 위해', artist: '잔나비', genre: '록', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 20, title: '다행이다', artist: '이적', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 21, title: '하늘을 달리다', artist: '이적', genre: '록', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 22, title: '스토커', artist: '10cm', genre: '인디', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 23, title: '벚꽃 엔딩', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 24, title: '노래방에서', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 25, title: '좋니', artist: '윤종신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 26, title: '좋은 날', artist: '아이유', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '' },
+      { id: 27, title: '밤편지', artist: '아이유', genre: '어쿠스틱', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 69, gender: 'F', emoji: '' },
+      { id: 28, title: 'Celebrity', artist: '아이유', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 5, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 29, title: 'Love wins all', artist: '아이유', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 30, title: '사계', artist: '태연', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 31, title: 'I', artist: '태연', genre: '팝/록', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 32, title: '만약에', artist: '태연', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 33, title: '보여줄게', artist: '에일리', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 79, gender: 'F', emoji: '' },
+      { id: 34, title: '첫눈처럼 너에게 가겠다', artist: '에일리', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 35, title: '사건의 지평선', artist: '윤하', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 36, title: '비밀번호 486', artist: '윤하', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 37, title: '바람의 노래', artist: '소향', genre: '발라드', lowestNote: '2옥도(C4)', highestNote: '3옥라(A5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 81, gender: 'F', emoji: '' },
+      { id: 38, title: '총 맞은 것처럼', artist: '백지영', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 39, title: '열애중', artist: '벤', genre: '발라드', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 40, title: '180도', artist: '벤', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 78, gender: 'F', emoji: '' },
+      { id: 41, title: '시간을 거슬러', artist: '린', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 42, title: '8282', artist: '다비치', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 43, title: '안녕이라고 말하지마', artist: '다비치', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 44, title: '끝', artist: '권진아', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 45, title: '기억해줘요 내 모든 날과 그때를', artist: '거미', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 46, title: 'Hype Boy', artist: '뉴진스', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 4, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 47, title: 'Ditto', artist: '뉴진스', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 71, gender: 'F', emoji: '' },
+      { id: 48, title: 'I AM', artist: '아이브', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 79, gender: 'F', emoji: '' },
+      { id: 49, title: 'Next Level', artist: '에스파', genre: '댄스', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '' },
+      { id: 50, title: '어떻게 이별까지 사랑하겠어', artist: 'AKMU', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥레(D5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 74, gender: 'X', emoji: '' },
+      { id: 51, title: '나를 사랑했던 사람아', artist: '허각', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 52, title: 'Hello', artist: '허각', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 53, title: '바람기억', artist: '나얼', genre: 'R&B/발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '' },
+      { id: 54, title: '같은 시간 속의 너', artist: '나얼', genre: 'R&B/발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 55, title: '서쪽 하늘', artist: '이승철', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '2옥라#(A#4)', difficulty: 'hard', difficultyScore: 7, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 56, title: '말리꽃', artist: '이승철', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 57, title: '인연', artist: '이선희', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 58, title: '천년의 사랑', artist: '박완규', genre: '록', lowestNote: '1옥미(E3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 74, gender: 'M', emoji: '' },
+      { id: 59, title: '나를 슬프게 하는 사람들', artist: '김경호', genre: '록', lowestNote: '1옥미(E3)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 79, gender: 'M', emoji: '' },
+      { id: 60, title: '금지된 사랑', artist: '김경호', genre: '록', lowestNote: '1옥미(E3)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 79, gender: 'M', emoji: '' },
+      { id: 61, title: '한 남자', artist: '김종국', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥라(A5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 81, gender: 'M', emoji: '' },
+      { id: 62, title: '사랑스러워', artist: '김종국', genre: '댄스/팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 63, title: '응급실', artist: 'Izi', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 64, title: '눈물', artist: '플라워', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 65, title: 'Endless', artist: '플라워', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 66, title: '애인 있어요', artist: '이은미', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 67, title: '체념', artist: '빅마마', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 68, title: '연', artist: '빅마마', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 69, title: '낭만고양이', artist: '체리필터', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 70, title: '오리 날다', artist: '체리필터', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 71, title: 'Tears', artist: '소찬휘', genre: '댄스/록', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 79, gender: 'F', emoji: '' },
+      { id: 72, title: '현명한 선택', artist: '소찬휘', genre: '댄스/록', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 73, title: '고해', artist: '임재범', genre: '록/발라드', lowestNote: '1옥레(D3)', highestNote: '2옥라#(A#4)', difficulty: 'hard', difficultyScore: 8, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 74, title: '너를 위해', artist: '임재범', genre: '록/발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 75, title: '사랑보다 깊은 상처', artist: '임재범 & 박정현', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 74, gender: 'X', emoji: '' },
+      { id: 76, title: '꿈에', artist: '박정현', genre: 'R&B/발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 77, title: '편지', artist: '김광석', genre: '포크/발라드', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 78, title: '서른 즈음에', artist: '김광석', genre: '포크/발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 79, title: '사랑했지만', artist: '김광석', genre: '포크/발라드', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 80, title: '소녀', artist: '이문세', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 81, title: '가로수 그늘 아래 서면', artist: '이문세', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 82, title: '옛사랑', artist: '이문세', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥파(F4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 65, gender: 'M', emoji: '' },
+      { id: 83, title: '내 여자라니까', artist: '이승기', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 84, title: '삭제', artist: '이승기', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 85, title: '결혼해줄래', artist: '이승기', genre: '팝/발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 86, title: '살다가', artist: 'SG워너비', genre: 'R&B/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 87, title: 'Timeless', artist: 'SG워너비', genre: 'R&B/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 88, title: '라라라', artist: 'SG워너비', genre: 'R&B/발라드', lowestNote: '1옥파(F3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 89, title: '가슴으로 운다', artist: '먼데이키즈', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 90, title: '발자국', artist: '먼데이키즈', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 91, title: '사랑해 그리고 기억해', artist: 'god', genre: '팝/R&B', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 92, title: '촛불하나', artist: 'god', genre: '팝', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 93, title: '거짓말', artist: 'god', genre: '팝/R&B', lowestNote: '1옥미(E3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 94, title: '희재', artist: '성시경', genre: '발라드', lowestNote: '1옥파#(F#3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 95, title: '내게 오는 길', artist: '성시경', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 96, title: '좋겠다', artist: '스윗소로우', genre: '팝/아카펠라', lowestNote: '1옥솔(G3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 97, title: '취중진담', artist: '전람회(김동률)', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 98, title: '기억의 습작', artist: '전람회(김동률)', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 99, title: '감사', artist: '김동률', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 100, title: '다시 사랑한다 말할까', artist: '김동률', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 101, title: '본능적으로', artist: '윤종신', genre: '팝/록', lowestNote: '1옥미(E3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 102, title: '오르막길', artist: '정인', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 103, title: '미워요', artist: '정인', genre: 'R&B/발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 104, title: '몽환의 숲', artist: '키네틱플로우', genre: '랩/힙합', lowestNote: '1옥레(D3)', highestNote: '2옥파(F4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 65, gender: 'M', emoji: '' },
+      { id: 105, title: '외톨이', artist: '아웃사이더', genre: '랩/힙합', lowestNote: '1옥미(E3)', highestNote: '2옥라(A4)', difficulty: 'hard', difficultyScore: 8, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 106, title: '눈물샤워', artist: '배치기', genre: '랩/힙합', lowestNote: '1옥파(F3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'X', emoji: '' },
+      { id: 107, title: '봄날', artist: '방탄소년단', genre: '팝/힙합', lowestNote: '1옥파(F3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 108, title: 'Dynamite', artist: '방탄소년단', genre: '댄스/팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 109, title: 'Butter', artist: '방탄소년단', genre: '댄스/팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 110, title: 'Fake Love', artist: '방탄소년단', genre: '팝/힙합', lowestNote: '1옥솔(G3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'M', emoji: '' },
+      { id: 111, title: '으르렁 (Growl)', artist: 'EXO', genre: '댄스/R&B', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 112, title: 'Love Shot', artist: 'EXO', genre: '댄스/팝', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 113, title: '하루하루', artist: 'BIGBANG', genre: '댄스/힙합', lowestNote: '1옥레(D3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 114, title: '뱅뱅뱅 (BANG BANG BANG)', artist: 'BIGBANG', genre: '댄스/힙합', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 115, title: '봄여름가을겨울 (Still Life)', artist: 'BIGBANG', genre: '록/팝', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 116, title: '그리워하다', artist: '비투비', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 117, title: '너 없인 안 된다', artist: '비투비', genre: '발라드/팝', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 118, title: '아름답고도 아프구나', artist: '비투비', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 119, title: '아주 NICE', artist: '세븐틴', genre: '댄스/팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 120, title: '울고 싶지 않아', artist: '세븐틴', genre: '댄스/팝', lowestNote: '1옥파(F3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 121, title: '손오공', artist: '세븐틴', genre: '댄스/힙합', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 122, title: '외톨이야', artist: 'CNBLUE', genre: '록/팝', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 123, title: '사랑 빛', artist: 'CNBLUE', genre: '어쿠스틱/록', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 124, title: '사랑앓이', artist: 'FTISLAND', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 125, title: '바래', artist: 'FTISLAND', genre: '록/댄스', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 126, title: 'Lazenca, Save Us', artist: '하현우(국카스텐)', genre: '록', lowestNote: '1옥솔(G3)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 77, gender: 'M', emoji: '' },
+      { id: 127, title: '돌먹는 소년', artist: '국카스텐', genre: '록', lowestNote: '1옥솔(G3)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 79, gender: 'M', emoji: '' },
+      { id: 128, title: '민물장어의 꿈', artist: '신해철', genre: '록/발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 129, title: '그대에게', artist: '무한궤도(신해철)', genre: '록', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 130, title: '붉은 노을', artist: '이문세', genre: '팝/록', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 131, title: '모나리자', artist: '조용필', genre: '록', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 132, title: '바운스 (Bounce)', artist: '조용필', genre: '팝/록', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 133, title: '이젠 그랬으면 좋겠네', artist: '조용필', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 134, title: '사랑하기 때문에', artist: '유재하', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 135, title: '지난 날', artist: '유재하', genre: '발라드/팝', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 136, title: '내 마음에 비친 내 모습', artist: '유재하', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 137, title: '청혼', artist: '노을', genre: 'R&B/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 138, title: '그리워 그리워', artist: '노을', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 139, title: '붙잡고도', artist: '노을', genre: 'R&B/발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 140, title: '죽어도 못 보내', artist: '2AM', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 141, title: '이 노래', artist: '2AM', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 142, title: '내꺼하자', artist: '인피니트', genre: '댄스/팝', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 143, title: '추격자', artist: '인피니트', genre: '댄스/팝', lowestNote: '1옥파(F3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 144, title: '셜록 (Sherlock)', artist: 'SHINee', genre: '댄스/팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 145, title: '누난 너무 예뻐', artist: 'SHINee', genre: 'R&B/댄스', lowestNote: '1옥레(D3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 146, title: '혜성', artist: '윤하', genre: '록/팝', lowestNote: '2옥도(C4)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 147, title: '우산', artist: '에픽하이 (feat. 윤하)', genre: '힙합/R&B', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'X', emoji: '' },
+      { id: 148, title: 'Fly', artist: '에픽하이', genre: '힙합/팝', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 149, title: 'Love Love Love', artist: '에픽하이', genre: '힙합/팝', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 150, title: '10월의 날씨', artist: '10cm', genre: '인디/어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 151, title: '아메리카노', artist: '10cm', genre: '인디/어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 152, title: '사랑은 은하수 다방에서', artist: '10cm', genre: '인디/어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 153, title: '여수 밤바다', artist: '버스커 버스커', genre: '어쿠스틱/포크', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 154, title: '꽃송이가', artist: '버스커 버스커', genre: '어쿠스틱/포크', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 155, title: '첫사랑', artist: '버스커 버스커', genre: '어쿠스틱/포크', lowestNote: '1옥도(C3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '' },
+      { id: 156, title: '위잉위잉', artist: '혁오', genre: '인디/록', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 157, title: 'TOMBOY', artist: '혁오', genre: '인디/록', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 158, title: '와리가리', artist: '혁오', genre: '인디/록', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 159, title: '우주를 줄게', artist: '볼빨간사춘기', genre: '인디/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 160, title: '썸 탈꺼야', artist: '볼빨간사춘기', genre: '인디/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 161, title: '나만, 봄', artist: '볼빨간사춘기', genre: '인디/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 162, title: '여행', artist: '볼빨간사춘기', genre: '인디/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 163, title: '스물셋', artist: '아이유', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 164, title: 'Blueming', artist: '아이유', genre: '팝/록', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 165, title: '에잇', artist: '아이유 (feat. SUGA)', genre: '팝/록', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 166, title: '드라마', artist: '아이유', genre: '어쿠스틱', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 167, title: '라일락', artist: '아이유', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 168, title: '불티 (Spark)', artist: '태연', genre: '팝/록', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 169, title: 'Weekend', artist: '태연', genre: '디스코/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 170, title: 'INVU', artist: '태연', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 171, title: 'Heaven', artist: '에일리', genre: 'R&B/댄스', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 172, title: '손대지마', artist: '에일리', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 173, title: '노래가 늘었어', artist: '에일리', genre: '록/발라드', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 174, title: '롤러코스터', artist: '청하', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 175, title: '벌써 12시', artist: '청하', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 176, title: 'Snapping', artist: '청하', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 177, title: 'CHEER UP', artist: 'TWICE', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
+      { id: 178, title: 'TT', artist: 'TWICE', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 179, title: 'Fancy', artist: 'TWICE', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 180, title: 'Feel Special', artist: 'TWICE', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 181, title: '빨간 맛 (Red Flavor)', artist: 'Red Velvet', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 182, title: 'Psycho', artist: 'Red Velvet', genre: 'R&B/댄스', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 183, title: 'Feel My Rhythm', artist: 'Red Velvet', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 77, gender: 'F', emoji: '' },
+      { id: 184, title: 'TOMBOY', artist: '(여자)아이들', genre: '록/댄스', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 185, title: '퀸카 (Queencard)', artist: '(여자)아이들', genre: '댄스/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 186, title: '나는 아픈 건 딱 질색이니까 (Fate)', artist: '(여자)아이들', genre: '팝/록', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 187, title: '일탈', artist: '자우림', genre: '록', lowestNote: '2옥도(C4)', highestNote: '3옥미(E5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 76, gender: 'F', emoji: '' },
+      { id: 188, title: '매직 카펫 라이드', artist: '자우림', genre: '록', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 189, title: '스물다섯, 스물하나', artist: '자우림', genre: '록/발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 190, title: '초혼', artist: '장윤정', genre: '트로트/발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 191, title: '어머나', artist: '장윤정', genre: '트로트', lowestNote: '1옥솔(G3)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 71, gender: 'F', emoji: '' },
+      { id: 192, title: '사랑의 배터리', artist: '홍진영', genre: '트로트', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '' },
+      { id: 193, title: '아모르 파티', artist: '김연자', genre: 'EDM/트로트', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 194, title: '찐이야', artist: '영탁', genre: '댄스/트로트', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 195, title: '막걸리 한잔', artist: '영탁', genre: '트로트', lowestNote: '1옥레(D3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
+      { id: 196, title: '이제 나만 믿어요', artist: '임영웅', genre: '팝/트로트', lowestNote: '1옥도(C3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '' },
+      { id: 197, title: '사랑은 늘 도망가', artist: '임영웅', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '' },
+      { id: 198, title: '별빛 같은 나의 사랑아', artist: '임영웅', genre: '트로트/발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
+      { id: 199, title: '팡파르', artist: '다비치', genre: '발라드/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'F', emoji: '' },
+      { id: 200, title: '꿈처럼 내린', artist: '다비치', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' }
     ];
     this.setSongs(songs);
 
@@ -444,11 +591,11 @@ function renderNav() {
       <button class="btn btn-primary btn-sm" onclick="navigate('submit')">무료 분석 시작</button>`;
   } else if (type === 'student') {
     links = `
-      <button class="nav-link" onclick="navigate('submit')">🎙 분석</button>
-      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'songs'})">🎵 곡 추천</button>
-      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'mr'})">🎛 MR 스튜디오</button>
-      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'trainers'})">👨‍🏫 트레이너</button>
-      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'lessons'})">📅 내 레슨</button>`;
+      <button class="nav-link" onclick="navigate('submit')">음성 분석</button>
+      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'songs'})">맞춤 곡 추천</button>
+      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'mr'})">MR 스튜디오</button>
+      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'trainers'})">트레이너 매칭</button>
+      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'lessons'})">내 레슨</button>`;
     actions = `
       <button class="btn btn-ghost btn-sm" onclick="navigate('student-dashboard',{sub:'home'})">대시보드</button>
       <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">로그아웃</button>`;
@@ -931,12 +1078,12 @@ function renderStudentApp(params) {
   const renderer = subContents[sub] || renderStudentHome;
 
   const navItems = [
-    { key: 'home', icon: '🏠', label: '대시보드' },
-    { key: 'songs', icon: '🎵', label: '곡 추천' },
-    { key: 'mr', icon: '🎛', label: 'MR 스튜디오' },
-    { key: 'trainers', icon: '👨‍🏫', label: '트레이너' },
-    { key: 'lessons', icon: '📅', label: '내 레슨' },
-    { key: 'song-analysis', icon: '🔬', label: '곡 분석' },
+    { key: 'home', label: '대시보드' },
+    { key: 'songs', label: '곡 추천' },
+    { key: 'mr', label: 'MR 스튜디오' },
+    { key: 'trainers', label: '트레이너' },
+    { key: 'lessons', label: '내 레슨' },
+    { key: 'song-analysis', label: '곡 분석' },
   ];
 
   return `
@@ -955,13 +1102,13 @@ function renderStudentApp(params) {
           <div class="sidebar-label">메뉴</div>
           ${navItems.map(item => `
             <button class="sidebar-item ${sub === item.key ? 'active' : ''}" onclick="navigate('student-dashboard',{sub:'${item.key}'})">
-              <span class="sidebar-item-icon">${item.icon}</span>${item.label}
+              ${item.label}
             </button>`).join('')}
         </div>
         <div class="divider"></div>
         <div class="sidebar-section">
-          <button class="sidebar-item" onclick="navigate('submit')"><span class="sidebar-item-icon">🎙</span>새 분석</button>
-          <button class="sidebar-item" onclick="Auth.logout()"><span class="sidebar-item-icon">🚪</span>로그아웃</button>
+          <button class="sidebar-item" onclick="navigate('submit')">새 분석</button>
+          <button class="sidebar-item" onclick="Auth.logout()">로그아웃</button>
         </div>
       </aside>
       <!-- Content -->
@@ -980,7 +1127,7 @@ function renderStudentHome() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">안녕하세요, ${u.nickname}님! 👋</div>
+    <div class="page-title">안녕하세요, ${u.nickname}님!</div>
     <div class="page-sub">오늘도 보컬 실력을 향상시켜 보세요</div>
 
     <div class="grid-4 mb-24" style="margin-bottom:28px">
@@ -1066,13 +1213,12 @@ function renderStudentSongs() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">🎵 스마트 곡 추천</div>
+    <div class="page-title">스마트 곡 추천</div>
     <div class="page-sub">당신의 음역대와 완곡 능력을 분석하여 딱 맞는 맞춤 곡을 추천합니다</div>
 
     <!-- 완곡 가능 곡 맞춤 추천 UI -->
     <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:20px">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-        <span style="font-size:32px">🎯</span>
         <div>
           <div style="font-size:16px;font-weight:700;color:var(--text)">완곡 가능한 곡 기반 맞춤 추천</div>
           <div class="text-2" style="font-size:13px">현재 자신 있게 부를 수 있는 애창곡을 선택하면, 비슷한 난이도의 곡과 실력 향상을 위한 도전 곡을 추천해 드립니다</div>
@@ -1080,7 +1226,7 @@ function renderStudentSongs() {
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <select id="mastered-song-select" class="form-input" style="flex:1;min-width:260px;font-size:14px">
-          <option value="">-- 내가 완곡 가능한 노래 선택 (50곡 마스터 DB) --</option>
+          <option value="">-- 내가 완곡 가능한 노래 선택 (200곡 마스터 DB) --</option>
           ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('')}
         </select>
         <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px">맞춤 추천 분석</button>
@@ -1263,12 +1409,11 @@ function renderStudentLessons() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">📅 내 레슨</div>
+    <div class="page-title">내 레슨</div>
     <div class="page-sub">예약된 레슨과 지난 레슨 내역을 확인합니다</div>
 
     ${bookings.length === 0 ? `
     <div class="empty-state">
-      <div class="empty-icon">📅</div>
       <div class="empty-title">예약된 레슨이 없습니다</div>
       <div class="empty-desc">전문 트레이너를 찾아 첫 레슨을 예약해보세요</div>
       <button class="btn btn-primary" onclick="navigate('student-dashboard',{sub:'trainers'})">트레이너 찾기</button>
@@ -1344,11 +1489,11 @@ function renderTrainerApp(params) {
 
   const sub = (params && params.sub) || 'home';
   const navItems = [
-    { key: 'home', icon: '🏠', label: '대시보드' },
-    { key: 'requests', icon: '📬', label: '레슨 요청' },
-    { key: 'students', icon: '🎓', label: '학생 실력 관리' },
-    { key: 'schedule', icon: '📅', label: '스케줄 관리' },
-    { key: 'profile', icon: '👤', label: '프로필 수정' },
+    { key: 'home', label: '대시보드' },
+    { key: 'requests', label: '레슨 요청' },
+    { key: 'students', label: '학생 실력 관리' },
+    { key: 'schedule', label: '스케줄 관리' },
+    { key: 'profile', label: '프로필 수정' },
   ];
   const subContents = { home: renderTrainerHome, requests: renderTrainerRequests, students: renderTrainerStudents, schedule: renderTrainerSchedule, profile: renderTrainerProfile };
   const renderer = subContents[sub] || renderTrainerHome;
@@ -1358,7 +1503,7 @@ function renderTrainerApp(params) {
     <div class="dashboard-layout">
       <aside class="sidebar">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px">
-          <div class="avatar avatar-lg">${t.profileEmoji || '🎤'}</div>
+          <div class="avatar avatar-lg">${t.name[0]}</div>
           <div>
             <div style="font-size:14px;font-weight:700">${t.name}</div>
             <div class="badge badge-accent" style="font-size:11px;padding:2px 8px;margin-top:2px">트레이너</div>
@@ -1368,11 +1513,11 @@ function renderTrainerApp(params) {
           <div class="sidebar-label">메뉴</div>
           ${navItems.map(item => `
             <button class="sidebar-item ${sub === item.key ? 'active' : ''}" onclick="navigate('trainer-dashboard',{sub:'${item.key}'})">
-              <span class="sidebar-item-icon">${item.icon}</span>${item.label}
+              ${item.label}
             </button>`).join('')}
         </div>
         <div class="divider"></div>
-        <button class="sidebar-item" onclick="Auth.logout()"><span class="sidebar-item-icon">🚪</span>로그아웃</button>
+        <button class="sidebar-item" onclick="Auth.logout()">로그아웃</button>
       </aside>
       <div class="dashboard-content">${renderer()}</div>
     </div>
@@ -1391,7 +1536,7 @@ function renderTrainerHome() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">안녕하세요, ${t.name} 선생님! 🎤</div>
+    <div class="page-title">안녕하세요, ${t.name} 선생님!</div>
     <div class="page-sub">오늘의 레슨 현황을 확인하세요</div>
 
     <div class="grid-4 mb-24" style="margin-bottom:28px">
@@ -1472,11 +1617,10 @@ function renderTrainerRequests() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">📬 레슨 요청 관리</div>
+    <div class="page-title">레슨 요청 관리</div>
     <div class="page-sub">학생들의 레슨 요청을 확인하고 수락 또는 거절하세요</div>
     ${bookings.length === 0 ? `
     <div class="empty-state">
-      <div class="empty-icon">📬</div>
       <div class="empty-title">아직 레슨 요청이 없습니다</div>
       <div class="empty-desc">학생들이 트레이너 프로필을 보고 레슨을 요청하면 여기에 표시됩니다</div>
     </div>` : `
@@ -1513,7 +1657,7 @@ function renderTrainerSchedule() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">📅 스케줄 관리</div>
+    <div class="page-title">스케줄 관리</div>
     <div class="page-sub">레슨 가능 시간을 설정하세요. 클릭하여 가능/불가능을 전환합니다</div>
 
     <div class="card mb-24" style="margin-bottom:24px">
@@ -1543,12 +1687,12 @@ function renderTrainerProfile() {
   const specialties = ['고음처리', '호흡', '발성', '음정교정', '스케일', '박자감', '다이나믹', '팝/R&B', '발라드', '재즈', '음색개발'];
   return `
   <div class="animate-up" style="max-width:600px">
-    <div class="page-title">👤 프로필 수정</div>
+    <div class="page-title">프로필 수정</div>
     <div class="page-sub">학생들에게 보이는 트레이너 프로필을 수정합니다</div>
     <div class="card card-xl">
       <form id="trainer-profile-form">
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px">
-          <div class="avatar avatar-xl">${t.profileEmoji || '🎤'}</div>
+          <div class="avatar avatar-xl">${t.name[0]}</div>
           <div>
             <div style="font-size:18px;font-weight:800">${t.name}</div>
             <div class="badge badge-success mt-8" style="margin-top:8px">승인된 트레이너</div>
@@ -1594,12 +1738,11 @@ function renderTrainerStudents() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">🎓 학생 실력 및 AI 분석 리포트 관리</div>
-    <div class="page-sub">수강생들의 완곡 가능 곡, AI 보컬 분석 리포트 내역, 피드백 및 약점을 종합적으로 조회합니다</div>
+    <div class="page-title">학생 실력 및 보컬 분석 리포트 관리</div>
+    <div class="page-sub">수강생들의 완곡 가능 곡, 정밀 보컬 분석 리포트 내역, 피드백 및 약점을 종합적으로 조회합니다</div>
 
     ${students.length === 0 ? `
     <div class="empty-state">
-      <div class="empty-icon">🎓</div>
       <div class="empty-title">등록된 학생이 없습니다</div>
     </div>` : `
     <div style="display:flex;flex-direction:column;gap:20px">
@@ -1711,7 +1854,7 @@ function renderAdminDashboard() {
       <div class="animate-up">
         <div class="section-header mb-24" style="margin-bottom:32px">
           <div>
-            <div class="page-title">🛡 관리자 패널</div>
+            <div class="page-title">관리자 패널</div>
             <div class="page-sub">플랫폼 전체 현황을 관리합니다</div>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">로그아웃</button>
@@ -3146,24 +3289,24 @@ async function runSongAnalysis(files) {
 function renderStudentSongAnalysis() {
   return `
   <div class="animate-up">
-    <div class="page-title">🔬 곡 분석</div>
+    <div class="page-title">곡 분석</div>
     <div class="page-sub">MP3 파일을 업로드하면 최고음·음역대·난이도를 자동 분석합니다 (최대 200곡)</div>
 
     <div class="card card-xl" id="sa-upload-card" style="margin-bottom:24px">
       <div style="margin-bottom:20px;padding:16px;background:var(--bg-1);border-radius:12px;border:1px solid var(--border)">
-        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:var(--accent)">🤖 AI 딥러닝 서버 주소 (선택)</label>
+        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:var(--accent)">보컬 정밀 분석 서버 주소 (선택)</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="sa-backend-url" class="input" placeholder="https://xxxx.loca.lt (코랩 서버 주소 입력)" style="flex:1" />
         </div>
-        <div class="text-3" style="font-size:12px;margin-top:6px">※ 주소를 입력하면 악기를 완벽히 제거하는 AI 서버 분석이 적용됩니다. 비워두면 빠른 브라우저 자체 분석이 진행됩니다.</div>
+        <div class="text-3" style="font-size:12px;margin-top:6px">※ 주소를 입력하면 악기를 완벽히 제거하는 보컬 정밀 분석이 적용됩니다. 비워두면 빠른 브라우저 자체 분석이 진행됩니다.</div>
       </div>
 
       <div id="sa-drop-zone" style="min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;border:2px dashed var(--border);border-radius:16px;padding:32px;transition:border-color .2s,background .2s">
         <input type="file" id="sa-file-input" multiple accept=".mp3,.wav,.m4a,.ogg" style="display:none" />
-        <div style="font-size:52px">🎵</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent);border:2px solid var(--accent);padding:10px 20px;border-radius:8px">AUDIO UPLOAD</div>
         <div style="font-size:18px;font-weight:700">MP3 파일을 드래그하거나 클릭하여 선택</div>
         <div class="text-2" style="font-size:13px">최대 200개 · MP3, WAV, M4A, OGG 지원</div>
-        <button class="btn btn-primary" onclick="document.getElementById('sa-file-input').click()">📂 파일 선택</button>
+        <button class="btn btn-primary" onclick="document.getElementById('sa-file-input').click()">파일 선택</button>
       </div>
     </div>
 
