@@ -866,6 +866,17 @@ function renderSubmit() {
 
         <div class="card card-xl">
           <form id="submit-form">
+            <!-- Target Song Selection Input -->
+            <div class="form-group mb-24" style="margin-bottom:24px">
+              <label class="form-label" style="font-size:16px; font-weight:800; color:var(--text-main);">🎯 부르신 곡명 선택/입력 <span class="text-danger">*</span></label>
+              <div style="position:relative;">
+                <input type="text" class="form-input" id="target-song-input" placeholder="예: 나였으면, 소주 한 잔, 밤편지 등 곡명을 입력하거나 선택하세요" style="font-size:16px; font-weight:700; padding:14px; border:2px solid var(--accent); border-radius:12px;" autocomplete="off" oninput="handleSongSearchInput(this.value)" onfocus="handleSongSearchInput(this.value)" />
+                <input type="hidden" id="target-song-id" value="" />
+                <div id="song-suggestions-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; max-height:220px; overflow-y:auto; background:var(--bg-card); border:2px solid var(--border); border-top:none; border-radius:0 0 12px 12px; z-index:1000; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
+              </div>
+              <div class="form-hint" id="target-song-hint" style="color:var(--text-accent); font-weight:600; margin-top:6px;">💡 사전에 등록된 200대 보컬 명곡 중 선택하시면 원곡 최고음과의 정밀 비교 평가가 진행됩니다.</div>
+            </div>
+
             <!-- File Drop Zone -->
             <div class="form-group mb-24" style="margin-bottom:24px">
               <label class="form-label">음성 파일 <span class="text-danger">*</span></label>
@@ -959,6 +970,43 @@ function renderAnalysis(params) {
           <div style="font-size:18px;font-weight:600;color:var(--text-2);margin-top:8px">/ 100점</div>
           <div class="badge badge-accent mt-16" style="margin-top:16px;font-size:14px">${scoreLabel(a.overall)}</div>
         </div>
+
+        ${songInfo.comparativeEval ? `
+        <!-- Comparative Evaluation Card (User Voice vs Original Song) -->
+        <div class="card mb-24" style="padding:32px; border:3px solid #6366f1; background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08)); margin-bottom:24px; box-shadow:0 12px 32px rgba(99,102,241,0.15);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed rgba(99,102,241,0.3);">
+            <div>
+              <div class="badge badge-accent mb-8" style="background:#6366f1; color:#fff;">🎯 원곡 대비 보컬 완성도 정밀 비교 평가</div>
+              <h2 style="font-size:24px; font-weight:900; margin:0; color:var(--text-1);">
+                선택하신 기준 원곡: <span style="color:#6366f1;">${songInfo.comparativeEval.origTitle}</span> (${songInfo.comparativeEval.origArtist})
+              </h2>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px; font-weight:700; color:var(--text-2);">원곡 소화 완곡 등급</div>
+              <div style="font-size:28px; font-weight:900; color:#6366f1;">${songInfo.comparativeEval.completionGrade}</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid var(--border); text-align:center;">
+              <div style="font-size:13px; font-weight:700; color:var(--text-3); margin-bottom:6px;">원곡 공식 최고음</div>
+              <div style="font-size:22px; font-weight:900; color:#ef4444;">${songInfo.comparativeEval.origHighestNote}</div>
+            </div>
+            <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid var(--border); text-align:center;">
+              <div style="font-size:13px; font-weight:700; color:var(--text-3); margin-bottom:6px;">사용자 실측 도달 최고음</div>
+              <div style="font-size:22px; font-weight:900; color:#10b981;">${songInfo.comparativeEval.userHighestNote}</div>
+            </div>
+            <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid var(--border); text-align:center;">
+              <div style="font-size:13px; font-weight:700; color:var(--text-3); margin-bottom:6px;">원곡 고음 도달율</div>
+              <div style="font-size:22px; font-weight:900; color:#6366f1;">${songInfo.comparativeEval.pitchReachRate}%</div>
+            </div>
+          </div>
+
+          <div style="padding:18px; background:rgba(255,255,255,0.05); border-radius:14px; border:1px solid rgba(99,102,241,0.2); font-size:15px; line-height:1.6; color:var(--text-1); font-weight:600;">
+            💡 <b>원곡 완성도 비교 총평:</b> ${songInfo.comparativeEval.evalComment}
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Song Recognition & Visual Pitch Timeline -->
         <div class="card mb-24" style="padding:32px; border:2px solid var(--accent); background:linear-gradient(to bottom right, var(--bg-1), var(--bg-2)); margin-bottom:24px;">
@@ -2215,6 +2263,71 @@ function attachPageListeners(page, params) {
   }
 }
 
+window.selectedTargetSong = null;
+
+window.handleSongSearchInput = function(val) {
+  const dropdown = document.getElementById('song-suggestions-dropdown');
+  if (!dropdown) return;
+  const query = (val || '').trim().toLowerCase();
+  const allSongs = DB.getSongs() || [];
+  
+  let matches = allSongs;
+  if (query) {
+    matches = allSongs.filter(s => s.title.toLowerCase().includes(query) || s.artist.toLowerCase().includes(query)).slice(0, 10);
+  } else {
+    matches = allSongs.slice(0, 8);
+  }
+  
+  if (matches.length === 0 && query) {
+    dropdown.style.display = 'block';
+    dropdown.innerHTML = `
+      <div style="padding:12px 16px; cursor:pointer; color:var(--accent); font-weight:700;" onclick="selectTargetSong('custom', '${val.replace(/'/g, "")}', '직접 입력 곡', '2옥라(A4)', 5)">
+        ➕ "${val}" (직접 입력 곡으로 설정)
+      </div>
+    `;
+    return;
+  } else if (matches.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+  
+  dropdown.style.display = 'block';
+  dropdown.innerHTML = matches.map(s => `
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='var(--bg-1)'" onmouseout="this.style.background='transparent'" onclick="selectTargetSong(${s.id}, '${s.title.replace(/'/g, "")}', '${s.artist.replace(/'/g, "")}', '${s.highestNote || "2옥라(A4)"}', ${s.difficulty || 5})">
+      <div>
+        <span style="font-weight:800; color:var(--text-main);">${s.title}</span>
+        <span style="font-size:13px; color:var(--text-2); margin-left:6px;">- ${s.artist}</span>
+      </div>
+      <div style="font-size:12px; font-weight:700; color:var(--accent); background:rgba(99,102,241,0.1); padding:4px 8px; border-radius:6px;">
+        최고음 ${s.highestNote || '2옥라'} · 난이도 ${s.difficulty || 5}/10
+      </div>
+    </div>
+  `).join('');
+};
+
+window.selectTargetSong = function(id, title, artist, highestNote, difficulty) {
+  window.selectedTargetSong = { id, title, artist, highestNote, difficulty };
+  const input = document.getElementById('target-song-input');
+  const hiddenId = document.getElementById('target-song-id');
+  const dropdown = document.getElementById('song-suggestions-dropdown');
+  const hint = document.getElementById('target-song-hint');
+  
+  if (input) input.value = `${title} - ${artist}`;
+  if (hiddenId) hiddenId.value = id;
+  if (dropdown) dropdown.style.display = 'none';
+  if (hint) {
+    hint.innerHTML = `✅ <b>선택된 기준 원곡:</b> ${title} (${artist}) · 기준 최고음: <span style="color:#ef4444;font-weight:800;">${highestNote}</span> · 난이도: ${difficulty}/10`;
+  }
+};
+
+document.addEventListener('click', e => {
+  const dropdown = document.getElementById('song-suggestions-dropdown');
+  const input = document.getElementById('target-song-input');
+  if (dropdown && input && !input.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
 function attachSubmitListeners() {
   const fileInput = document.getElementById('audio-file');
   const dropZone = document.getElementById('drop-zone');
@@ -2248,6 +2361,19 @@ function attachSubmitListeners() {
   if (form) {
     form.addEventListener('submit', e => {
       e.preventDefault();
+      const targetSongVal = document.getElementById('target-song-input')?.value.trim();
+      if (!targetSongVal) { showToast('분석할 곡명을 먼저 선택하거나 입력해주세요', 'error'); return; }
+      
+      if (!window.selectedTargetSong) {
+        const parts = targetSongVal.split('-');
+        window.selectedTargetSong = {
+          title: parts[0]?.trim() || targetSongVal,
+          artist: parts[1]?.trim() || '직접 입력',
+          highestNote: '2옥라#(A#4)',
+          difficulty: 5
+        };
+      }
+
       const file = fileInput && fileInput.files[0];
       if (!file) { showToast('음성 파일을 선택해주세요', 'error'); return; }
       const maxSize = 50 * 1024 * 1024;
@@ -2259,7 +2385,7 @@ function attachSubmitListeners() {
       const requirements = document.getElementById('requirements')?.value || '';
       const guestEmail = document.getElementById('guest-email')?.value || '';
 
-      startAnalysis(file, requirements, guestEmail);
+      startAnalysis(file, requirements, guestEmail, window.selectedTargetSong);
     });
   }
 }
@@ -2449,7 +2575,7 @@ function detectPitchAutocorrelation(buffer, sampleRate) {
   return sampleRate / T0;
 }
 
-async function startAnalysis(file, requirements, guestEmail) {
+async function startAnalysis(file, requirements, guestEmail, userTargetSong) {
   const fileName = typeof file === 'string' ? file : file.name;
   showLoading('AI가 실제 음성 파일의 주파수 파형 및 가사를 인식하고 있습니다...');
 
@@ -2543,7 +2669,7 @@ async function startAnalysis(file, requirements, guestEmail) {
   }
 
   const mode = window.currentAnalysisMode || 'practice';
-  const analysis = generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode, gptSongMeta, webSongMeta);
+  const analysis = generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode, gptSongMeta, webSongMeta, userTargetSong);
   const submissions = DB.getSubmissions();
   const newSub = {
     id: DB.nextId(submissions),
@@ -2569,7 +2695,7 @@ async function startAnalysis(file, requirements, guestEmail) {
   showToast(whisperLyrics ? '🎉 음성 가사 100% 실제 인식 및 음향 분석 완료!' : '🎉 실제 음성 파형 정밀 분석 완료!', 'success');
 }
 
-function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode, gptSongMeta, webSongMeta) {
+function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode, gptSongMeta, webSongMeta, userTargetSong) {
   const base = () => Math.floor(Math.random() * 30 + 60);
   const pitch = aiData?.pitch_score || base();
   const rhythm = aiData?.rhythm_score || base();
@@ -2594,7 +2720,15 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   const searchStr = ((fileName || '') + ' ' + (requirements || '') + ' ' + (whisperLyrics || '')).toLowerCase();
   
   let matchedSong = null;
-  if (gptSongMeta && gptSongMeta.title && gptSongMeta.artist) {
+  if (userTargetSong && userTargetSong.title) {
+    matchedSong = {
+      title: userTargetSong.title,
+      artist: userTargetSong.artist,
+      genre: userTargetSong.genre || '발라드',
+      highestNote: userTargetSong.highestNote || '2옥라#(A#4)',
+      difficulty: typeof userTargetSong.difficulty === 'number' ? (userTargetSong.difficulty >= 8 ? 'hard' : userTargetSong.difficulty <= 4 ? 'easy' : 'medium') : (userTargetSong.difficulty || 'medium')
+    };
+  } else if (gptSongMeta && gptSongMeta.title && gptSongMeta.artist) {
     matchedSong = {
       title: gptSongMeta.title,
       artist: gptSongMeta.artist,
@@ -2648,7 +2782,9 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   }
 
   let sttLyrics = '';
-  if (gptSongMeta && gptSongMeta.cleanLyrics) {
+  if (userTargetSong && userTargetSong.title) {
+    sttLyrics = whisperLyrics ? `"${whisperLyrics}" (선택 원곡 '${userTargetSong.title}' 기준 STT 매칭)` : `선택하신 원곡 '${userTargetSong.title} - ${userTargetSong.artist}' 기준 정밀 음향 비교 분석 완료`;
+  } else if (gptSongMeta && gptSongMeta.cleanLyrics) {
     sttLyrics = `"${gptSongMeta.cleanLyrics}" (OpenAI GPT-4o + Whisper 실제 가사 교정 및 곡명 식별 완료)`;
   } else if (webSongMeta && webSongMeta.title) {
     sttLyrics = `"${whisperLyrics}" (${webSongMeta.source} 자동 곡명 일치: ${webSongMeta.artist} - ${webSongMeta.title})`;
@@ -2666,6 +2802,38 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   const totalSec = realAudio?.totalSec || 272;
   const highestNoteStr = realAudio?.highestNote || matchedSong?.highestNote || '2옥라#(A#4)';
 
+  const origNote = matchedSong.highestNote || '2옥라#(A#4)';
+  const userNote = realAudio?.highestNote || origNote;
+  const noteFreqMap = {
+    '1옥파(F3)': 174, '1옥솔(G3)': 196, '1옥라(A3)': 220, '1옥시(B3)': 246,
+    '2옥도(C4)': 261, '2옥레(D4)': 293, '2옥미(E4)': 329, '2옥파(F4)': 349,
+    '2옥솔(G4)': 392, '2옥라(A4)': 440, '2옥라#(A#4)': 466, '2옥시(B4)': 493,
+    '3옥도(C5)': 523, '3옥도#(C#5)': 554, '3옥레(D5)': 587, '3옥미(E5)': 659
+  };
+  const origFreq = noteFreqMap[origNote] || 466;
+  const userFreq = realAudio?.highestHz || noteFreqMap[userNote] || 440;
+  
+  let pitchReachRate = Math.min(100, Math.round((userFreq / origFreq) * 100));
+  if (pitchReachRate > 100) pitchReachRate = 100;
+  
+  let completionScore = Math.round((overall * 0.6) + (pitchReachRate * 0.4));
+  let completionGrade = completionScore >= 90 ? 'S (완벽 소화)' : completionScore >= 80 ? 'A (우수 완곡)' : completionScore >= 70 ? 'B (도전 가능)' : 'C (연습 필요)';
+  
+  const comparativeEval = {
+    origTitle: matchedSong.title,
+    origArtist: matchedSong.artist,
+    origHighestNote: origNote,
+    userHighestNote: userNote,
+    pitchReachRate,
+    completionScore,
+    completionGrade,
+    evalComment: pitchReachRate >= 98 
+      ? `원곡 '${matchedSong.title}'의 최고음(${origNote}) 주파수에 완벽하게 도달했습니다! 호흡 지지력이 훌륭하여 원곡 소화 완곡 확률이 매우 높습니다.`
+      : pitchReachRate >= 88
+      ? `원곡 '${matchedSong.title}'의 최고음(${origNote}) 대비 약 반음~한음 정도 여유가 필요합니다. 파사지오 구간에서의 호흡 압력을 10% 더 보강하세요.`
+      : `원곡 '${matchedSong.title}'은 최고음이 ${origNote}로 난이도가 높은 곡입니다. 현재 음역대(${userNote})에 맞춘 2키 낮춤(키조절) 연습이나 고음 발성 훈련을 권장합니다.`
+  };
+
   const songInfo = {
     title: matchedSong.title,
     artist: matchedSong.artist,
@@ -2674,7 +2842,8 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
     difficulty: matchedSong.difficulty === 'hard' ? '상 (고난도)' : matchedSong.difficulty === 'medium' ? '중' : '하',
     durationStr,
     totalSec,
-    sttLyrics
+    sttLyrics,
+    comparativeEval
   };
 
   let timeline = [];
@@ -2712,7 +2881,7 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
     ];
   }
 
-  return { mode, pitch, rhythm, volume, timbre, overall, pitchFeedback: pitchFB, rhythmFeedback: rhythmFB, volumeFeedback: volumeFB, timbreFeedback: timbreFB, weakAreas, songInfo, timeline };
+  return { mode, pitch, rhythm, volume, timbre, overall, pitchFeedback: pitchFB, rhythmFeedback: rhythmFB, volumeFeedback: volumeFB, timbreFeedback: timbreFB, weakAreas, songInfo, timeline, comparativeEval };
 }
 
 function attachStudentAuthListeners() {

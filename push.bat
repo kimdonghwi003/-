@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: implement live web lyrics search matching & DSP human voice isolation filter (85Hz-2200Hz)"
+git commit -m "feat: add initial target song selection UI and original vs user voice completion evaluation system (v=23)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
