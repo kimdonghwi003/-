@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: 200 verified songs DB expansion and UI emoji removal"
+git commit -m "fix: resolve auth data loss by merging cloud sync with local storage and trimming emails"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main

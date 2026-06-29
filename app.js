@@ -21,52 +21,99 @@ const DB = {
   async initCloud() {
     if (!window.supabaseClient) return;
     try {
-      // 1. Load students from Cloud DB
+      // 1. Load students from Cloud DB & merge with local
       const { data: stds } = await window.supabaseClient.from('students').select('*');
       if (stds && stds.length > 0) {
-        const mappedStds = stds.map(s => ({
-          id: Number(s.id),
-          email: s.email,
-          password: s.password_hash || '',
-          nickname: s.nickname || '',
-          preferredGenres: s.preferred_genres || [],
-          oauthProvider: s.oauth_provider || 'none',
-          isActive: s.is_active !== false,
-          createdAt: s.created_at ? s.created_at.slice(0, 10) : '2026-06-01'
-        }));
-        this._set('students', mappedStds);
+        const localStds = this._get('students') || [];
+        const stdMap = new Map();
+        stds.forEach(s => {
+          const cleanEmail = (s.email || '').trim().toLowerCase();
+          stdMap.set(cleanEmail, {
+            id: Number(s.id),
+            email: cleanEmail,
+            password: s.password_hash || '',
+            nickname: s.nickname || '',
+            preferredGenres: s.preferred_genres || [],
+            oauthProvider: s.oauth_provider || 'none',
+            isActive: s.is_active !== false,
+            createdAt: s.created_at ? s.created_at.slice(0, 10) : '2026-06-01'
+          });
+        });
+        localStds.forEach(ls => {
+          const cleanEmail = (ls.email || '').trim().toLowerCase();
+          if (!stdMap.has(cleanEmail)) {
+            stdMap.set(cleanEmail, ls);
+            // Push missing local signup to cloud
+            window.supabaseClient.from('students').upsert({
+              id: ls.id,
+              email: cleanEmail,
+              password_hash: ls.password,
+              nickname: ls.nickname,
+              preferred_genres: ls.preferredGenres || [],
+              oauth_provider: ls.oauthProvider || 'none',
+              is_active: true
+            }, { onConflict: 'email' }).then(null, () => {});
+          }
+        });
+        this._set('students', Array.from(stdMap.values()));
       }
 
-      // 2. Load trainers from Cloud DB
+      // 2. Load trainers from Cloud DB & merge with local
       const { data: trs } = await window.supabaseClient.from('trainers').select('*');
       if (trs && trs.length > 0) {
-        const mappedTrs = trs.map(t => ({
-          id: Number(t.id),
-          email: t.email,
-          password: t.password_hash || '',
-          name: t.name || '',
-          profileEmoji: t.profile_image_url || '🎤',
-          intro: t.introduction || '',
-          careerYears: t.career_years || 0,
-          lessonPrice: t.lesson_price || 0,
-          specialties: t.specialties || [],
-          approvalStatus: t.approval_status || 'approved',
-          oauthProvider: t.oauth_provider || 'none',
-          isActive: t.is_active !== false,
-          averageRating: Number(t.average_rating) || 4.8,
-          totalReviews: t.total_reviews || 0,
-          createdAt: t.created_at ? t.created_at.slice(0, 10) : '2026-01-10'
-        }));
-        this._set('trainers', mappedTrs);
+        const localTrs = this._get('trainers') || [];
+        const trMap = new Map();
+        trs.forEach(t => {
+          const cleanEmail = (t.email || '').trim().toLowerCase();
+          trMap.set(cleanEmail, {
+            id: Number(t.id),
+            email: cleanEmail,
+            password: t.password_hash || '',
+            name: t.name || '',
+            profileEmoji: '',
+            intro: t.introduction || '',
+            careerYears: t.career_years || 0,
+            lessonPrice: t.lesson_price || 0,
+            specialties: t.specialties || [],
+            approvalStatus: t.approval_status || 'approved',
+            oauthProvider: t.oauth_provider || 'none',
+            isActive: t.is_active !== false,
+            averageRating: Number(t.average_rating) || 4.8,
+            totalReviews: t.total_reviews || 0,
+            createdAt: t.created_at ? t.created_at.slice(0, 10) : '2026-01-10'
+          });
+        });
+        localTrs.forEach(lt => {
+          const cleanEmail = (lt.email || '').trim().toLowerCase();
+          if (!trMap.has(cleanEmail)) {
+            trMap.set(cleanEmail, lt);
+            window.supabaseClient.from('trainers').upsert({
+              id: lt.id,
+              email: cleanEmail,
+              password_hash: lt.password,
+              name: lt.name,
+              profile_image_url: '',
+              introduction: lt.intro || '',
+              career_years: lt.careerYears || 0,
+              lesson_price: lt.lessonPrice || 0,
+              specialties: lt.specialties || [],
+              approval_status: lt.approvalStatus || 'pending',
+              oauth_provider: 'none',
+              is_active: true
+            }, { onConflict: 'email' }).then(null, () => {});
+          }
+        });
+        this._set('trainers', Array.from(trMap.values()));
       }
 
-      // 3. Load global_emails registry
+      // 3. Load global_emails registry & merge with local
       const { data: ems } = await window.supabaseClient.from('global_emails').select('*');
+      const localEms = this._get('emails') || {};
+      const emObj = { ...localEms };
       if (ems && ems.length > 0) {
-        const emObj = {};
-        ems.forEach(e => { emObj[e.email] = e.account_type; });
-        this._set('emails', emObj);
+        ems.forEach(e => { emObj[(e.email || '').trim().toLowerCase()] = e.account_type; });
       }
+      this._set('emails', emObj);
 
       // 4. Load songs from Cloud DB
       const { data: sngs } = await window.supabaseClient.from('songs').select('*');
@@ -191,24 +238,36 @@ const DB = {
   seed() {
     const curSongs = this.getSongs() || [];
     const needSeed = !this._get('seeded') || curSongs.length < 200 || (curSongs[0] && curSongs[0].emoji !== undefined && curSongs[0].emoji !== '');
+    
+    const curStudents = this._get('students') || [];
+    if (curStudents.length === 0) {
+      // Admin
+      const admins = [{ id: 1, email: 'admin@vocalai.kr', password: hash('admin1234'), name: '시스템관리자' }];
+      this.setAdmins(admins);
+
+      // Emails registry
+      const emails = { 'admin@vocalai.kr': 'admin' };
+
+      // Approved trainers
+      const trainers = [
+        { id: 1, email: 'trainer1@vocalai.kr', password: hash('trainer1'), name: '김하늘', profileEmoji: '', intro: '10년 경력의 보컬 전문 트레이너입니다. SBS 보이스킹 출연 경험이 있으며 고음 처리와 호흡법을 전문적으로 지도합니다.', careerYears: 10, lessonPrice: 80000, specialties: ['고음처리', '호흡', '발성'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 124, createdAt: '2026-01-10' },
+        { id: 2, email: 'trainer2@vocalai.kr', password: hash('trainer2'), name: '박서윤', profileEmoji: '', intro: '음대 출신 보컬리스트로 팝, R&B, 재즈 장르에 특화되어 있습니다. 음정 교정과 스케일 훈련을 집중적으로 진행합니다.', careerYears: 7, lessonPrice: 65000, specialties: ['음정교정', '스케일', '팝/R&B'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.6, totalReviews: 89, createdAt: '2026-01-15' },
+        { id: 3, email: 'trainer3@vocalai.kr', password: hash('trainer3'), name: '이준혁', profileEmoji: '', intro: '발라드와 CCM 전문 트레이너입니다. 박자감, 다이나믹 표현, 감정 전달 기법을 중심으로 수업합니다.', careerYears: 5, lessonPrice: 55000, specialties: ['박자감', '다이나믹', '발라드'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.7, totalReviews: 67, createdAt: '2026-02-01' },
+        { id: 4, email: 'trainer4@vocalai.kr', password: hash('trainer4'), name: '최민지', profileEmoji: '', intro: '신청 중인 트레이너입니다.', careerYears: 3, lessonPrice: 45000, specialties: ['음색개발'], approvalStatus: 'pending', oauthProvider: 'none', isActive: true, averageRating: 0, totalReviews: 0, createdAt: '2026-06-10' },
+      ];
+      this.setTrainers(trainers);
+      trainers.forEach(t => { emails[t.email] = 'trainer'; });
+      
+      // Sample student
+      const students = [
+        { id: 1, email: 'student@test.kr', password: hash('student1'), nickname: '보컬고수', preferredGenres: ['발라드', '팝'], oauthProvider: 'none', isActive: true, createdAt: '2026-03-01' }
+      ];
+      this.setStudents(students);
+      emails['student@test.kr'] = 'student';
+      this.setEmails(emails);
+    }
+
     if (!needSeed) return;
-
-    // Admin
-    const admins = [{ id: 1, email: 'admin@vocalai.kr', password: hash('admin1234'), name: '시스템관리자' }];
-    this.setAdmins(admins);
-
-    // Emails registry
-    const emails = { 'admin@vocalai.kr': 'admin' };
-
-    // Approved trainers
-    const trainers = [
-      { id: 1, email: 'trainer1@vocalai.kr', password: hash('trainer1'), name: '김하늘', profileEmoji: '', intro: '10년 경력의 보컬 전문 트레이너입니다. SBS 보이스킹 출연 경험이 있으며 고음 처리와 호흡법을 전문적으로 지도합니다.', careerYears: 10, lessonPrice: 80000, specialties: ['고음처리', '호흡', '발성'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 124, createdAt: '2026-01-10' },
-      { id: 2, email: 'trainer2@vocalai.kr', password: hash('trainer2'), name: '박서윤', profileEmoji: '', intro: '음대 출신 보컬리스트로 팝, R&B, 재즈 장르에 특화되어 있습니다. 음정 교정과 스케일 훈련을 집중적으로 진행합니다.', careerYears: 7, lessonPrice: 65000, specialties: ['음정교정', '스케일', '팝/R&B'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.6, totalReviews: 89, createdAt: '2026-01-15' },
-      { id: 3, email: 'trainer3@vocalai.kr', password: hash('trainer3'), name: '이준혁', profileEmoji: '', intro: '발라드와 CCM 전문 트레이너입니다. 박자감, 다이나믹 표현, 감정 전달 기법을 중심으로 수업합니다.', careerYears: 5, lessonPrice: 55000, specialties: ['박자감', '다이나믹', '발라드'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.7, totalReviews: 67, createdAt: '2026-02-01' },
-      { id: 4, email: 'trainer4@vocalai.kr', password: hash('trainer4'), name: '최민지', profileEmoji: '', intro: '신청 중인 트레이너입니다.', careerYears: 3, lessonPrice: 45000, specialties: ['음색개발'], approvalStatus: 'pending', oauthProvider: 'none', isActive: true, averageRating: 0, totalReviews: 0, createdAt: '2026-06-10' },
-    ];
-    this.setTrainers(trainers);
-    trainers.forEach(t => { emails[t.email] = 'trainer'; });
 
     // 200곡 검증된 가요 DB (나무위키 고음/노래 목록 철저 검증)
     const songs = [
@@ -414,15 +473,6 @@ const DB = {
       { id: 200, title: '꿈처럼 내린', artist: '다비치', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' }
     ];
     this.setSongs(songs);
-
-    // Sample student
-    const students = [
-      { id: 1, email: 'student@test.kr', password: hash('student1'), nickname: '보컬고수', preferredGenres: ['발라드', '팝'], oauthProvider: 'none', isActive: true, createdAt: '2026-03-01' }
-    ];
-    this.setStudents(students);
-    emails['student@test.kr'] = 'student';
-
-    this.setEmails(emails);
     this._set('seeded', true);
   }
 };
@@ -449,15 +499,16 @@ const State = {
 const Auth = {
   login(type, email, pw) {
     let user = null;
+    const cleanEmail = (email || '').trim().toLowerCase();
     if (type === 'student') {
-      user = DB.getStudents().find(s => s.email === email && s.password === hash(pw));
+      user = DB.getStudents().find(s => (s.email || '').trim().toLowerCase() === cleanEmail && s.password === hash(pw));
     } else if (type === 'trainer') {
-      user = DB.getTrainers().find(t => t.email === email && t.password === hash(pw));
+      user = DB.getTrainers().find(t => (t.email || '').trim().toLowerCase() === cleanEmail && t.password === hash(pw));
     } else if (type === 'admin') {
-      user = DB.getAdmins().find(a => a.email === email && a.password === hash(pw));
+      user = DB.getAdmins().find(a => (a.email || '').trim().toLowerCase() === cleanEmail && a.password === hash(pw));
     }
     if (!user) return { ok: false, msg: '이메일 또는 비밀번호가 올바르지 않습니다.' };
-    DB.setCurrentSession({ userId: user.id, type, email });
+    DB.setCurrentSession({ userId: user.id, type, email: cleanEmail });
     State.currentUser = user;
     State.userType = type;
     return { ok: true, user };
@@ -472,12 +523,13 @@ const Auth = {
 
   register(type, data) {
     const emails = DB.getEmails();
-    if (emails[data.email]) return { ok: false, msg: '이미 사용 중인 이메일입니다.' };
+    const cleanEmail = (data.email || '').trim().toLowerCase();
+    if (emails[cleanEmail]) return { ok: false, msg: '이미 사용 중인 이메일입니다.' };
     if (type === 'student') {
       const students = DB.getStudents();
       const newStudent = {
         id: DB.nextId(students),
-        email: data.email,
+        email: cleanEmail,
         password: hash(data.password),
         nickname: data.nickname,
         preferredGenres: data.genres || [],
@@ -487,9 +539,9 @@ const Auth = {
       };
       students.push(newStudent);
       DB.setStudents(students);
-      emails[data.email] = 'student';
+      emails[cleanEmail] = 'student';
       DB.setEmails(emails);
-      DB.setCurrentSession({ userId: newStudent.id, type: 'student', email: data.email });
+      DB.setCurrentSession({ userId: newStudent.id, type: 'student', email: cleanEmail });
       State.currentUser = newStudent;
       State.userType = 'student';
       return { ok: true };
@@ -497,10 +549,10 @@ const Auth = {
       const trainers = DB.getTrainers();
       const newTrainer = {
         id: DB.nextId(trainers),
-        email: data.email,
+        email: cleanEmail,
         password: hash(data.password),
         name: data.name,
-        profileEmoji: '🎤',
+        profileEmoji: '',
         intro: data.intro || '',
         careerYears: Number(data.careerYears) || 0,
         lessonPrice: Number(data.lessonPrice) || 0,
@@ -514,7 +566,7 @@ const Auth = {
       };
       trainers.push(newTrainer);
       DB.setTrainers(trainers);
-      emails[data.email] = 'trainer';
+      emails[cleanEmail] = 'trainer';
       DB.setEmails(emails);
       return { ok: true };
     }
