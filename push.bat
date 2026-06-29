@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: enhance STT lyrics recognition for Na Yoon Kwon Nayotseumyeon and concrete pitch timeline analysis"
+git commit -m "feat: implement real audio file decoding via AudioContext and OpenAI Whisper API integration for genuine STT lyrics recognition"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
