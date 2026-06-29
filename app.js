@@ -2329,6 +2329,9 @@ async function startAnalysis(file, requirements, guestEmail) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', 'whisper-1');
+        formData.append('language', 'ko');
+        formData.append('prompt', '한국어 대중가요 보컬 노래 녹음 파일입니다. 가사를 정확하고 자연스러운 한국어 맞춤법으로 띄어쓰기에 맞춰 인식해주세요.');
+        formData.append('temperature', '0.0');
         const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${whisperKey}` },
