@@ -678,8 +678,8 @@ function renderHome() {
   return `
   <div class="hero">
     <div class="hero-bg">
-      <img src="singingwoman.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0.25;pointer-events:none;" />
-      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(13,148,136,0.15) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(16,185,129,0.1) 0%,transparent 60%),linear-gradient(to bottom,rgba(255,255,255,0.4) 0%,rgba(255,255,255,0.95) 100%);pointer-events:none;"></div>
+      <img src="singingwoman.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0.7;pointer-events:none;" />
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(13,148,136,0.15) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(16,185,129,0.1) 0%,transparent 60%),linear-gradient(to bottom,rgba(255,255,255,0.15) 0%,rgba(255,255,255,0.75) 100%);pointer-events:none;"></div>
     </div>
     <div class="container hero-content animate-up">
       <div class="hero-eyebrow">보컬 정밀 분석 및 교육 매칭 플랫폼</div>
@@ -2281,7 +2281,7 @@ window.handleSongSearchInput = function(val) {
   if (matches.length === 0 && query) {
     dropdown.style.display = 'block';
     dropdown.innerHTML = `
-      <div style="padding:12px 16px; cursor:pointer; color:var(--accent); font-weight:700;" onclick="selectTargetSong('custom', '${val.replace(/'/g, "")}', '직접 입력 곡', '2옥라(A4)', 5)">
+      <div style="padding:12px 16px; cursor:pointer; color:var(--accent); font-weight:700;" onclick="selectTargetSong('custom', '${val.replace(/'/g, "")}', '직접 입력 곡', '확인 불가 (공식 정보 없음)', 5)">
         ➕ "${val}" (직접 입력 곡으로 설정)
       </div>
     `;
@@ -2293,13 +2293,13 @@ window.handleSongSearchInput = function(val) {
   
   dropdown.style.display = 'block';
   dropdown.innerHTML = matches.map(s => `
-    <div style="padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='var(--bg-1)'" onmouseout="this.style.background='transparent'" onclick="selectTargetSong(${s.id}, '${s.title.replace(/'/g, "")}', '${s.artist.replace(/'/g, "")}', '${s.highestNote || "2옥라(A4)"}', ${s.difficulty || 5})">
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='var(--bg-1)'" onmouseout="this.style.background='transparent'" onclick="selectTargetSong(${s.id}, '${s.title.replace(/'/g, "")}', '${s.artist.replace(/'/g, "")}', '${s.highestNote || "확인 불가 (공식 정보 없음)"}', ${s.difficulty || 5})">
       <div>
         <span style="font-weight:800; color:var(--text-main);">${s.title}</span>
         <span style="font-size:13px; color:var(--text-2); margin-left:6px;">- ${s.artist}</span>
       </div>
       <div style="font-size:12px; font-weight:700; color:var(--accent); background:rgba(99,102,241,0.1); padding:4px 8px; border-radius:6px;">
-        최고음 ${s.highestNote || '2옥라'} · 난이도 ${s.difficulty || 5}/10
+        최고음 ${s.highestNote || '확인 불가'} · 난이도 ${s.difficulty || 5}/10
       </div>
     </div>
   `).join('');
@@ -2366,12 +2366,26 @@ function attachSubmitListeners() {
       
       if (!window.selectedTargetSong) {
         const parts = targetSongVal.split('-');
-        window.selectedTargetSong = {
-          title: parts[0]?.trim() || targetSongVal,
-          artist: parts[1]?.trim() || '직접 입력',
-          highestNote: '2옥라#(A#4)',
-          difficulty: 5
-        };
+        const titlePart = parts[0]?.trim() || targetSongVal;
+        const artistPart = parts[1]?.trim() || '';
+        const allSongs = DB.getSongs() || [];
+        const foundInDb = allSongs.find(s => s.title.toLowerCase() === titlePart.toLowerCase() && (!artistPart || s.artist.toLowerCase().includes(artistPart.toLowerCase())));
+        if (foundInDb) {
+          window.selectedTargetSong = {
+            id: foundInDb.id,
+            title: foundInDb.title,
+            artist: foundInDb.artist,
+            highestNote: foundInDb.highestNote,
+            difficulty: foundInDb.difficulty || 5
+          };
+        } else {
+          window.selectedTargetSong = {
+            title: titlePart,
+            artist: artistPart || '직접 입력',
+            highestNote: '확인 불가 (공식 정보 없음)',
+            difficulty: 5
+          };
+        }
       }
 
       const file = fileInput && fileInput.files[0];
@@ -2721,28 +2735,31 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   
   let matchedSong = null;
   if (userTargetSong && userTargetSong.title) {
+    const foundInDb = allSongs.find(s => s.title.toLowerCase().trim() === userTargetSong.title.toLowerCase().trim() || (userTargetSong.id && s.id === userTargetSong.id));
     matchedSong = {
       title: userTargetSong.title,
       artist: userTargetSong.artist,
-      genre: userTargetSong.genre || '발라드',
-      highestNote: userTargetSong.highestNote || '2옥라#(A#4)',
+      genre: userTargetSong.genre || foundInDb?.genre || '발라드',
+      highestNote: foundInDb ? foundInDb.highestNote : (userTargetSong.highestNote && !userTargetSong.highestNote.includes('2옥라') && !userTargetSong.highestNote.includes('확인') ? userTargetSong.highestNote : '확인 불가 (공식 정보 없음)'),
       difficulty: typeof userTargetSong.difficulty === 'number' ? (userTargetSong.difficulty >= 8 ? 'hard' : userTargetSong.difficulty <= 4 ? 'easy' : 'medium') : (userTargetSong.difficulty || 'medium')
     };
   } else if (gptSongMeta && gptSongMeta.title && gptSongMeta.artist) {
+    const foundInDb = allSongs.find(s => s.title.toLowerCase().trim() === gptSongMeta.title.toLowerCase().trim());
     matchedSong = {
       title: gptSongMeta.title,
       artist: gptSongMeta.artist,
-      genre: gptSongMeta.genre || '발라드',
-      highestNote: gptSongMeta.highestNote || realAudio?.highestNote || '2옥라#(A#4)',
-      difficulty: gptSongMeta.difficulty === '상' ? 'hard' : gptSongMeta.difficulty === '하' ? 'easy' : 'medium'
+      genre: gptSongMeta.genre || foundInDb?.genre || '발라드',
+      highestNote: foundInDb ? foundInDb.highestNote : (gptSongMeta.highestNote && !gptSongMeta.highestNote.includes('2옥라') ? gptSongMeta.highestNote : '확인 불가 (공식 정보 없음)'),
+      difficulty: foundInDb ? (foundInDb.difficulty || 'medium') : (gptSongMeta.difficulty === '상' ? 'hard' : gptSongMeta.difficulty === '하' ? 'easy' : 'medium')
     };
   } else if (webSongMeta && webSongMeta.title && webSongMeta.artist) {
+    const foundInDb = allSongs.find(s => s.title.toLowerCase().trim() === webSongMeta.title.toLowerCase().trim());
     matchedSong = {
       title: webSongMeta.title,
       artist: webSongMeta.artist,
-      genre: webSongMeta.genre || '대중가요',
-      highestNote: realAudio?.highestNote || '2옥라#(A#4)',
-      difficulty: 'medium'
+      genre: webSongMeta.genre || foundInDb?.genre || '대중가요',
+      highestNote: foundInDb ? foundInDb.highestNote : '확인 불가 (공식 정보 없음)',
+      difficulty: foundInDb ? (foundInDb.difficulty || 'medium') : 'medium'
     };
   }
 
@@ -2772,13 +2789,7 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   }
   
   if (!matchedSong) {
-    if (realAudio && whisperLyrics.length > 5) {
-      matchedSong = { title: 'AI 분석 곡', artist: '보컬 음원', genre: '대중가요', highestNote: realAudio.highestNote || '2옥라(A4)', difficulty: 'medium' };
-    } else if (realAudio) {
-      matchedSong = allSongs.find(s => Math.abs((s.durationSec || 240) - realAudio.totalSec) < 20) || allSongs[Math.floor(Math.random() * allSongs.length)];
-    } else {
-      matchedSong = allSongs[0] || { title: '음성 보컬 분석', artist: '업로드 파일', genre: '보컬', lowestNote: '1옥파(F3)', highestNote: '2옥라(A4)', difficulty: 'medium' };
-    }
+    matchedSong = { title: '알 수 없는 곡 (분석 음원)', artist: '미상', genre: '대중가요', highestNote: '확인 불가 (공식 정보 없음)', difficulty: 'medium' };
   }
 
   let sttLyrics = '';
@@ -2800,38 +2811,51 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
 
   const durationStr = realAudio?.durationStr || '04:32';
   const totalSec = realAudio?.totalSec || 272;
-  const highestNoteStr = realAudio?.highestNote || matchedSong?.highestNote || '2옥라#(A#4)';
+  const highestNoteStr = realAudio?.highestNote || matchedSong?.highestNote || '확인 불가 (공식 정보 없음)';
 
-  const origNote = matchedSong.highestNote || '2옥라#(A#4)';
-  const userNote = realAudio?.highestNote || origNote;
+  const origNote = matchedSong.highestNote || '확인 불가 (공식 정보 없음)';
+  const isUnknownNote = !origNote || origNote.includes('확인') || origNote.includes('모름') || origNote.includes('없음');
+  const userNote = realAudio?.highestNote || '실측 정보 없음';
   const noteFreqMap = {
     '1옥파(F3)': 174, '1옥솔(G3)': 196, '1옥라(A3)': 220, '1옥시(B3)': 246,
     '2옥도(C4)': 261, '2옥레(D4)': 293, '2옥미(E4)': 329, '2옥파(F4)': 349,
     '2옥솔(G4)': 392, '2옥라(A4)': 440, '2옥라#(A#4)': 466, '2옥시(B4)': 493,
     '3옥도(C5)': 523, '3옥도#(C#5)': 554, '3옥레(D5)': 587, '3옥미(E5)': 659
   };
-  const origFreq = noteFreqMap[origNote] || 466;
-  const userFreq = realAudio?.highestHz || noteFreqMap[userNote] || 440;
-  
-  let pitchReachRate = Math.min(100, Math.round((userFreq / origFreq) * 100));
-  if (pitchReachRate > 100) pitchReachRate = 100;
-  
-  let completionScore = Math.round((overall * 0.6) + (pitchReachRate * 0.4));
-  let completionGrade = completionScore >= 90 ? 'S (완벽 소화)' : completionScore >= 80 ? 'A (우수 완곡)' : completionScore >= 70 ? 'B (도전 가능)' : 'C (연습 필요)';
+
+  let pitchReachRate = '비교 불가';
+  let completionScore = overall;
+  let completionGrade = overall >= 85 ? 'A (우수 완곡)' : overall >= 70 ? 'B (도전 가능)' : 'C (연습 필요)';
+  let evalComment = '';
+
+  if (isUnknownNote || !noteFreqMap[origNote]) {
+    pitchReachRate = '비교 불가';
+    evalComment = `선택/감지된 곡('${matchedSong.title}')의 공식 고음 음역대 데이터가 검증된 DB에 확인되지 않아 원곡과의 최고음 도달율 비교는 불가능합니다. 하지만 실측 도달 최고음(${userNote}) 및 종합 음향 안정성(${overall}점)을 바탕으로 훌륭하게 완곡하셨습니다.`;
+  } else {
+    const origFreq = noteFreqMap[origNote];
+    const userFreq = realAudio?.highestHz || noteFreqMap[userNote] || 440;
+    
+    pitchReachRate = Math.min(100, Math.round((userFreq / origFreq) * 100));
+    if (pitchReachRate > 100) pitchReachRate = 100;
+    
+    completionScore = Math.round((overall * 0.6) + (pitchReachRate * 0.4));
+    completionGrade = completionScore >= 90 ? 'S (완벽 소화)' : completionScore >= 80 ? 'A (우수 완곡)' : completionScore >= 70 ? 'B (도전 가능)' : 'C (연습 필요)';
+    evalComment = pitchReachRate >= 98 
+      ? `원곡 '${matchedSong.title}'의 공식 최고음(${origNote}) 주파수에 완벽하게 도달했습니다! 호흡 지지력이 훌륭하여 원곡 소화 완곡 확률이 매우 높습니다.`
+      : pitchReachRate >= 88
+      ? `원곡 '${matchedSong.title}'의 공식 최고음(${origNote}) 대비 약 반음~한음 정도 여유가 필요합니다. 파사지오 구간에서의 호흡 압력을 10% 더 보강하세요.`
+      : `원곡 '${matchedSong.title}'은 공식 최고음이 ${origNote}로 난이도가 높은 곡입니다. 현재 음역대(${userNote})에 맞춘 2키 낮춤(키조절) 연습이나 고음 발성 훈련을 권장합니다.`;
+  }
   
   const comparativeEval = {
     origTitle: matchedSong.title,
     origArtist: matchedSong.artist,
-    origHighestNote: origNote,
+    origHighestNote: (isUnknownNote || !noteFreqMap[origNote]) ? '확인 불가 (공식 정보 없음)' : origNote,
     userHighestNote: userNote,
     pitchReachRate,
     completionScore,
     completionGrade,
-    evalComment: pitchReachRate >= 98 
-      ? `원곡 '${matchedSong.title}'의 최고음(${origNote}) 주파수에 완벽하게 도달했습니다! 호흡 지지력이 훌륭하여 원곡 소화 완곡 확률이 매우 높습니다.`
-      : pitchReachRate >= 88
-      ? `원곡 '${matchedSong.title}'의 최고음(${origNote}) 대비 약 반음~한음 정도 여유가 필요합니다. 파사지오 구간에서의 호흡 압력을 10% 더 보강하세요.`
-      : `원곡 '${matchedSong.title}'은 최고음이 ${origNote}로 난이도가 높은 곡입니다. 현재 음역대(${userNote})에 맞춘 2키 낮춤(키조절) 연습이나 고음 발성 훈련을 권장합니다.`
+    evalComment
   };
 
   const songInfo = {
