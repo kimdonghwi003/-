@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "fix: increase home background image visibility and strictly output 확인 불가 for unknown official song highest notes (v=24)"
+git commit -m "feat: diversify evaluation criteria to 6 items (breath, tail finish, real waveform stability, pitch, pronunciation, volume) with hexagon radar chart (v=25)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main

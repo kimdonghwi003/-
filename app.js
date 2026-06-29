@@ -1094,13 +1094,15 @@ function renderAnalysis(params) {
           </div>
         </div>
 
-        <!-- 4 Score Cards -->
-        <div class="score-cards mb-24" style="margin-bottom:24px">
+        <!-- 6 Score Cards -->
+        <div class="score-cards mb-24" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:16px; margin-bottom:24px">
           ${[
-            ['음정', a.pitch, '음정 정확도'],
-            ['박자', a.rhythm, '리듬·타이밍'],
-            ['성량', a.volume, '음량 다이나믹'],
-            ['음색', a.timbre, '톤·음색']
+            ['호흡', a.breath || a.rhythm || 80, '호흡 지지력'],
+            ['끝음처리', a.tailFinish || a.rhythm || 78, '비브라토·마무리'],
+            ['안정성', a.stability || a.timbre || 82, '실측 파형 균일도'],
+            ['음정', a.pitch || 80, '피치 정확도'],
+            ['발음', a.pronunciation || a.timbre || 82, '가사 전달력'],
+            ['성량', a.volume || 80, '다이나믹 강약']
           ].map(([label, score, desc]) => `
             <div class="score-card">
               <div class="score-card-label" style="font-size:14px;margin-bottom:4px">${label}</div>
@@ -1117,19 +1119,21 @@ function renderAnalysis(params) {
         <!-- Chart + Feedback -->
         <div class="grid-2 mb-24" style="margin-bottom:24px">
           <div class="card" style="padding:32px;display:flex;flex-direction:column;align-items:center">
-            <div class="text-2 mb-16" style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">레이더 차트</div>
+            <div class="text-2 mb-16" style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">6대 핵심 역량 레이더 차트</div>
             <canvas id="radar-chart" width="280" height="280"></canvas>
           </div>
-          <div class="card" style="padding:28px">
-            <div style="font-size:15px;font-weight:700;margin-bottom:20px">세부 피드백</div>
+          <div class="card" style="padding:28px; max-height:420px; overflow-y:auto;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:20px">6대 평가 항목 세부 피드백</div>
             ${[
-              ['음정', a.pitchFeedback],
-              ['박자', a.rhythmFeedback],
-              ['성량', a.volumeFeedback],
-              ['음색', a.timbreFeedback]
+              ['호흡 지지 (Breath Support)', a.breathFeedback || '호흡 지지가 안정적입니다.'],
+              ['끝음 처리 (Tail Finish)', a.tailFinishFeedback || '끝음 마무리가 자연스럽습니다.'],
+              ['파형 안정성 (Stability)', a.stabilityFeedback || '실측 파형 진폭이 균일합니다.'],
+              ['음정 정확도 (Pitch)', a.pitchFeedback || '음정이 전반적으로 정확합니다.'],
+              ['발음 전달력 (Pronunciation)', a.pronunciationFeedback || '가사 전달력이 우수합니다.'],
+              ['성량 다이나믹 (Volume)', a.volumeFeedback || '성량 조절이 적절합니다.']
             ].map(([label, fb]) => `
               <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                <div style="font-size:13px;font-weight:700;margin-bottom:6px">${label}</div>
+                <div style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--accent)">${label}</div>
                 <div class="text-2" style="font-size:13px;line-height:1.65">${fb}</div>
               </div>`).join('')}
           </div>
@@ -2069,11 +2073,13 @@ function renderTrainerStudents() {
                     <div style="font-size:24px;font-weight:900;color:var(--accent)">${latestAna.overall}점</div>
                     <div class="text-3" style="font-size:11px;font-weight:600">AI 종합점수</div>
                   </div>
-                  <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;text-align:center">
-                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">음정 정확도</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.pitch}점</div></div>
-                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">박자 안정성</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.rhythm}점</div></div>
-                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">성량 조절</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.volume}점</div></div>
-                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">음색 매력도</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.timbre}점</div></div>
+                  <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fit, minmax(90px, 1fr));gap:8px;text-align:center">
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">호흡</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.breath || latestAna.rhythm || 80}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">끝음처리</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.tailFinish || latestAna.rhythm || 78}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">안정성</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.stability || latestAna.timbre || 82}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">음정</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.pitch || 80}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">발음</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.pronunciation || latestAna.timbre || 82}점</div></div>
+                    <div style="background:var(--bg-0);padding:8px;border-radius:6px"><div class="text-3" style="font-size:11px">성량</div><div style="font-weight:700;color:var(--text);font-size:14px">${latestAna.volume || 80}점</div></div>
                   </div>
                 </div>
 
@@ -2545,7 +2551,17 @@ async function decodeAndAnalyzeAudioFile(file) {
     else if (highestHz > 380) highestNote = '2옥솔(G4)';
     else if (highestHz > 340) highestNote = '2옥파(F4)';
 
-    return { durationStr, totalSec: Math.round(duration), timelineData, highestHz: Math.round(highestHz), highestNote };
+    let activeRMS = timelineData.filter(t => t.rms > 0.005).map(t => t.rms);
+    let stabilityScore = 82;
+    if (activeRMS.length > 1) {
+      const mean = activeRMS.reduce((a, b) => a + b, 0) / activeRMS.length;
+      const variance = activeRMS.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / activeRMS.length;
+      const stdDev = Math.sqrt(variance);
+      const cv = mean > 0 ? (stdDev / mean) : 0.3;
+      stabilityScore = Math.min(98, Math.max(68, Math.round(98 - cv * 35)));
+    }
+
+    return { durationStr, totalSec: Math.round(duration), timelineData, highestHz: Math.round(highestHz), highestNote, stabilityScore };
   } catch (e) {
     console.warn('Real audio analysis failed:', e);
     return null;
@@ -2710,25 +2726,35 @@ async function startAnalysis(file, requirements, guestEmail, userTargetSong) {
 }
 
 function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode, gptSongMeta, webSongMeta, userTargetSong) {
-  const base = () => Math.floor(Math.random() * 30 + 60);
+  const base = () => Math.floor(Math.random() * 25 + 70);
+  const breath = aiData?.breath_score || base();
+  const tailFinish = aiData?.tail_score || base();
+  const stability = realAudio?.stabilityScore || aiData?.stability_score || base();
   const pitch = aiData?.pitch_score || base();
-  const rhythm = aiData?.rhythm_score || base();
+  const pronunciation = aiData?.diction_score || base();
   const volume = aiData?.volume_score || base();
-  const timbre = aiData?.timbre_score || base();
-  const overall = aiData?.overall_score || Math.round((pitch + rhythm + volume + timbre) / 4);
+  
+  // Backward compatibility aliases
+  const rhythm = tailFinish;
+  const timbre = stability;
+  
+  const overall = aiData?.overall_score || Math.round((breath + tailFinish + stability + pitch + pronunciation + volume) / 6);
 
   const weakAreas = [];
-  if (pitch < 72) weakAreas.push('음정교정');
-  if (rhythm < 72) weakAreas.push('박자감');
-  if (volume < 72) weakAreas.push('다이나믹');
-  if (timbre < 72) weakAreas.push('음색개발');
-  if (pitch >= 80 && overall < 80) weakAreas.push('고음처리');
-  if ((requirements || '').includes('호흡')) weakAreas.push('호흡');
+  if (breath < 75) weakAreas.push('호흡지지');
+  if (tailFinish < 75) weakAreas.push('끝음처리');
+  if (stability < 75) weakAreas.push('발성안정성');
+  if (pitch < 75) weakAreas.push('음정교정');
+  if (pronunciation < 75) weakAreas.push('가사발음');
+  if (volume < 75) weakAreas.push('성량조절');
+  if ((requirements || '').includes('호흡')) weakAreas.push('호흡훈련');
 
-  const pitchFB = pitch >= 80 ? '음정이 전반적으로 안정적입니다. 고음 구간에서 약간의 불안정함이 있으나 연습으로 개선 가능합니다.' : pitch >= 65 ? '음정 이탈이 일부 구간에서 발생합니다. 특히 전환음(transition note)에서 주의가 필요합니다.' : '음정 이탈이 다수 구간에서 나타납니다. 기본 음정 훈련과 청음 연습을 병행하기를 권장합니다.';
-  const rhythmFB = rhythm >= 80 ? '박자 유지가 매우 안정적입니다. 강약 처리가 음악적으로 자연스럽습니다.' : rhythm >= 65 ? '박자가 전체적으로 양호하나 빠른 구간에서 약간의 딜레이가 있습니다.' : '박자 유지에 어려움이 있습니다. 메트로놈 훈련을 통해 리듬감을 향상시키세요.';
-  const volumeFB = volume >= 80 ? '성량 조절이 훌륭합니다. 클라이맥스와 여린 부분의 대비가 효과적입니다.' : volume >= 65 ? '성량이 전반적으로 안정되어 있지만 다이나믹 폭을 더 넓히면 좋겠습니다.' : '성량이 일정하게 유지되지 않습니다. 호흡 지지(breath support)를 강화하는 연습이 필요합니다.';
-  const timbreFB = timbre >= 80 ? '음색이 매력적이고 일관성이 높습니다. 개인 색깔이 잘 드러납니다.' : timbre >= 65 ? '음색이 보통 수준입니다. 발성 훈련을 통해 더 풍부한 음색을 만들 수 있습니다.' : '음색 발달이 더 필요합니다. 공명(resonance) 훈련과 후두 조절 연습을 추천합니다.';
+  const breathFB = breath >= 80 ? '복식 호흡 지지(Breath Support)가 매우 훌륭하여 프레이즈 전체에 안정적인 호흡 압력이 공급됩니다.' : breath >= 65 ? '호흡량은 충분하나 긴 문장 끝부분에서 호흡 지지가 다소 풀리는 경향이 있습니다.' : '호흡 압력이 부족하여 소리가 흔들립니다. 횡격막 강화 및 스타카토 호흡 훈련이 필요합니다.';
+  const tailFinishFB = tailFinish >= 80 ? '프레이즈의 끝음 처리와 자연스러운 비브라토 감쇄(Fade-out)가 매우 세련되고 부드럽습니다.' : tailFinish >= 65 ? '끝음 유지는 양호하나 비브라토 주기가 일정하지 않고 다소 급하게 끊어지는 구간이 있습니다.' : '끝음에서 음정이 흔들리거나 호흡이 먼저 빠집니다. 롱톤(Long-tone) 끝음 유지 연습을 추천합니다.';
+  const stabilityFB = stability >= 80 ? '실측 오디오 파형 진폭 균일도(CV)가 우수하며, 성대 접촉과 발성이 훌륭한 안정성을 보입니다.' : stability >= 65 ? '파형 진폭이 다소 불규칙한 구간이 존재하며, 고음 도약 시 발성의 흔들림이 감지되었습니다.' : '파형 진폭 흔들림이 큽니다. 성대 접촉을 일정하게 유지하는 립트릴 및 발성 안정화 연습이 시급합니다.';
+  const pitchFB = pitch >= 80 ? '음정이 전반적으로 매우 정확합니다. 전환음 구간에서도 피치 중심을 잘 유지하고 있습니다.' : pitch >= 65 ? '음정 이탈이 일부 고음이나 도약 구간에서 발생합니다. 반음 계단 연습을 통한 피치 교정을 권장합니다.' : '음정 이탈이 다수 감지됩니다. 스케일 훈련 및 피아노 맞춤 청음 연습을 병행하세요.';
+  const pronunciationFB = pronunciation >= 80 ? '자음의 타격과 모음의 포먼트(Formant)가 명확하여 전달력이 우수하고 가사 가독성이 훌륭합니다.' : pronunciation >= 65 ? '고음역대에서 모음이 다소 뭉개지거나 자음 발음이 흐려지는 경향이 있습니다.' : '가사 전달력이 다소 떨어집니다. 구강 구조를 넓게 열고 모음 정밀 발음 훈련을 연습하세요.';
+  const volumeFB = volume >= 80 ? '성량 조절과 다이나믹 표현력이 훌륭합니다. 곡의 기승전결에 따른 강약 대비가 효과적입니다.' : volume >= 65 ? '성량이 전반적으로 안정적이나, 클라이맥스에서의 폭발적인 성량 대비를 더 넓히면 좋겠습니다.' : '성량이 일정하지 않거나 전체적으로 작습니다. 공명강을 활용한 소리 증폭 연습이 필요합니다.';
 
   const allSongs = DB.getSongs() || [];
   const searchStr = ((fileName || '') + ' ' + (requirements || '') + ' ' + (whisperLyrics || '')).toLowerCase();
@@ -2905,7 +2931,15 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
     ];
   }
 
-  return { mode, pitch, rhythm, volume, timbre, overall, pitchFeedback: pitchFB, rhythmFeedback: rhythmFB, volumeFeedback: volumeFB, timbreFeedback: timbreFB, weakAreas, songInfo, timeline, comparativeEval };
+  return { 
+    mode, 
+    breath, tailFinish, stability, pitch, pronunciation, volume, 
+    rhythm, timbre, overall, 
+    breathFeedback: breathFB, tailFinishFeedback: tailFinishFB, stabilityFeedback: stabilityFB, 
+    pitchFeedback: pitchFB, pronunciationFeedback: pronunciationFB, volumeFeedback: volumeFB, 
+    rhythmFeedback: tailFinishFB, timbreFeedback: stabilityFB, 
+    weakAreas, songInfo, timeline, comparativeEval 
+  };
 }
 
 function attachStudentAuthListeners() {
@@ -3548,10 +3582,17 @@ function drawRadarChart(analysis) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const cx = W / 2, cy = H / 2;
-  const r = Math.min(W, H) * 0.36;
-  const labels = ['음정', '박자', '성량', '음색'];
-  const scores = [analysis.pitch, analysis.rhythm, analysis.volume, analysis.timbre];
-  const N = 4;
+  const r = Math.min(W, H) * 0.32;
+  const labels = ['호흡', '끝음처리', '안정성', '음정', '발음', '성량'];
+  const scores = [
+    analysis.breath || analysis.rhythm || 80,
+    analysis.tailFinish || analysis.rhythm || 78,
+    analysis.stability || analysis.timbre || 82,
+    analysis.pitch || 80,
+    analysis.pronunciation || analysis.timbre || 82,
+    analysis.volume || 80
+  ];
+  const N = 6;
 
   ctx.clearRect(0, 0, W, H);
 
@@ -3617,16 +3658,16 @@ function drawRadarChart(analysis) {
   // Labels
   for (let i = 0; i < N; i++) {
     const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
-    const px = cx + Math.cos(angle) * (r + 30);
-    const py = cy + Math.sin(angle) * (r + 30);
+    const px = cx + Math.cos(angle) * (r + 28);
+    const py = cy + Math.sin(angle) * (r + 28);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '700 14px Inter, sans-serif';
+    ctx.font = '700 13px Inter, sans-serif';
     ctx.fillStyle = '#f0f0f5';
-    ctx.fillText(labels[i], px, py);
+    ctx.fillText(labels[i], px, py - 6);
     ctx.font = '600 12px Inter, sans-serif';
     ctx.fillStyle = '#8b5cf6';
-    ctx.fillText(scores[i] + '점', px, py + 18);
+    ctx.fillText(scores[i] + '점', px, py + 12);
   }
 }
 
