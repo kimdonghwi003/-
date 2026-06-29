@@ -212,12 +212,12 @@ const DB = {
 
     // 50곡 검증된 가요 DB
     const songs = [
-      // 남성 보컬 (25곡)
+      // 남성 보컬 (25곡) - 나무위키 고음/노래 목록 철저 검증
       { id: 1, title: '겁쟁이', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🎤' },
       { id: 2, title: '가시', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🌵' },
       { id: 3, title: '야생화', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 72, gender: 'M', emoji: '🌸' },
-      { id: 4, title: '눈의 꽃', artist: '박효신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 67, gender: 'M', emoji: '❄️' },
-      { id: 5, title: '숨', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥라#(A#4)', difficulty: 'hard', difficultyScore: 8, highestMidi: 70, gender: 'M', emoji: '🌬️' },
+      { id: 4, title: '눈의 꽃', artist: '박효신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '❄️' },
+      { id: 5, title: '숨', artist: '박효신', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '🌬️' },
       { id: 6, title: '보고 싶다', artist: '김범수', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '😢' },
       { id: 7, title: '끝사랑', artist: '김범수', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '💔' },
       { id: 8, title: '어디에도', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥레#(D#3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 74, gender: 'M', emoji: '🌊' },
@@ -225,23 +225,23 @@ const DB = {
       { id: 10, title: '모든 날, 모든 순간', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '☕' },
       { id: 11, title: '너를 만나', artist: '폴킴', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 69, gender: 'M', emoji: '🤝' },
       { id: 12, title: '거리에서', artist: '성시경', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 5, highestMidi: 68, gender: 'M', emoji: '🍂' },
-      { id: 13, title: '너의 모든 순간', artist: '성시경', genre: '발라드', lowestNote: '1옥파#(F#3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '✨' },
-      { id: 14, title: '소주 한 잔', artist: '임창정', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥라(A5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 81, gender: 'M', emoji: '🍶' },
+      { id: 13, title: '너의 모든 순간', artist: '성시경', genre: '발라드', lowestNote: '1옥파#(F#3)', highestNote: '2옥솔#(G#4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 68, gender: 'M', emoji: '✨' },
+      { id: 14, title: '소주 한 잔', artist: '임창정', genre: '발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 74, gender: 'M', emoji: '🍶' },
       { id: 15, title: '내가 저지른 사랑', artist: '임창정', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 75, gender: 'M', emoji: '💥' },
       { id: 16, title: '가수가 된 이유', artist: '신용재', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '🎙️' },
       { id: 17, title: '선물', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '🎁' },
-      { id: 18, title: '사랑인가 봐', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 72, gender: 'M', emoji: '💘' },
+      { id: 18, title: '사랑인가 봐', artist: '멜로망스', genre: '팝', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'M', emoji: '💘' },
       { id: 19, title: '주저하는 연인들을 위해', artist: '잔나비', genre: '록', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '🎸' },
       { id: 20, title: '다행이다', artist: '이적', genre: '발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '💍' },
       { id: 21, title: '하늘을 달리다', artist: '이적', genre: '록', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '🏃' },
-      { id: 22, title: '스토커', artist: '10cm', genre: '인디', lowestNote: '1옥솔(G3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '👓' },
-      { id: 23, title: '벚꽃 엔딩', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥미(E4)', difficulty: 'easy', difficultyScore: 2, highestMidi: 64, gender: 'M', emoji: '🌸' },
-      { id: 24, title: '노래방에서', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '🎤' },
+      { id: 22, title: '스토커', artist: '10cm', genre: '인디', lowestNote: '1옥솔(G3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '👓' },
+      { id: 23, title: '벚꽃 엔딩', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥파#(F#4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 66, gender: 'M', emoji: '🌸' },
+      { id: 24, title: '노래방에서', artist: '장범준', genre: '어쿠스틱', lowestNote: '1옥레(D3)', highestNote: '2옥솔(G4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 67, gender: 'M', emoji: '🎤' },
       { id: 25, title: '좋니', artist: '윤종신', genre: '발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '🍷' },
 
-      // 여성 보컬 (25곡)
+      // 여성 보컬 (25곡) - 나무위키 고음/노래 목록 철저 검증
       { id: 26, title: '좋은 날', artist: '아이유', genre: '댄스/팝', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '☀️' },
-      { id: 27, title: '밤편지', artist: '아이유', genre: '어쿠스틱', lowestNote: '1옥솔(G3)', highestNote: '2옥미(E4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 64, gender: 'F', emoji: '🌙' },
+      { id: 27, title: '밤편지', artist: '아이유', genre: '어쿠스틱', lowestNote: '1옥솔(G3)', highestNote: '2옥라(A4)', difficulty: 'easy', difficultyScore: 3, highestMidi: 69, gender: 'F', emoji: '🌙' },
       { id: 28, title: 'Celebrity', artist: '아이유', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 5, highestMidi: 72, gender: 'F', emoji: '⭐' },
       { id: 29, title: 'Love wins all', artist: '아이유', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '🪐' },
       { id: 30, title: '사계', artist: '태연', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '🍂' },
@@ -260,11 +260,11 @@ const DB = {
       { id: 43, title: '안녕이라고 말하지마', artist: '다비치', genre: '발라드', lowestNote: '1옥시(B3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '✋' },
       { id: 44, title: '끝', artist: '권진아', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'F', emoji: '⌛' },
       { id: 45, title: '기억해줘요 내 모든 날과 그때를', artist: '거미', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 74, gender: 'F', emoji: '📅' },
-      { id: 46, title: 'Hype Boy', artist: '뉴진스', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 71, gender: 'F', emoji: '🐰' },
-      { id: 47, title: 'Ditto', artist: '뉴진스', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '2옥라(A4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 69, gender: 'F', emoji: '❄️' },
-      { id: 48, title: 'I AM', artist: '아이브', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 77, gender: 'F', emoji: '✈️' },
-      { id: 49, title: 'Next Level', artist: '에스파', genre: '댄스', lowestNote: '2옥도(C4)', highestNote: '3옥레#(D#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 75, gender: 'F', emoji: '🚀' },
-      { id: 50, title: '어떻게 이별까지 사랑하겠어', artist: 'AKMU', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 72, gender: 'X', emoji: '⛵' }
+      { id: 46, title: 'Hype Boy', artist: '뉴진스', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥도(C5)', difficulty: 'medium', difficultyScore: 4, highestMidi: 72, gender: 'F', emoji: '🐰' },
+      { id: 47, title: 'Ditto', artist: '뉴진스', genre: '팝', lowestNote: '1옥라(A3)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 71, gender: 'F', emoji: '❄️' },
+      { id: 48, title: 'I AM', artist: '아이브', genre: '팝', lowestNote: '2옥도(C4)', highestNote: '3옥솔(G5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 79, gender: 'F', emoji: '✈️' },
+      { id: 49, title: 'Next Level', artist: '에스파', genre: '댄스', lowestNote: '2옥도(C4)', highestNote: '3옥파#(F#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 78, gender: 'F', emoji: '🚀' },
+      { id: 50, title: '어떻게 이별까지 사랑하겠어', artist: 'AKMU', genre: '발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥레(D5)', difficulty: 'medium', difficultyScore: 6, highestMidi: 74, gender: 'X', emoji: '⛵' }
     ];
     this.setSongs(songs);
 

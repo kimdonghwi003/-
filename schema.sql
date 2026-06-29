@@ -551,16 +551,16 @@ INSERT INTO global_emails (email, account_type)
 VALUES ('admin@vocalai.kr', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
--- ▶ 샘플 곡 데이터
+-- ▶ 샘플 곡 데이터 (나무위키 고음/노래 목록 검증 완료)
 INSERT INTO songs (title, artist, genre, lowest_note, highest_note, difficulty) VALUES
-  ('밤편지',          '아이유',    '발라드', 'G3', 'E5', 'medium'),
-  ('Celebrity',      '아이유',    '팝',    'C4', 'G5', 'medium'),
-  ('다시 만난 세계',   '소녀시대', '팝',    'D4', 'D5', 'easy'),
-  ('사랑하기 때문에',  '유재하',   '발라드', 'E3', 'F5', 'hard'),
-  ('눈의 꽃',         '박효신',   '발라드', 'D3', 'G5', 'hard'),
-  ('좋은날',          '아이유',   '발라드', 'D4', 'F6', 'hard'),
-  ('비',             '윤종신',   '발라드', 'A3', 'D5', 'easy'),
-  ('봄날',            'BTS',     '팝',    'C4', 'E5', 'medium')
+  ('밤편지',          '아이유',    '발라드', 'G3', '2옥라(A4)', 'easy'),
+  ('Celebrity',      '아이유',    '팝',    'C4', '3옥도(C5)', 'medium'),
+  ('야생화',          '박효신',    '발라드', 'C3', '3옥도(C5)', 'hard'),
+  ('어디에도',        '이수',     '록/발라드', 'D#3', '3옥레(D5)', 'hard'),
+  ('눈의 꽃',         '박효신',   '발라드', 'D3', '2옥솔#(G#4)', 'medium'),
+  ('좋은 날',          '아이유',   '댄스/팝', 'C4', '3옥파#(F#5)', 'hard'),
+  ('소주 한 잔',       '임창정',   '발라드', 'E3', '3옥레(D5)', 'hard'),
+  ('봄날',            'BTS',     '팝',    'C4', '2옥라(A4)', 'medium')
 ON CONFLICT DO NOTHING;
 
 -- =============================================================
