@@ -1557,22 +1557,39 @@ function renderStudentSongs() {
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <select id="mastered-song-select" class="form-input" style="flex:1;min-width:260px;font-size:14px">
+        <div style="position:relative;flex:0 0 210px">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px">🔍</span>
+          <input type="text" id="mastered-song-search" class="form-input" placeholder="애창곡 빠른 검색 (가수/곡명)" oninput="filterMasteredSelect()" style="padding-left:34px;font-size:13px;height:42px" />
+        </div>
+        <select id="mastered-song-select" class="form-input" style="flex:1;min-width:240px;font-size:14px;height:42px">
           <option value="">-- 내가 완곡 가능한 노래 선택 (200곡 마스터 DB) --</option>
           ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('')}
         </select>
-        <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px">맞춤 추천 분석</button>
+        <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px;height:42px">맞춤 추천 분석</button>
       </div>
       <div id="recommendation-results" style="margin-top:20px;display:none;border-top:1px dashed var(--border);padding-top:20px"></div>
     </div>
 
-    <!-- Filter -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-      ${genres.map(g => `<button class="chip genre-filter ${g === '전체' ? 'active' : ''}" data-genre="${g}" onclick="filterSongs(this,'${g}')">${g}</button>`).join('')}
+    <!-- Search Bar & Genre Filter -->
+    <div class="card mb-20" style="padding:16px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:20px;border-radius:12px">
+      <div style="margin-bottom:12px">
+        <div style="position:relative;display:flex;align-items:center">
+          <span style="position:absolute;left:14px;font-size:16px;color:var(--text-3)">🔍</span>
+          <input type="text" id="song-search-input" class="form-input" placeholder="곡 이름이나 가수 이름을 직접 검색해 보세요 (예: 아이유, 밤편지, 박효신, 고백...)" oninput="filterSongs(null)" style="padding-left:42px;height:46px;font-size:14px;border-radius:10px;width:100%" />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${genres.map(g => `<button class="chip genre-filter ${g === '전체' ? 'active' : ''}" data-genre="${g}" onclick="filterSongs(this,'${g}')">${g}</button>`).join('')}
+      </div>
     </div>
 
     <!-- Song List -->
     <div id="song-list" style="display:flex;flex-direction:column;gap:10px">
+      <div id="song-list-empty" style="display:none;padding:40px;text-align:center;color:var(--text-3);background:var(--bg-2);border-radius:12px;border:1px dashed var(--border)">
+        <div style="font-size:32px;margin-bottom:8px">😢</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:4px">검색 결과가 없습니다.</div>
+        <div style="font-size:13px">다른 검색어나 장르 필터를 선택해 보세요.</div>
+      </div>
       ${songs.map((song, i) => `
         <div class="song-item" data-genre="${song.genre}" onclick="showSongDetail(${song.id})">
           <div class="song-num">${String(i+1).padStart(2,'0')}</div>
@@ -3265,12 +3282,45 @@ function toggleChip(input, chipId) {
 }
 
 function filterSongs(btn, genre) {
-  document.querySelectorAll('.genre-filter').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) {
+    document.querySelectorAll('.genre-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const activeBtn = document.querySelector('.genre-filter.active');
+  const selectedGenre = genre || (activeBtn ? activeBtn.dataset.genre : '전체');
+  const q = (document.getElementById('song-search-input')?.value || '').trim().toLowerCase();
+
   const items = document.querySelectorAll('#song-list .song-item');
+  let matchCount = 0;
   items.forEach(item => {
-    item.style.display = (genre === '전체' || item.dataset.genre === genre) ? 'flex' : 'none';
+    const title = item.querySelector('.song-title')?.textContent?.toLowerCase() || '';
+    const artist = item.querySelector('.song-artist')?.textContent?.toLowerCase() || '';
+    const matchGenre = (selectedGenre === '전체' || item.dataset.genre === selectedGenre);
+    const matchQuery = !q || title.includes(q) || artist.includes(q);
+    if (matchGenre && matchQuery) {
+      item.style.display = 'flex';
+      matchCount++;
+    } else {
+      item.style.display = 'none';
+    }
   });
+
+  const emptyDiv = document.getElementById('song-list-empty');
+  if (emptyDiv) {
+    emptyDiv.style.display = matchCount === 0 ? 'block' : 'none';
+  }
+}
+
+function filterMasteredSelect() {
+  const q = (document.getElementById('mastered-song-search')?.value || '').trim().toLowerCase();
+  const sel = document.getElementById('mastered-song-select');
+  if (!sel) return;
+  const songs = DB.getSongs();
+  const currentVal = sel.value;
+  const filtered = songs.filter(s => !q || s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+  
+  sel.innerHTML = `<option value="">-- 내가 완곡 가능한 노래 선택 (${q ? '검색 결과 ' + filtered.length + '곡' : '200곡 마스터 DB'}) --</option>` +
+    filtered.map(s => `<option value="${s.id}" ${String(s.id) === currentVal ? 'selected' : ''}>${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('');
 }
 
 function filterTrainers() {
@@ -3814,6 +3864,7 @@ window.Auth = Auth;
 window.switchAuthTab = switchAuthTab;
 window.toggleChip = toggleChip;
 window.filterSongs = filterSongs;
+window.filterMasteredSelect = filterMasteredSelect;
 window.filterTrainers = filterTrainers;
 window.showBookingModal = showBookingModal;
 window.showTrainerDetail = showTrainerDetail;
