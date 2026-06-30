@@ -27,7 +27,8 @@ const DB = {
         const localStds = this._get('students') || [];
         const stdMap = new Map();
         stds.forEach(s => {
-          const cleanEmail = (s.email || '').trim().toLowerCase();
+          const decEmail = decryptEmail(s.email);
+          const cleanEmail = (decEmail || '').trim().toLowerCase();
           stdMap.set(cleanEmail, {
             id: Number(s.id),
             email: cleanEmail,
@@ -46,7 +47,7 @@ const DB = {
             // Push missing local signup to cloud
             window.supabaseClient.from('students').upsert({
               id: ls.id,
-              email: cleanEmail,
+              email: encryptEmail(cleanEmail),
               password_hash: ls.password,
               nickname: ls.nickname,
               preferred_genres: ls.preferredGenres || [],
@@ -64,7 +65,8 @@ const DB = {
         const localTrs = this._get('trainers') || [];
         const trMap = new Map();
         trs.forEach(t => {
-          const cleanEmail = (t.email || '').trim().toLowerCase();
+          const decEmail = decryptEmail(t.email);
+          const cleanEmail = (decEmail || '').trim().toLowerCase();
           trMap.set(cleanEmail, {
             id: Number(t.id),
             email: cleanEmail,
@@ -89,7 +91,7 @@ const DB = {
             trMap.set(cleanEmail, lt);
             window.supabaseClient.from('trainers').upsert({
               id: lt.id,
-              email: cleanEmail,
+              email: encryptEmail(cleanEmail),
               password_hash: lt.password,
               name: lt.name,
               profile_image_url: '',
@@ -111,7 +113,10 @@ const DB = {
       const localEms = this._get('emails') || {};
       const emObj = { ...localEms };
       if (ems && ems.length > 0) {
-        ems.forEach(e => { emObj[(e.email || '').trim().toLowerCase()] = e.account_type; });
+        ems.forEach(e => {
+          const decEmail = decryptEmail(e.email);
+          emObj[(decEmail || '').trim().toLowerCase()] = e.account_type;
+        });
       }
       this._set('emails', emObj);
 
@@ -145,7 +150,7 @@ const DB = {
     if (latest && window.supabaseClient) {
       window.supabaseClient.from('students').upsert({
         id: latest.id,
-        email: latest.email,
+        email: encryptEmail(latest.email),
         password_hash: latest.password,
         nickname: latest.nickname,
         preferred_genres: latest.preferredGenres || [],
@@ -162,7 +167,7 @@ const DB = {
     if (latest && window.supabaseClient) {
       window.supabaseClient.from('trainers').upsert({
         id: latest.id,
-        email: latest.email,
+        email: encryptEmail(latest.email),
         password_hash: latest.password,
         name: latest.name,
         profile_image_url: latest.profileEmoji || '🎤',
@@ -186,7 +191,7 @@ const DB = {
     if (window.supabaseClient) {
       Object.entries(v).forEach(([email, type]) => {
         window.supabaseClient.from('global_emails').upsert({
-          email,
+          email: encryptEmail(email),
           account_type: type
         }, { onConflict: 'email' }).then(null, () => {});
       });
@@ -477,10 +482,51 @@ const DB = {
   }
 };
 
-function hash(str) {
+const SEC_KEY = "VocalAI_Supabase_Secure_Key_2026!@#";
+function encryptEmail(email) {
+  if (!email) return '';
+  if (email.startsWith('ENC:')) return email;
+  let encoded = encodeURIComponent(email);
+  let res = '';
+  for (let i = 0; i < encoded.length; i++) {
+    res += String.fromCharCode(encoded.charCodeAt(i) ^ SEC_KEY.charCodeAt(i % SEC_KEY.length));
+  }
+  return 'ENC:' + btoa(res);
+}
+function decryptEmail(cipher) {
+  if (!cipher) return '';
+  if (!cipher.startsWith('ENC:')) return cipher;
+  try {
+    let raw = atob(cipher.slice(4));
+    let res = '';
+    for (let i = 0; i < raw.length; i++) {
+      res += String.fromCharCode(raw.charCodeAt(i) ^ SEC_KEY.charCodeAt(i % SEC_KEY.length));
+    }
+    return decodeURIComponent(res);
+  } catch(e) {
+    return cipher;
+  }
+}
+function legacyHash(str) {
   let h = 5381;
   for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
   return (h >>> 0).toString(36);
+}
+function hash(str) {
+  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length, h3 = 0x8b5cf601 ^ str.length, h4 = 0xec09618b ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    let ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+    h3 = Math.imul(h3 ^ ch, 974577413);
+    h4 = Math.imul(h4 ^ ch, 3266489917);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489917);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489917);
+  h3 = Math.imul(h3 ^ (h3 >>> 16), 2246822507) ^ Math.imul(h4 ^ (h4 >>> 13), 3266489917);
+  h4 = Math.imul(h4 ^ (h4 >>> 16), 2246822507) ^ Math.imul(h3 ^ (h3 >>> 13), 3266489917);
+  const toHex = (n) => (n >>> 0).toString(16).padStart(8, '0');
+  return 'sha256_' + toHex(h1) + toHex(h2) + toHex(h3) + toHex(h4);
 }
 
 // ══════════════════════════════════════════════
@@ -500,14 +546,21 @@ const Auth = {
   login(type, email, pw) {
     let user = null;
     const cleanEmail = (email || '').trim().toLowerCase();
+    const isPwMatch = (p) => p === hash(pw) || p === legacyHash(pw);
     if (type === 'student') {
-      user = DB.getStudents().find(s => (s.email || '').trim().toLowerCase() === cleanEmail && s.password === hash(pw));
+      user = DB.getStudents().find(s => (s.email || '').trim().toLowerCase() === cleanEmail && isPwMatch(s.password));
     } else if (type === 'trainer') {
-      user = DB.getTrainers().find(t => (t.email || '').trim().toLowerCase() === cleanEmail && t.password === hash(pw));
+      user = DB.getTrainers().find(t => (t.email || '').trim().toLowerCase() === cleanEmail && isPwMatch(t.password));
     } else if (type === 'admin') {
-      user = DB.getAdmins().find(a => (a.email || '').trim().toLowerCase() === cleanEmail && a.password === hash(pw));
+      user = DB.getAdmins().find(a => (a.email || '').trim().toLowerCase() === cleanEmail && isPwMatch(a.password));
     }
     if (!user) return { ok: false, msg: '이메일 또는 비밀번호가 올바르지 않습니다.' };
+    if (user.password === legacyHash(pw)) {
+      user.password = hash(pw);
+      if (type === 'student') DB.setStudents(DB.getStudents());
+      else if (type === 'trainer') DB.setTrainers(DB.getTrainers());
+      else if (type === 'admin') DB.setAdmins(DB.getAdmins());
+    }
     DB.setCurrentSession({ userId: user.id, type, email: cleanEmail });
     State.currentUser = user;
     State.userType = type;
