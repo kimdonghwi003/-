@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: implement Global Acoustic Calibration Engine with collective Z-score percentile scoring and adaptive noise filter precision (v=28)"
+git commit -m "fix: enable full bidirectional Supabase cloud sync for submissions and analysis results across mobile and PC (v=29)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main

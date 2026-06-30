@@ -138,6 +138,86 @@ const DB = {
         }));
         this._set('songs', mappedSongs);
       }
+
+      // 5-A. Push local submissions & analyses to Cloud DB first to ensure cross-device consistency
+      const locSubs = this._get('submissions') || [];
+      if (locSubs.length > 0) {
+        const batch = locSubs.map(s => ({
+          id: Number(s.id),
+          student_id: s.studentId ? Number(s.studentId) : null,
+          guest_email: s.guestEmail || '',
+          original_filename: s.fileName || '',
+          requirements: s.requirements || '',
+          status: s.status || 'completed',
+          access_token: s.accessToken || 'tok_' + s.id,
+          created_at: s.createdAt || new Date().toISOString()
+        }));
+        await window.supabaseClient.from('vocal_submissions').upsert(batch, { onConflict: 'id' }).then(null, () => {});
+      }
+      const locAna = this._get('analyses') || [];
+      if (locAna.length > 0) {
+        const batchAna = locAna.map(a => ({
+          id: Number(a.id),
+          submission_id: Number(a.submissionId) || 1,
+          mode: a.mode || 'practice',
+          overall_score: Number(a.overall) || 75,
+          breath_score: Number(a.breath) || 75,
+          tail_finish_score: Number(a.tailFinish) || 75,
+          stability_score: Number(a.stability) || 75,
+          pitch_score: Number(a.pitch) || 75,
+          diction_score: Number(a.pronunciation) || 75,
+          volume_score: Number(a.volume) || 75,
+          json_data: JSON.stringify(a)
+        }));
+        await window.supabaseClient.from('vocal_analysis_results').upsert(batchAna, { onConflict: 'id' }).then(null, () => {});
+      }
+
+      // 5-B. Load vocal_submissions from Cloud DB
+      const { data: subsData } = await window.supabaseClient.from('vocal_submissions').select('*');
+      if (subsData && subsData.length > 0) {
+        const localSubs = this._get('submissions') || [];
+        const subMap = new Map();
+        localSubs.forEach(s => subMap.set(Number(s.id), s));
+        subsData.forEach(s => {
+          subMap.set(Number(s.id), {
+            id: Number(s.id),
+            studentId: s.student_id ? Number(s.student_id) : null,
+            guestEmail: s.guest_email || '',
+            fileName: s.original_filename || '',
+            requirements: s.requirements || '',
+            status: s.status || 'completed',
+            accessToken: s.access_token || 'tok_' + s.id,
+            createdAt: (s.created_at || '').slice(0, 10)
+          });
+        });
+        this._set('submissions', Array.from(subMap.values()));
+      }
+
+      // 6. Load vocal_analysis_results from Cloud DB
+      const { data: anaData } = await window.supabaseClient.from('vocal_analysis_results').select('*');
+      if (anaData && anaData.length > 0) {
+        const localAna = this._get('analyses') || [];
+        const anaMap = new Map();
+        localAna.forEach(a => anaMap.set(Number(a.id), a));
+        anaData.forEach(a => {
+          let parsed = {};
+          try { parsed = a.json_data ? JSON.parse(a.json_data) : {}; } catch(e) {}
+          anaMap.set(Number(a.id), {
+            id: Number(a.id),
+            submissionId: Number(a.submission_id),
+            mode: a.mode || 'practice',
+            overall: Number(a.overall_score) || 75,
+            breath: Number(a.breath_score) || 75,
+            tailFinish: Number(a.tail_finish_score) || 75,
+            stability: Number(a.stability_score) || 75,
+            pitch: Number(a.pitch_score) || 75,
+            pronunciation: Number(a.diction_score) || 75,
+            volume: Number(a.volume_score) || 75,
+            ...parsed
+          });
+        });
+        this._set('analyses', Array.from(anaMap.values()));
+      }
     } catch(err) {
       console.warn('Supabase Cloud Sync Init Failed, fallback to local:', err);
     }
@@ -198,9 +278,42 @@ const DB = {
     }
   },
   getSubmissions() { return this._get('submissions') || []; },
-  setSubmissions(v) { this._set('submissions', v); },
+  setSubmissions(v) { 
+    this._set('submissions', v); 
+    if (window.supabaseClient && v && v.length > 0) {
+      const batch = v.map(s => ({
+        id: Number(s.id),
+        student_id: s.studentId ? Number(s.studentId) : null,
+        guest_email: s.guestEmail || '',
+        original_filename: s.fileName || '',
+        requirements: s.requirements || '',
+        status: s.status || 'completed',
+        access_token: s.accessToken || 'tok_' + s.id,
+        created_at: s.createdAt || new Date().toISOString()
+      }));
+      window.supabaseClient.from('vocal_submissions').upsert(batch, { onConflict: 'id' }).then(null, () => {});
+    }
+  },
   getAnalyses() { return this._get('analyses') || []; },
-  setAnalyses(v) { this._set('analyses', v); },
+  setAnalyses(v) { 
+    this._set('analyses', v); 
+    if (window.supabaseClient && v && v.length > 0) {
+      const batch = v.map(a => ({
+        id: Number(a.id),
+        submission_id: Number(a.submissionId) || 1,
+        mode: a.mode || 'practice',
+        overall_score: Number(a.overall) || 75,
+        breath_score: Number(a.breath) || 75,
+        tail_finish_score: Number(a.tailFinish) || 75,
+        stability_score: Number(a.stability) || 75,
+        pitch_score: Number(a.pitch) || 75,
+        diction_score: Number(a.pronunciation) || 75,
+        volume_score: Number(a.volume) || 75,
+        json_data: JSON.stringify(a)
+      }));
+      window.supabaseClient.from('vocal_analysis_results').upsert(batch, { onConflict: 'id' }).then(null, () => {});
+    }
+  },
   getSongs() { return this._get('songs') || []; },
   setSongs(v) { 
     this._set('songs', v); 
@@ -665,6 +778,13 @@ const Auth = {
     DB.setCurrentSession({ userId: user.id, type, email: cleanEmail });
     State.currentUser = user;
     State.userType = type;
+    if (window.supabaseClient) {
+      DB.initCloud().then(() => {
+        if (State.currentPage === 'student-dashboard' || State.currentPage === 'trainer-dashboard') {
+          renderPage();
+        }
+      });
+    }
     return { ok: true, user };
   },
 
