@@ -355,7 +355,7 @@ const DB = {
 
   seed() {
     const curSongs = this.getSongs() || [];
-    const needSeed = !this._get('seeded') || curSongs.length < 300 || curSongs[5]?.highestNote !== '2옥라#(A#4)';
+    const needSeed = !this._get('seeded') || curSongs.length < 300 || curSongs.find(s => s.id === 201)?.highestNote !== '3옥도#(C#5)';
     
     const curStudents = this._get('students') || [];
     if (curStudents.length === 0) {
@@ -592,10 +592,10 @@ const DB = {
       { id: 198, title: '별빛 같은 나의 사랑아', artist: '임영웅', genre: '트로트/발라드', lowestNote: '1옥도(C3)', highestNote: '2옥솔(G4)', difficulty: 'medium', difficultyScore: 4, highestMidi: 67, gender: 'M', emoji: '' },
       { id: 199, title: '팡파르', artist: '다비치', genre: '발라드/팝', lowestNote: '1옥라(A3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 74, gender: 'F', emoji: '' },
       { id: 200, title: '꿈처럼 내린', artist: '다비치', genre: '발라드', lowestNote: '1옥라(A3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 7, highestMidi: 73, gender: 'F', emoji: '' },
-      { id: 201, title: '사계 (하루살이)', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥파(F5)', difficulty: 'hard', difficultyScore: 10, highestMidi: 77, gender: 'M', emoji: '' },
-      { id: 202, title: '행복하지 말아요', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
-      { id: 203, title: 'One Love', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥레(D5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 74, gender: 'M', emoji: '' },
-      { id: 204, title: '입술의 말', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 201, title: '사계 (하루살이)', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 202, title: '행복하지 말아요', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥레(D3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
+      { id: 203, title: 'One Love', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '' },
+      { id: 204, title: '입술의 말', artist: '이수(M.C the MAX)', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
       { id: 205, title: '나타나', artist: '김범수', genre: '팝/발라드', lowestNote: '1옥레(D3)', highestNote: '2옥시(B4)', difficulty: 'medium', difficultyScore: 7, highestMidi: 71, gender: 'M', emoji: '' },
       { id: 206, title: '사랑해요', artist: '김범수', genre: '발라드', lowestNote: '1옥파(F3)', highestNote: '3옥도(C5)', difficulty: 'hard', difficultyScore: 8, highestMidi: 72, gender: 'M', emoji: '' },
       { id: 207, title: '기억의 빈자리', artist: '나얼', genre: 'R&B/발라드', lowestNote: '1옥솔(G3)', highestNote: '3옥도#(C#5)', difficulty: 'hard', difficultyScore: 9, highestMidi: 73, gender: 'M', emoji: '' },
