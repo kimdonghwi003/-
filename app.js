@@ -1257,6 +1257,11 @@ function renderAnalysis(params) {
       }
     }
     if (window.renderBookmarkListUI) window.renderBookmarkListUI();
+    if (window.calcKaraokeKeyShift && songInfo) {
+      const origN = songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote || '2옥라#(A#4)';
+      const userN = songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)');
+      window.calcKaraokeKeyShift(-2, origN, userN);
+    }
   }, 50);
 
   return `
@@ -1403,6 +1408,45 @@ function renderAnalysis(params) {
           </div>
         </div>
         ` : ''}
+
+        <!-- YouTube Karaoke Accompaniment & Key Shift Comparison Studio (v=35) -->
+        <div class="card mb-24" style="padding:30px; border:2px solid #ec4899; background:linear-gradient(135deg, rgba(236,72,153,0.08), rgba(99,102,241,0.08)); margin-bottom:24px; border-radius:18px; box-shadow:0 10px 28px rgba(236,72,153,0.15)">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border)">
+            <div>
+              <div class="badge mb-6" style="background:#ec4899; color:#fff; font-size:12px; margin-bottom:8px;">🎤 유튜브 노래방 (TJ/KY) 반주 연동 및 키조절 음정 대조 스튜디오</div>
+              <h2 style="font-size:24px; font-weight:900; margin:0; color:var(--text-1); display:flex; align-items:center; gap:8px">
+                📺 유튜브 노래방 반주 즉시 실행 & 리모컨 키 조절 대조
+              </h2>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((songInfo.artist || '') + ' ' + (songInfo.title || '') + ' TJ노래방')}" target="_blank" class="btn btn-sm" style="background:#ff0000; color:#fff; font-weight:800; text-decoration:none;">
+                ▶ TJ 공식 유튜브 반주 열기
+              </a>
+              <a href="https://www.youtube.com/results?search_query=${encodeURIComponent((songInfo.artist || '') + ' ' + (songInfo.title || '') + ' KY금영 노래방')}" target="_blank" class="btn btn-secondary btn-sm" style="font-weight:800; text-decoration:none;">
+                ▶ KY 금영 노래방 열기
+              </a>
+            </div>
+          </div>
+
+          <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid var(--border);">
+            <div style="font-size:15px; font-weight:800; color:var(--text-1); margin-bottom:12px; display:flex; align-items:center; gap:6px">
+              🎹 노래방 키(Key) 조절 대조 시뮬레이터: 기준 원곡(${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}) vs 내 실측 최고음(${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')})
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px">
+              <span class="text-2" style="font-size:13px; font-weight:700">노래방 리모컨 키 선택:</span>
+              <button class="btn btn-xs btn-ghost" onclick="window.calcKaraokeKeyShift(0, '${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}', '${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')}')" id="kk-btn-0" style="border:1px solid var(--border)">원키 (±0)</button>
+              <button class="btn btn-xs btn-ghost" onclick="window.calcKaraokeKeyShift(-1, '${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}', '${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')}')" id="kk-btn--1" style="border:1px solid var(--border)">♭1키 낮춤</button>
+              <button class="btn btn-xs btn-primary" onclick="window.calcKaraokeKeyShift(-2, '${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}', '${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')}')" id="kk-btn--2">♭2키 낮춤 (추천)</button>
+              <button class="btn btn-xs btn-ghost" onclick="window.calcKaraokeKeyShift(-3, '${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}', '${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')}')" id="kk-btn--3" style="border:1px solid var(--border)">♭3키 낮춤</button>
+              <button class="btn btn-xs btn-ghost" onclick="window.calcKaraokeKeyShift(-4, '${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}', '${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')}')" id="kk-btn--4" style="border:1px solid var(--border)">♭4키 낮춤 (여성곡→남성키)</button>
+              <button class="btn btn-xs btn-ghost" onclick="window.calcKaraokeKeyShift(2, '${songInfo.comparativeEval ? songInfo.comparativeEval.origHighestNote : songInfo.highestNote}', '${songInfo.comparativeEval ? songInfo.comparativeEval.userHighestNote : (a.highestNote || '2옥솔(G4)')}')" id="kk-btn-2" style="border:1px solid var(--border)">♯2키 높임</button>
+            </div>
+
+            <div id="karaoke-shift-result" style="padding:16px; background:rgba(16,185,129,0.08); border:1px solid #10b981; border-radius:12px; font-size:14px; line-height:1.6; color:var(--text-1)">
+              계산 중...
+            </div>
+          </div>
+        </div>
 
         <!-- Song Recognition & Visual Pitch Timeline -->
         <div class="card mb-24" style="padding:32px; border:2px solid var(--accent); background:linear-gradient(to bottom right, var(--bg-1), var(--bg-2)); margin-bottom:24px;">
@@ -5004,5 +5048,70 @@ window.VocalAudioDB = {
       return new Promise(resolve => req.onsuccess = () => resolve(req.result || null));
     } catch(e) { return null; }
   }
+};
+
+// ── 유튜브 노래방 (TJ/KY) 반주 키(Key) 조절 대조 시뮬레이터 함수
+window.calcKaraokeKeyShift = function(shift, origNoteStr, userNoteStr) {
+  [-4, -3, -2, -1, 0, 2].forEach(k => {
+    const btn = document.getElementById('kk-btn-' + k);
+    if (btn) {
+      if (k === shift) {
+        btn.className = 'btn btn-xs btn-primary';
+      } else {
+        btn.className = 'btn btn-xs btn-ghost';
+        btn.style.border = '1px solid var(--border)';
+      }
+    }
+  });
+
+  const chromatic = [
+    { note: '1옥도(C3)', hz: 130 }, { note: '1옥도#(C#3)', hz: 138 }, { note: '1옥레(D3)', hz: 146 }, { note: '1옥레#(D#3)', hz: 155 },
+    { note: '1옥미(E3)', hz: 164 }, { note: '1옥파(F3)', hz: 174 }, { note: '1옥파#(F#3)', hz: 185 }, { note: '1옥솔(G3)', hz: 196 },
+    { note: '1옥솔#(G#3)', hz: 207 }, { note: '1옥라(A3)', hz: 220 }, { note: '1옥라#(A#3)', hz: 233 }, { note: '1옥시(B3)', hz: 246 },
+    { note: '2옥도(C4)', hz: 261 }, { note: '2옥도#(C#4)', hz: 277 }, { note: '2옥레(D4)', hz: 293 }, { note: '2옥레#(D#4)', hz: 311 },
+    { note: '2옥미(E4)', hz: 329 }, { note: '2옥파(F4)', hz: 349 }, { note: '2옥파#(F#4)', hz: 369 }, { note: '2옥솔(G4)', hz: 392 },
+    { note: '2옥솔#(G#4)', hz: 415 }, { note: '2옥라(A4)', hz: 440 }, { note: '2옥라#(A#4)', hz: 466 }, { note: '2옥시(B4)', hz: 493 },
+    { note: '3옥도(C5)', hz: 523 }, { note: '3옥도#(C#5)', hz: 554 }, { note: '3옥레(D5)', hz: 587 }, { note: '3옥레#(D#5)', hz: 622 }
+  ];
+
+  const findIdx = (str) => {
+    if (!str) return 22; // default 2옥라#
+    for (let i = 0; i < chromatic.length; i++) {
+      if (str.includes(chromatic[i].note.split('(')[0]) || str.includes(chromatic[i].note.split('(')[1]?.replace(')',''))) {
+        return i;
+      }
+    }
+    return 22;
+  };
+
+  const origIdx = findIdx(origNoteStr);
+  const userIdx = findIdx(userNoteStr);
+  
+  let targetIdx = Math.max(0, Math.min(chromatic.length - 1, origIdx + shift));
+  const targetObj = chromatic[targetIdx];
+  const userObj = chromatic[userIdx];
+
+  const resDiv = document.getElementById('karaoke-shift-result');
+  if (!resDiv) return;
+
+  const diff = userIdx - targetIdx;
+  let statusBadge = '';
+  let advice = '';
+
+  if (diff >= 0) {
+    statusBadge = `<span style="display:inline-block; padding:4px 10px; background:#10b981; color:#fff; font-weight:800; border-radius:8px; margin-bottom:8px;">🎉 노래방 완곡 가능 (100% 음정 일치)</span>`;
+    advice = `선택하신 <b>[${shift === 0 ? '원키' : shift > 0 ? '+' + shift + '키 높임' : shift + '키 낮춤'}]</b> 설정 시 노래방 반주의 최고음은 <b>${targetObj.note} (${targetObj.hz}Hz)</b>로 조절됩니다.<br>회원님의 실측 음역대 최고음인 <b>${userObj.note} (${userObj.hz}Hz)</b> 이내에 완벽히 들어오므로, 고음부 이탈 없이 편안하게 100% 완곡 가능합니다!`;
+  } else if (diff === -1) {
+    statusBadge = `<span style="display:inline-block; padding:4px 10px; background:#f59e0b; color:#fff; font-weight:800; border-radius:8px; margin-bottom:8px;">⚠️ 반음(1키) 도약 도전 구간</span>`;
+    advice = `선택하신 <b>[${shift === 0 ? '원키' : shift > 0 ? '+' + shift + '키 높임' : shift + '키 낮춤'}]</b> 설정 시 노래방 반주 최고음은 <b>${targetObj.note} (${targetObj.hz}Hz)</b>이며, 회원님의 실측 최고음보다 딱 반음(1키) 높습니다.<br>상단 <b>[▶ TJ/KY 공식 유튜브 반주 열기]</b>를 띄워두고 파사지오 구간 복식 호흡 압력을 유지하며 연습해보세요!`;
+  } else {
+    statusBadge = `<span style="display:inline-block; padding:4px 10px; background:#ef4444; color:#fff; font-weight:800; border-radius:8px; margin-bottom:8px;">🚨 음역대 초과 (키 조절 권장)</span>`;
+    advice = `선택하신 설정 시 노래방 최고음은 <b>${targetObj.note} (${targetObj.hz}Hz)</b>로, 회원님의 실측 음역대보다 약 ${Math.abs(diff)}키(반음) 높습니다.<br>노래방 리모컨에서 키를 <b>${shift - Math.abs(diff)}키</b>까지 낮추어 부르시거나, 보컬 트레이너와의 고음 훈련 파트 연습을 권장합니다.`;
+  }
+
+  resDiv.innerHTML = `
+    <div style="margin-bottom:6px;">${statusBadge}</div>
+    <div style="font-size:14px; line-height:1.6; color:var(--text-1);">${advice}</div>
+  `;
 };
 

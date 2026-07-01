@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: implement real mathematical acoustic waveform inspection for dynamic pitch and rhythm anomaly timestamps vs target song (v=34)"
+git commit -m "feat: add YouTube Karaoke (TJ/KY) accompaniment sync & live key shift comparison studio (v=35)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
