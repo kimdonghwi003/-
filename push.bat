@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: massive expansion to 600 songs DB incorporating NamuWiki extreme high pitch (4th/5th octaves) and low pitch masterpieces (v=42)"
+git commit -m "feat: menu unification, gender separation in song selection, and algorithm rename (v=46)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
