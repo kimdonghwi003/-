@@ -1529,13 +1529,13 @@ function renderSubmit() {
         </div>
 
         <!-- Prominent Echo Notice for Practice Mode -->
-        <div id="practice-notice" style="margin-bottom:24px; padding:20px; background:linear-gradient(135deg, rgba(239,68,68,0.12), rgba(249,115,22,0.12)); border:2px solid #ef4444; border-radius:16px; color:#ef4444; box-shadow:0 8px 24px rgba(239,68,68,0.1);">
+        <div id="practice-notice" style="margin-bottom:24px; padding:20px; background:linear-gradient(135deg, rgba(13,148,136,0.12), rgba(6,182,212,0.12)); border:2px solid #0d9488; border-radius:16px; color:#0d9488; box-shadow:0 8px 24px rgba(13,148,136,0.1);">
           <div style="font-size:17px; font-weight:900; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-            🚨 [필독] 에코(Echo) 및 리버브 없는 드라이(Dry) 녹음 필수!
+            [안내] 에코(Echo) 및 리버브 없는 드라이(Dry) 녹음 추천!
           </div>
           <div style="font-size:14px; line-height:1.6; color:var(--text-1); font-weight:600;">
-            연습곡 분석 시 노래방 에코나 울림 효과, 반주 소음이 들어있으면 AI가 주파수를 왜곡하여 가사와 최고음 인식률이 떨어집니다.<br>
-            <span style="color:#ef4444; text-decoration:underline; font-weight:800;">반드시 에코(Echo)가 전혀 없는 깨끗한 목소리(무반주 또는 드라이 보컬) 파일</span>을 업로드해야 AI가 100% 정확하게 분석합니다!
+            연습곡 분석 시 노래방 에코나 울림 효과, 반주 소음이 많으면 AI가 주파수와 가사를 인식하는 정확도가 떨어질 수 있습니다.<br>
+            <span style="color:#0d9488; text-decoration:underline; font-weight:800;">가급적 에코(Echo)가 적거나 없는 깨끗한 목소리(무반주 또는 드라이 보컬) 파일</span>을 업로드하시면 AI가 더욱 정밀하게 분석합니다!
           </div>
         </div>
 
