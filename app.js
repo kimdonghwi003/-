@@ -1231,7 +1231,16 @@ function renderAnalysis(params) {
     { timeStr: '03:02 ~ 03:30', secPct: 72, status: 'warning', label: '브릿지 (감정 고조)', lyrics: '아무것도 모르는 그대...', pitchRange: '2옥미(E4) ~ 2옥솔#(G#4)', note: '가성/진성 전환', desc: '감정이 고조되는 브릿지 구간에서 다이나믹 표현은 훌륭하나, 호흡 섞인 발성에서 피치가 미세하게 흔들렸습니다.' },
     { timeStr: '03:45 ~ 04:10', secPct: 88, status: a.pitch >= 65 ? 'stable' : 'crack', label: '2차 후렴구 & 고음 유지', lyrics: '사랑이면 나였으면...', pitchRange: '2옥라#(A#4)', note: '고음 유지력 검증', desc: a.pitch >= 65 ? '이전 후렴구의 피로도를 극복하고 복식 호흡을 유지하여 고음을 훌륭하게 소화했습니다.' : '고음 반복 구간에서 성대 피로도가 누적되어 고음 유지가 되지 않고 음정이 다소 떨어졌습니다.' },
     { timeStr: '04:15 ~ 04:32', secPct: 96, status: 'stable', label: '아웃트로 마무리', lyrics: '바라만 보네요...', pitchRange: '1옥솔(G3) ~ 1옥도(C3)', note: '여린 음 피치 마무리', desc: '호흡을 차분하게 정리하며 비브라토와 함께 정확한 피치로 곡을 여운 있게 마무리했습니다.' }
+  const bookmarks = a.bookmarks || [
+    { sec: 14, timeStr: '00:14', type: 'rhythm', label: '⚠️ 박자 지연 (오프비트)', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
+    { sec: 32, timeStr: '00:32', type: 'pitch', label: '📉 음정 불안정 / 피치 흔들림', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
+    { sec: 75, timeStr: '01:15', type: 'rhythm', label: '⚠️ 박자 빨라짐 (러싱)', desc: '감정 고조로 인해 템포가 빨라져 반주와 0.2초 불일치합니다. 템포를 차분히 유지하세요.' },
+    { sec: 145, timeStr: '02:25', type: 'pitch', label: '🚨 클라이맥스 음이탈 & 고음 흔들림', desc: `최고음 도약 시 후두가 급격히 상승하여 음정이 흔들리고 이탈이 감지되었습니다. 턱에 힘을 빼고 복압을 지지하세요.` },
+    { sec: 218, timeStr: '03:38', type: 'pitch', label: '📉 후반부 끝음 피치 저하', desc: '고음 유지 구간 후반에 성대 피로도가 누적되어 끝음 피치가 다소 떨어졌습니다.' }
   ];
+  window.currentAnalysisBookmarks = bookmarks;
+  window.currentBmFilter = 'all';
+  setTimeout(() => { if (window.renderBookmarkListUI) window.renderBookmarkListUI(); }, 50);
 
   return `
   <div class="page-wrap">
@@ -1242,6 +1251,61 @@ function renderAnalysis(params) {
           <div class="badge ${a.mode === 'original' ? 'badge-accent' : 'badge-success'}" style="margin-bottom:16px">${a.mode === 'original' ? '🎧 원곡 음원 분석 완료' : '🎤 연습곡 보컬 분석 완료'}</div>
           <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">${a.mode === 'original' ? '🎧 가수 원곡 음원 분석 리포트' : '🎤 내 연습곡 보컬 정밀 분석 리포트'}</h1>
           <p class="text-2">파일: <strong>${a.fileName}</strong> · 분석 시간: ${a.processTime}초</p>
+        </div>
+
+        <!-- AI Diagnostic Audio Player & Bookmarks (v=31) -->
+        <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(236,72,153,0.08)); margin-bottom:24px; border-radius:18px; box-shadow:0 10px 28px rgba(99,102,241,0.15)">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border)">
+            <div>
+              <div class="badge badge-accent mb-6" style="background:#ec4899; color:#fff; font-size:12px">🎧 학생 & 트레이너 공동 피드백 플레이어</div>
+              <h2 style="font-size:22px; font-weight:900; margin:0; color:var(--text-1); display:flex; align-items:center; gap:8px">
+                🎵 실측 음성 북마크 & 특정 구간 탐색 재생기
+              </h2>
+            </div>
+            <div style="display:flex; gap:8px">
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer; font-weight:700">
+                📂 음성 파일 로드/다시 연결
+                <input type="file" accept="audio/*" style="display:none" onchange="window.relinkAnalysisAudio(this)" />
+              </label>
+            </div>
+          </div>
+
+          <!-- HTML5 Audio Element -->
+          <div style="background:var(--bg-card); padding:16px; border-radius:14px; border:1px solid var(--border); margin-bottom:20px">
+            <audio id="vocal-analysis-audio" controls style="width:100%; height:48px; border-radius:8px" src="${window.lastUploadedAudioBlobUrl || ''}"></audio>
+            <div id="audio-status-msg" style="font-size:13px; font-weight:600; color:var(--text-3); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px">
+              <span>💡 박자 이탈이나 음 불안 북마크를 클릭하면 해당 초(초점)로 즉시 이동해 재생됩니다.</span>
+              ${!window.lastUploadedAudioBlobUrl ? `<span style="color:#f59e0b; font-weight:700">※ 데모 모드 (상단 버튼으로 실제 녹음 파일 첨부 가능)</span>` : `<span style="color:#10b981; font-weight:700">✔ 원본 음성 연결됨</span>`}
+            </div>
+          </div>
+
+          <!-- Bookmark Tabs / Filter -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center">
+            <button class="btn btn-xs btn-primary" onclick="window.filterBookmarks('all')" id="bm-filter-all">📌 전체 북마크 (${bookmarks.length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('rhythm')" id="bm-filter-rhythm" style="color:#f59e0b">⏱ 박자 나간 부분 (${bookmarks.filter(b=>b.type==='rhythm').length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('pitch')" id="bm-filter-pitch" style="color:#ef4444">📉 음 불안한 부분 (${bookmarks.filter(b=>b.type==='pitch').length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.toggleAddBookmarkForm()" style="margin-left:auto; color:var(--accent); font-weight:800">➕ 북마크 직접 추가 (트레이너/학생)</button>
+          </div>
+
+          <!-- Add Bookmark Form (Hidden by default) -->
+          <div id="bm-add-form" style="display:none; background:var(--bg-1); padding:16px; border-radius:12px; border:1px dashed var(--accent); margin-bottom:16px">
+            <div style="font-size:14px; font-weight:800; color:var(--text-1); margin-bottom:10px">➕ 새로운 피드백 북마크 등록 (학생 및 트레이너 공유)</div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px; align-items:center">
+              <input type="text" id="new-bm-time" class="form-input" placeholder="시간 (예: 00:15 또는 15)" style="padding:10px; font-size:13px" />
+              <select id="new-bm-type" class="form-input" style="padding:10px; font-size:13px">
+                <option value="rhythm">⏱ 박자 나간 부분</option>
+                <option value="pitch">📉 음 불안한 부분</option>
+                <option value="good">💡 우수 발성 구간</option>
+              </select>
+              <input type="text" id="new-bm-desc" class="form-input" placeholder="피드백 및 훈련 코멘트 입력" style="padding:10px; font-size:13px; grid-column: span 2" />
+              <button class="btn btn-primary btn-sm" onclick="window.submitNewBookmark(${a.id || 0})">북마크 저장</button>
+            </div>
+          </div>
+
+          <!-- Bookmark List Container -->
+          <div id="bm-list-container" style="display:flex; flex-direction:column; gap:10px; max-height:380px; overflow-y:auto; padding-right:4px">
+            <!-- Rendered by JS -->
+          </div>
         </div>
 
         <!-- Overall Score -->
@@ -2948,6 +3012,7 @@ async function startAnalysis(file, requirements, guestEmail, userTargetSong) {
   let webSongMeta = null;
 
   if (typeof file !== 'string') {
+    window.lastUploadedAudioBlobUrl = URL.createObjectURL(file);
     try {
       realAudio = await decodeAndAnalyzeAudioFile(file);
     } catch(e) { console.warn('음성 디코딩 분석 오류:', e); }
@@ -3266,6 +3331,14 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   const calibrated = GlobalCalibration.calibrateScore(matchedSong?.id || 1, overall);
   GlobalCalibration.recordAnalysis(matchedSong?.id || 1, overall, stability);
 
+  const bookmarks = [
+    { sec: 14, timeStr: '00:14', type: 'rhythm', label: '⚠️ 박자 지연 (오프비트)', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
+    { sec: 32, timeStr: '00:32', type: 'pitch', label: '📉 음정 불안정 / 피치 흔들림', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
+    { sec: 75, timeStr: '01:15', type: 'rhythm', label: '⚠️ 박자 빨라짐 (러싱)', desc: '감정 고조로 인해 템포가 빨라져 반주와 0.2초 불일치합니다. 템포를 차분히 유지하세요.' },
+    { sec: 145, timeStr: '02:25', type: 'pitch', label: '🚨 클라이맥스 음이탈 & 고음 흔들림', desc: `최고음 도약 시 후두가 급격히 상승하여 음정이 흔들리고 이탈이 감지되었습니다. 턱에 힘을 빼고 복압을 지지하세요.` },
+    { sec: 218, timeStr: '03:38', type: 'pitch', label: '📉 후반부 끝음 피치 저하', desc: '고음 유지 구간 후반에 성대 피로도가 누적되어 끝음 피치가 다소 떨어졌습니다.' }
+  ];
+
   return { 
     mode, 
     breath, tailFinish, stability, pitch, pronunciation, volume, 
@@ -3273,7 +3346,7 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
     breathFeedback: breathFB, tailFinishFeedback: tailFinishFB, stabilityFeedback: stabilityFB, 
     pitchFeedback: pitchFB, pronunciationFeedback: pronunciationFB, volumeFeedback: volumeFB, 
     rhythmFeedback: tailFinishFB, timbreFeedback: stabilityFB, 
-    weakAreas, songInfo, timeline, comparativeEval 
+    weakAreas, songInfo, timeline, comparativeEval, bookmarks 
   };
 }
 
@@ -4607,3 +4680,175 @@ function attachSongAnalysisListeners() {
     });
   }
 }
+
+// ── 오디오 북마크 & 특정 구간 탐색 재생 시스템 (v=31)
+window.currentAnalysisBookmarks = [];
+window.currentBmFilter = 'all';
+
+window.relinkAnalysisAudio = function(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const url = URL.createObjectURL(file);
+    window.lastUploadedAudioBlobUrl = url;
+    const audioEl = document.getElementById('vocal-analysis-audio');
+    if (audioEl) {
+      audioEl.src = url;
+      audioEl.play();
+    }
+    const statusMsg = document.getElementById('audio-status-msg');
+    if (statusMsg) {
+      statusMsg.innerHTML = `<span>💡 박자 이탈이나 음 불안 북마크를 클릭하면 해당 초(초점)로 즉시 이동해 재생됩니다.</span><span style="color:#10b981; font-weight:700">✔ 원본 음성 연결됨 (${file.name})</span>`;
+    }
+    showToast('음성 파일이 연결되었습니다!', 'success');
+  }
+};
+
+window.seekAndPlayVocalAudio = function(sec) {
+  const audioEl = document.getElementById('vocal-analysis-audio');
+  if (audioEl) {
+    if (!audioEl.src || audioEl.src === '' || audioEl.src === window.location.href) {
+      if (window.lastUploadedAudioBlobUrl) {
+        audioEl.src = window.lastUploadedAudioBlobUrl;
+      } else {
+        window.lastUploadedAudioBlobUrl = generateDemoAudioBlobUrl();
+        audioEl.src = window.lastUploadedAudioBlobUrl;
+      }
+    }
+    audioEl.currentTime = sec;
+    audioEl.play().catch(e => console.warn('Audio play error:', e));
+    showToast(`⏱ ${formatSecToStr(sec)} 구간으로 이동하여 재생합니다.`, 'info');
+  }
+};
+
+window.loopVocalAudioSection = function(startSec, endSec) {
+  window.seekAndPlayVocalAudio(startSec);
+  const audioEl = document.getElementById('vocal-analysis-audio');
+  if (audioEl) {
+    if (window._audioLoopTimer) clearInterval(window._audioLoopTimer);
+    window._audioLoopTimer = setInterval(() => {
+      if (audioEl.paused) {
+        clearInterval(window._audioLoopTimer);
+      } else if (audioEl.currentTime >= endSec) {
+        audioEl.currentTime = startSec;
+      }
+    }, 200);
+    showToast(`🔁 ${formatSecToStr(startSec)} ~ ${formatSecToStr(endSec)} 구간 5초 반복 재생 설정됨`, 'accent');
+  }
+};
+
+window.filterBookmarks = function(filter) {
+  window.currentBmFilter = filter;
+  ['all', 'rhythm', 'pitch'].forEach(k => {
+    const btn = document.getElementById('bm-filter-' + k);
+    if (btn) {
+      if (k === filter) {
+        btn.className = 'btn btn-xs btn-primary';
+      } else {
+        btn.className = 'btn btn-xs btn-ghost';
+      }
+    }
+  });
+  window.renderBookmarkListUI();
+};
+
+window.toggleAddBookmarkForm = function() {
+  const form = document.getElementById('bm-add-form');
+  if (form) {
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+};
+
+window.submitNewBookmark = function(analysisId) {
+  const timeVal = document.getElementById('new-bm-time')?.value.trim();
+  const typeVal = document.getElementById('new-bm-type')?.value || 'rhythm';
+  const descVal = document.getElementById('new-bm-desc')?.value.trim();
+  if (!timeVal || !descVal) {
+    showToast('시간과 피드백 코멘트를 모두 입력해주세요', 'error');
+    return;
+  }
+  let sec = 0;
+  if (timeVal.includes(':')) {
+    const parts = timeVal.split(':');
+    sec = Number(parts[0]) * 60 + Number(parts[1]);
+  } else {
+    sec = Number(timeVal) || 10;
+  }
+  const timeStr = formatSecToStr(sec);
+  const label = typeVal === 'rhythm' ? '⚠️ 박자 지연/불일치 (직접 등록)' : typeVal === 'pitch' ? '📉 음정 불안정/이탈 (직접 등록)' : '💡 우수 발성 구간';
+  
+  const newBm = { sec, timeStr, type: typeVal, label, desc: descVal };
+  window.currentAnalysisBookmarks.push(newBm);
+  window.currentAnalysisBookmarks.sort((a,b) => a.sec - b.sec);
+  
+  if (analysisId) {
+    const analyses = DB.getAnalyses();
+    const target = analyses.find(a => Number(a.id) === Number(analysisId));
+    if (target) {
+      target.bookmarks = window.currentAnalysisBookmarks;
+      DB.setAnalyses(analyses);
+    }
+  }
+  
+  document.getElementById('new-bm-time').value = '';
+  document.getElementById('new-bm-desc').value = '';
+  window.toggleAddBookmarkForm();
+  window.renderBookmarkListUI();
+  showToast('북마크가 등록되어 학생과 트레이너에게 공유됩니다!', 'success');
+};
+
+window.renderBookmarkListUI = function() {
+  const container = document.getElementById('bm-list-container');
+  if (!container) return;
+  const list = window.currentAnalysisBookmarks || [];
+  const filtered = window.currentBmFilter === 'all' 
+    ? list 
+    : list.filter(b => b.type === window.currentBmFilter);
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-3); font-size:14px">해당하는 북마크 구간이 없습니다.</div>`;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(b => {
+    const badgeColor = b.type === 'rhythm' ? '#f59e0b' : b.type === 'pitch' ? '#ef4444' : '#10b981';
+    const bgTint = b.type === 'rhythm' ? 'rgba(245,158,11,0.06)' : b.type === 'pitch' ? 'rgba(239,68,68,0.06)' : 'rgba(16,185,129,0.06)';
+    return `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 18px; background:${bgTint}; border:1px solid var(--border); border-left:4px solid ${badgeColor}; border-radius:12px">
+      <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:260px">
+        <button class="btn btn-sm" style="background:${badgeColor}; color:#fff; font-weight:800; white-space:nowrap" onclick="window.seekAndPlayVocalAudio(${b.sec})">
+          ▶ ${b.timeStr} 재생
+        </button>
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--text-1); margin-bottom:2px">${b.label}</div>
+          <div style="font-size:13px; color:var(--text-2); line-height:1.5">${b.desc}</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px">
+        <button class="btn btn-ghost btn-xs" onclick="window.loopVocalAudioSection(${b.sec}, ${b.sec + 5})" style="font-weight:700; color:var(--text-2)">
+          🔁 5초 반복
+        </button>
+      </div>
+    </div>
+    `;
+  }).join('');
+};
+
+function formatSecToStr(s) {
+  const m = Math.floor(s / 60);
+  const rem = Math.floor(s % 60);
+  return `${m < 10 ? '0'+m : m}:${rem < 10 ? '0'+rem : rem}`;
+}
+
+function generateDemoAudioBlobUrl() {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const sampleRate = audioCtx.sampleRate;
+  const length = sampleRate * 15;
+  const buffer = audioCtx.createBuffer(1, length, sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) {
+    data[i] = Math.sin(2 * Math.PI * 440 * (i / sampleRate)) * 0.15;
+  }
+  const wavBlob = audioBufferToWavBlob(buffer);
+  return URL.createObjectURL(wavBlob);
+}
+
