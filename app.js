@@ -1231,6 +1231,8 @@ function renderAnalysis(params) {
     { timeStr: '03:02 ~ 03:30', secPct: 72, status: 'warning', label: '브릿지 (감정 고조)', lyrics: '아무것도 모르는 그대...', pitchRange: '2옥미(E4) ~ 2옥솔#(G#4)', note: '가성/진성 전환', desc: '감정이 고조되는 브릿지 구간에서 다이나믹 표현은 훌륭하나, 호흡 섞인 발성에서 피치가 미세하게 흔들렸습니다.' },
     { timeStr: '03:45 ~ 04:10', secPct: 88, status: a.pitch >= 65 ? 'stable' : 'crack', label: '2차 후렴구 & 고음 유지', lyrics: '사랑이면 나였으면...', pitchRange: '2옥라#(A#4)', note: '고음 유지력 검증', desc: a.pitch >= 65 ? '이전 후렴구의 피로도를 극복하고 복식 호흡을 유지하여 고음을 훌륭하게 소화했습니다.' : '고음 반복 구간에서 성대 피로도가 누적되어 고음 유지가 되지 않고 음정이 다소 떨어졌습니다.' },
     { timeStr: '04:15 ~ 04:32', secPct: 96, status: 'stable', label: '아웃트로 마무리', lyrics: '바라만 보네요...', pitchRange: '1옥솔(G3) ~ 1옥도(C3)', note: '여린 음 피치 마무리', desc: '호흡을 차분하게 정리하며 비브라토와 함께 정확한 피치로 곡을 여운 있게 마무리했습니다.' }
+  ];
+
   const bookmarks = a.bookmarks || [
     { sec: 14, timeStr: '00:14', type: 'rhythm', label: '⚠️ 박자 지연 (오프비트)', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
     { sec: 32, timeStr: '00:32', type: 'pitch', label: '📉 음정 불안정 / 피치 흔들림', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
