@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="100%" height="100%" style="background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <defs>
+    <style>
+      .title { font-size: 26px; font-weight: 700; fill: #f8fafc; letter-spacing: -0.5px; }
+      .subtitle { font-size: 15px; font-weight: 400; fill: #94a3b8; }
+      .step-header { font-size: 13px; font-weight: 600; fill: #0d9488; letter-spacing: 1px; }
+      .col-header { font-size: 16px; font-weight: 700; fill: #f8fafc; letter-spacing: 0.5px; }
+      .box-title { font-size: 17px; font-weight: 600; fill: #f8fafc; }
+      .box-desc { font-size: 13px; font-weight: 400; fill: #cbd5e1; line-height: 1.6; }
+      .sub-box-text { font-size: 13px; font-weight: 500; fill: #e2e8f0; }
+      .border-box { fill: #1e293b; stroke: #334155; stroke-width: 1.5px; }
+      .accent-box { fill: #132337; stroke: #0d9488; stroke-width: 1.5px; }
+      .inner-box { fill: #0f172a; stroke: #334155; stroke-width: 1px; }
+    </style>
+    <marker id="arrow-mono" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Title Section -->
+  <g transform="translate(600, 60)" text-anchor="middle">
+    <text x="0" y="0" class="title">보컬 약점 기반 맞춤형 트레이너 매칭 시스템 아키텍처</text>
+    <text x="0" y="30" class="subtitle">사용자 음성 정량 보컬 약점 데이터와 트레이너별 보완 전문성 데이터 교차 매칭 매트릭스</text>
+  </g>
+
+  <!-- Left Column: User Quantitative Vocal Weakness Extraction -->
+  <g transform="translate(60, 130)">
+    <!-- Column Header -->
+    <rect width="520" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="260" y="28" class="col-header" text-anchor="middle">USER DATA. 사용자 정량 보컬 약점 데이터 추출</text>
+
+    <!-- Step U1 -->
+    <g transform="translate(0, 64)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">PHASE U-1. 6-AXIS METRIC EVALUATION</text>
+      <text x="24" y="54" class="box-title">음성 분석 도출 6대 항목 계량 점수화</text>
+      <text x="24" y="80" class="box-desc">음정 정밀도, 박자 리듬감, 발성 안정성, 호흡 지지력, 성량 강약 조절, 발음 명료도의 실측 백분율 데이터 로드 • 가창 오디오 파형 정밀 DSP 연산 결과 반영</text>
+    </g>
+
+    <path d="M 260 169 L 260 195" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step U2 -->
+    <g transform="translate(0, 195)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">PHASE U-2. WEAKNESS THRESHOLD FILTERING</text>
+      <text x="24" y="54" class="box-title">취약 역량 식별 및 우선순위 결정</text>
+      <text x="24" y="80" class="box-desc">임계치(기준 점수 하회 대역) 자동 필터링 • 예: 고음 파사지오 구간 호흡 불안정 1순위, 믹스보이스 성대 접촉 약화 2순위 취약 항목 식별</text>
+    </g>
+
+    <path d="M 260 300 L 260 326" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step U3 -->
+    <g transform="translate(0, 326)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#0d9488"/>
+      <text x="24" y="28" class="step-header">PHASE U-3. WEAKNESS VECTORIZATION</text>
+      <text x="24" y="54" class="box-title">사용자 정량 약점 프로필 벡터 (W_user) 구성</text>
+      <text x="24" y="80" class="box-desc">정량화된 취약도 지수를 N차원 벡터로 변형 • [Pitch_Deficit, Breath_Instability, Passaggio_Gap, Tone_Weakness] 벡터 행렬 확정</text>
+    </g>
+  </g>
+
+  <!-- Right Column: Trainer Specialty & Reinforcement Expertise -->
+  <g transform="translate(620, 130)">
+    <!-- Column Header -->
+    <rect width="520" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="260" y="28" class="col-header" text-anchor="middle">TRAINER DATA. 트레이너별 보완 전문성 데이터베이스</text>
+
+    <!-- Step T1 -->
+    <g transform="translate(0, 64)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">PHASE T-1. EXPERTISE INDEXING</text>
+      <text x="24" y="54" class="box-title">트레이너 코칭 이력 및 전문 커리큘럼 인덱싱</text>
+      <text x="24" y="80" class="box-desc">소속 트레이너별 레슨 데이터, 수강생 실력 향상도 통계, 전문 교정 분야(고음 발성, 벨팅, 딕션, 횡격막 호흡) 메타데이터 정밀 파싱</text>
+    </g>
+
+    <path d="M 260 169 L 260 195" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step T2 -->
+    <g transform="translate(0, 195)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">PHASE T-2. SPECIALTY MATRIX MAPPING</text>
+      <text x="24" y="54" class="box-title">분야별 보완 가중치 매트릭스 태깅</text>
+      <text x="24" y="80" class="box-desc">항목별 해결 역량 가중치 부여 • 예: 고음 파사지오 교정 0.95, 복식 호흡 지지 0.90, 리듬 그루브 0.85 등의 역량 지수 표준화</text>
+    </g>
+
+    <path d="M 260 300 L 260 326" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step T3 -->
+    <g transform="translate(0, 326)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#0d9488"/>
+      <text x="24" y="28" class="step-header">PHASE T-3. EXPERTISE VECTORIZATION</text>
+      <text x="24" y="54" class="box-title">트레이너 보완 전문성 프로필 벡터 (S_trainer) 구성</text>
+      <text x="24" y="80" class="box-desc">사용자 약점 벡터와 1:1 대조 가능한 표준화 N차원 행렬 정렬 • [Pitch_Remedy, Breath_Reinforce, Passaggio_Mastery] 특성 지표화</text>
+    </g>
+  </g>
+
+  <!-- Convergence Arrows -->
+  <path d="M 320 561 L 580 610" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+  <path d="M 880 561 L 620 610" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+
+  <!-- Core Matching Engine -->
+  <g transform="translate(100, 610)">
+    <rect width="1000" height="250" rx="12" class="accent-box"/>
+    <rect x="0" y="0" width="6" height="250" rx="3" fill="#0d9488"/>
+    <text x="500" y="34" class="step-header" text-anchor="middle">MATCHING ENGINE. CROSS-WEIGHTED ALGORITHM &amp; CURATION OUTPUT</text>
+    <text x="500" y="64" class="box-title" text-anchor="middle">정량 약점 벡터(W_user) × 보완 전문성 벡터(S_trainer) 내적 연산 및 맞춤 매칭</text>
+
+    <!-- 3 Core Engine Logic Cards -->
+    <g transform="translate(35, 92)">
+      <rect width="295" height="120" rx="8" class="inner-box"/>
+      <text x="147.5" y="30" class="step-header" text-anchor="middle">SIMILARITY SCORING</text>
+      <text x="147.5" y="56" class="sub-box-text" text-anchor="middle">내적 가중치 적합도 연산</text>
+      <text x="147.5" y="82" class="box-desc" text-anchor="middle">Score = Σ (W_user × S_trainer)</text>
+      <text x="147.5" y="102" class="box-desc" text-anchor="middle">약점 항목과 보완 전문성 일치도 극대화</text>
+    </g>
+    <g transform="translate(352.5, 92)">
+      <rect width="295" height="120" rx="8" class="inner-box"/>
+      <text x="147.5" y="30" class="step-header" text-anchor="middle">CONSTRAINT FILTERING</text>
+      <text x="147.5" y="56" class="sub-box-text" text-anchor="middle">성별 및 장르 선호도 제약 필터</text>
+      <text x="147.5" y="82" class="box-desc" text-anchor="middle">남/녀 성대 구조적 발성 특성 대조</text>
+      <text x="147.5" y="102" class="box-desc" text-anchor="middle">선호 장르 및 수강 시간대 매칭 검증</text>
+    </g>
+    <g transform="translate(670, 92)">
+      <rect width="295" height="120" rx="8" class="inner-box"/>
+      <text x="147.5" y="30" class="step-header" text-anchor="middle">CURATION &amp; BOOKING</text>
+      <text x="147.5" y="56" class="sub-box-text" text-anchor="middle">1:1 맞춤 트레이너 추천 발급</text>
+      <text x="147.5" y="82" class="box-desc" text-anchor="middle">최적 적합도 순위 랭킹 리포트 제공</text>
+      <text x="147.5" y="102" class="box-desc" text-anchor="middle">약점 교정 커리큘럼 미리보기 연동</text>
+    </g>
+  </g>
+</svg>
