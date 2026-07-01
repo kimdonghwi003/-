@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "fix: replace harsh 440Hz beep demo audio with soft vocal piano melody & persist recorded audio files in IndexedDB (v=33)"
+git commit -m "feat: implement real mathematical acoustic waveform inspection for dynamic pitch and rhythm anomaly timestamps vs target song (v=34)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
