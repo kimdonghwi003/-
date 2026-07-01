@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 960" width="100%" height="100%" style="background: #0f172a; font-family: 'Pretendard', 'Inter', -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="bg-grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="card-grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.08)"/>
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.02)"/>
+    </linearGradient>
+    <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="violet-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="green-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="shadow2" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#06b6d4"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="960" fill="url(#bg-grad2)"/>
+
+  <!-- Title Section -->
+  <g transform="translate(600, 60)" text-anchor="middle">
+    <text x="0" y="0" fill="#ffffff" font-size="32" font-weight="900" letter-spacing="-0.5">🎙️ 곡 분석 (원곡 분석 &amp; 연습곡 분석) 핵심 프로세스 도식화</text>
+    <text x="0" y="32" fill="#94a3b8" font-size="16" font-weight="500">가수 원곡 음원 분석과 내 오디오 녹음 분석 투트랙(Two-Track) AI 진단 파이프라인</text>
+  </g>
+
+  <!-- Track A: Original Song Analysis -->
+  <g transform="translate(60, 130)">
+    <!-- Header -->
+    <rect width="520" height="50" rx="12" fill="url(#cyan-grad)"/>
+    <text x="260" y="32" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🎧 TRACK A. 원곡 분석 (가수 원곡 음원)</text>
+
+    <!-- Step A1 -->
+    <g transform="translate(0, 70)" filter="url(#shadow2)">
+      <rect width="520" height="110" rx="14" fill="url(#card-grad2)" stroke="#06b6d4" stroke-width="2"/>
+      <text x="25" y="30" fill="#38bdf8" font-size="14" font-weight="800">1. 음원 파일 업로드 &amp; 백엔드 분기</text>
+      <text x="25" y="58" fill="#ffffff" font-size="16" font-weight="700">MP3 / WAV 파일 드래그 앤 드롭 입력</text>
+      <text x="25" y="85" fill="#cbd5e1" font-size="13">• 정밀 분석 서버: Demucs 반주 분리 순수 보컬 추출</text>
+      <text x="25" y="102" fill="#cbd5e1" font-size="13">• 브라우저 모드: Web Audio API 초고속 로딩 분석</text>
+    </g>
+
+    <path d="M 260 180 L 260 210" stroke="#06b6d4" stroke-width="3" fill="none" marker-end="url(#arrow2)"/>
+
+    <!-- Step A2 -->
+    <g transform="translate(0, 210)" filter="url(#shadow2)">
+      <rect width="520" height="110" rx="14" fill="url(#card-grad2)" stroke="#06b6d4" stroke-width="2"/>
+      <text x="25" y="30" fill="#38bdf8" font-size="14" font-weight="800">2. F0 주파수 피치 추적 (Pitch Tracking)</text>
+      <text x="25" y="58" fill="#ffffff" font-size="16" font-weight="700">FFT 및 Autocorrelation 피치 연산</text>
+      <text x="25" y="85" fill="#cbd5e1" font-size="13">• 초당 수백 회 피치 탐지로 최고음 주파수(Hz) 산출</text>
+      <text x="25" y="102" fill="#cbd5e1" font-size="13">• 음악 MIDI 옥타브 매칭 (예: 523Hz ➔ 3옥 도 C5)</text>
+    </g>
+
+    <path d="M 260 320 L 260 350" stroke="#06b6d4" stroke-width="3" fill="none" marker-end="url(#arrow2)"/>
+
+    <!-- Step A3 -->
+    <g transform="translate(0, 350)" filter="url(#shadow2)">
+      <rect width="520" height="110" rx="14" fill="url(#card-grad2)" stroke="#06b6d4" stroke-width="2"/>
+      <text x="25" y="30" fill="#38bdf8" font-size="14" font-weight="800">3. 원곡 난이도 및 대역 판정</text>
+      <text x="25" y="58" fill="#ffffff" font-size="16" font-weight="700">600곡 데이터베이스 연동 자동 비교</text>
+      <text x="25" y="85" fill="#cbd5e1" font-size="13">• 음역 한계 및 곡 난이도 점수(1~10점) 진단</text>
+      <text x="25" y="102" fill="#cbd5e1" font-size="13">• 분석 완료 리스트(사건 로그)에 카드 형태로 저장</text>
+    </g>
+  </g>
+
+  <!-- Track B: Practice Song Analysis -->
+  <g transform="translate(620, 130)">
+    <!-- Header -->
+    <rect width="520" height="50" rx="12" fill="url(#violet-grad)"/>
+    <text x="260" y="32" fill="#ffffff" font-size="18" font-weight="800" text-anchor="middle">🎤 TRACK B. 연습곡 보컬 분석 (내 목소리 녹음)</text>
+
+    <!-- Step B1 -->
+    <g transform="translate(0, 70)" filter="url(#shadow2)">
+      <rect width="520" height="110" rx="14" fill="url(#card-grad2)" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="25" y="30" fill="#e879f9" font-size="14" font-weight="800">1. 실시간 보컬 녹음 또는 연습 파일 입력</text>
+      <text x="25" y="58" fill="#ffffff" font-size="16" font-weight="700">노래방 에코 없는 드라이(Dry) 오디오 입력</text>
+      <text x="25" y="85" fill="#cbd5e1" font-size="13">• 마이크 입력 또는 내 가창 녹음 파일 로드</text>
+      <text x="25" y="102" fill="#cbd5e1" font-size="13">• 에코/울림 감지 시 AI 피치 왜곡 방지 안내 메시지</text>
+    </g>
+
+    <path d="M 260 180 L 260 210" stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#arrow2)"/>
+
+    <!-- Step B2 -->
+    <g transform="translate(0, 210)" filter="url(#shadow2)">
+      <rect width="520" height="110" rx="14" fill="url(#card-grad2)" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="25" y="30" fill="#e879f9" font-size="14" font-weight="800">2. Web Audio DSP 목소리 파형 정밀 분리</text>
+      <text x="25" y="58" fill="#ffffff" font-size="16" font-weight="700">BiquadFilterNode &amp; VAD 노이즈 게이트 적용</text>
+      <text x="25" y="85" fill="#cbd5e1" font-size="13">• 85Hz 이하 Highpass: 쿵 소리/러블 저음 노이즈 제거</text>
+      <text x="25" y="102" fill="#cbd5e1" font-size="13">• 2200Hz 이상 Lowpass &amp; RMS &lt; 0.015 침묵 제거</text>
+    </g>
+
+    <path d="M 260 320 L 260 350" stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#arrow2)"/>
+
+    <!-- Step B3 -->
+    <g transform="translate(0, 350)" filter="url(#shadow2)">
+      <rect width="520" height="110" rx="14" fill="url(#card-grad2)" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="25" y="30" fill="#e879f9" font-size="14" font-weight="800">3. 6대 핵심 평가 항목 심층 분석</text>
+      <text x="25" y="58" fill="#ffffff" font-size="16" font-weight="700">정육각형 레이더 차트 다각도 진단</text>
+      <text x="25" y="85" fill="#cbd5e1" font-size="13">• 음정 / 박자 / 발성 안정성 / 호흡 지지력 점수화</text>
+      <text x="25" y="102" fill="#cbd5e1" font-size="13">• 성량 강약 조절 / 발음 명료도 종합 역량 진단</text>
+    </g>
+  </g>
+
+  <!-- Convergence Arrow -->
+  <path d="M 320 600 L 580 660" stroke="#10b981" stroke-width="4" fill="none"/>
+  <path d="M 880 600 L 620 660" stroke="#10b981" stroke-width="4" fill="none"/>
+
+  <!-- STEP 4: Comprehensive Convergence Evaluation -->
+  <g transform="translate(100, 660)" filter="url(#shadow2)">
+    <rect width="1000" height="230" rx="20" fill="url(#card-grad2)" stroke="#10b981" stroke-width="3"/>
+    <rect x="0" y="0" width="12" height="230" rx="6" fill="url(#green-grad)"/>
+    <text x="500" y="38" fill="#34d399" font-size="16" font-weight="800" text-anchor="middle">★ TRACK A + TRACK B 융합: 원곡 대비 보컬 완성도 정밀 진단 (generateAnalysis)</text>
+    <text x="500" y="70" fill="#ffffff" font-size="22" font-weight="900" text-anchor="middle">🏆 남/녀 성별 맞춤 교차 보정 &amp; 완곡 가능성 종합 리포트 발급</text>
+
+    <!-- 3 Core Report Sections -->
+    <g transform="translate(40, 100)">
+      <rect width="290" height="100" rx="12" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="145" y="30" fill="#34d399" font-size="14" font-weight="800" text-anchor="middle">정밀 피치 도달율 비교</text>
+      <text x="145" y="55" fill="#ffffff" font-size="13" text-anchor="middle">원곡 최고음 vs 내 실측 최고음</text>
+      <text x="145" y="75" fill="#cbd5e1" font-size="12" text-anchor="middle">남/녀 성별 불일치 시 보정 계수 적용</text>
+    </g>
+    <g transform="translate(355, 100)">
+      <rect width="290" height="100" rx="12" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="145" y="30" fill="#34d399" font-size="14" font-weight="800" text-anchor="middle">완곡 등급 판정</text>
+      <text x="145" y="55" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">S / A / B / C 등급 판정</text>
+      <text x="145" y="75" fill="#cbd5e1" font-size="12" text-anchor="middle">종합 60% + 최고음 도달 40% 산출</text>
+    </g>
+    <g transform="translate(670, 100)">
+      <rect width="290" height="100" rx="12" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="145" y="30" fill="#34d399" font-size="14" font-weight="800" text-anchor="middle">성별 1:1 맞춤 진단 피드백</text>
+      <text x="145" y="55" fill="#ffffff" font-size="13" text-anchor="middle">파사지오 극복 &amp; 호흡 압력 가이드</text>
+      <text x="145" y="75" fill="#cbd5e1" font-size="12" text-anchor="middle">추천 키조절(-4키/+4키) 솔루션 연동</text>
+    </g>
+  </g>
+</svg>

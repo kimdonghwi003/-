@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" width="100%" height="100%" style="background: #0f172a; font-family: 'Pretendard', 'Inter', -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.08)"/>
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.02)"/>
+    </linearGradient>
+    <linearGradient id="primary-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="pink-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+    <linearGradient id="blue-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#eab308"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#8b5cf6"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="850" fill="url(#bg-grad)"/>
+
+  <!-- Title Section -->
+  <g transform="translate(600, 60)" text-anchor="middle">
+    <text x="0" y="0" fill="#ffffff" font-size="32" font-weight="900" letter-spacing="-0.5">🎯 맞춤 곡 추천 (사용자 맞춤 알고리즘) 핵심 프로세스 도식화</text>
+    <text x="0" y="32" fill="#94a3b8" font-size="16" font-weight="500">남/녀 성별 식별 및 10곡 취향·음역대 종합 연산 메커니즘</text>
+  </g>
+
+  <!-- STEP 1: User Profile & Gender -->
+  <g transform="translate(100, 140)" filter="url(#shadow)">
+    <rect width="1000" height="110" rx="16" fill="url(#card-grad)" stroke="#6366f1" stroke-width="2"/>
+    <rect x="0" y="0" width="10" height="110" rx="4" fill="url(#primary-grad)"/>
+    <text x="40" y="38" fill="#a855f7" font-size="14" font-weight="800">STEP 1. 사용자 계정 및 보컬 파라미터 초기화</text>
+    <text x="40" y="68" fill="#ffffff" font-size="20" font-weight="800">👤 회원 성별(남성 👨 / 여성 👩) 및 기본 파사지오 대역 설정</text>
+    <text x="40" y="92" fill="#cbd5e1" font-size="14" font-weight="400">회원가입 및 프로필에서 선택한 성별 데이터베이스 로드 ➔ 남/녀 고유 성대 진동수 및 고음 한계치 매칭 기준점 수립</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <path d="M 600 250 L 600 280" stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- STEP 2: Song Input (2 Columns) -->
+  <g transform="translate(100, 290)">
+    <!-- Taste Songs -->
+    <g transform="translate(0, 0)" filter="url(#shadow)">
+      <rect width="485" height="140" rx="16" fill="url(#card-grad)" stroke="#ec4899" stroke-width="2"/>
+      <rect x="0" y="0" width="10" height="140" rx="4" fill="url(#pink-grad)"/>
+      <text x="30" y="35" fill="#f43f5e" font-size="14" font-weight="800">STEP 2-A. 선호 장르 데이터 수집</text>
+      <text x="30" y="65" fill="#ffffff" font-size="18" font-weight="800">❤️ 평소 좋아하는 취향 노래 (5곡)</text>
+      <text x="30" y="90" fill="#cbd5e1" font-size="13">상단 성별 필터 [👫전체 / 👨남성곡 / 👩여성곡] 활용</text>
+      <text x="30" y="115" fill="#94a3b8" font-size="13">➔ 선호 장르 분포도 및 아티스트 가중치 연산</text>
+    </g>
+
+    <!-- Mastered Songs -->
+    <g transform="translate(515, 0)" filter="url(#shadow)">
+      <rect width="485" height="140" rx="16" fill="url(#card-grad)" stroke="#3b82f6" stroke-width="2"/>
+      <rect x="0" y="0" width="10" height="140" rx="4" fill="url(#blue-grad)"/>
+      <text x="30" y="35" fill="#38bdf8" font-size="14" font-weight="800">STEP 2-B. 실측 음역대 한계 파악</text>
+      <text x="30" y="65" fill="#ffffff" font-size="18" font-weight="800">🎤 현재 완창 가능한 애창곡 (5곡)</text>
+      <text x="30" y="90" fill="#cbd5e1" font-size="13">남/녀 배지 [👨남] [👩여] 직관적 선택 가능</text>
+      <text x="30" y="115" fill="#94a3b8" font-size="13">➔ 평균 최고음 MIDI 피치 &amp; 난이도 수용 능력 추출</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -->
+  <path d="M 342 430 L 500 470" stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 857 430 L 700 470" stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- STEP 3: Algorithm Core Engine -->
+  <g transform="translate(100, 480)" filter="url(#shadow)">
+    <rect width="1000" height="150" rx="20" fill="rgba(30, 27, 75, 0.8)" stroke="#a855f7" stroke-width="3"/>
+    <text x="500" y="38" fill="#e879f9" font-size="15" font-weight="800" text-anchor="middle">STEP 3. 사용자 맞춤 알고리즘 실행 (runComprehensiveSongAI)</text>
+    <text x="500" y="70" fill="#ffffff" font-size="22" font-weight="900" text-anchor="middle">🤖 600곡 전수 조사 교차 분석 및 남/녀 키 조절 가이드 산출</text>
+    
+    <!-- 3 Mini logic boxes inside engine -->
+    <g transform="translate(40, 90)">
+      <rect width="290" height="44" rx="8" fill="rgba(255,255,255,0.05)" stroke="#6366f1" stroke-width="1"/>
+      <text x="145" y="27" fill="#cbd5e1" font-size="13" font-weight="600" text-anchor="middle">👨 남성이 👩 여성 곡 선택: -4 ~ -5키 조절</text>
+    </g>
+    <g transform="translate(355, 90)">
+      <rect width="290" height="44" rx="8" fill="rgba(255,255,255,0.05)" stroke="#6366f1" stroke-width="1"/>
+      <text x="145" y="27" fill="#cbd5e1" font-size="13" font-weight="600" text-anchor="middle">👩 여성이 👨 남성 곡 선택: +4 ~ +5키 조절</text>
+    </g>
+    <g transform="translate(670, 90)">
+      <rect width="290" height="44" rx="8" fill="rgba(255,255,255,0.05)" stroke="#6366f1" stroke-width="1"/>
+      <text x="145" y="27" fill="#cbd5e1" font-size="13" font-weight="600" text-anchor="middle">👫 동성 보컬 곡: 원키(0키) &amp; 난이도 검증</text>
+    </g>
+  </g>
+
+  <!-- Arrow 3 -->
+  <path d="M 600 630 L 600 660" stroke="#8b5cf6" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- STEP 4: Output & Curation -->
+  <g transform="translate(100, 670)" filter="url(#shadow)">
+    <rect width="1000" height="120" rx="16" fill="url(#card-grad)" stroke="#f59e0b" stroke-width="2"/>
+    <rect x="0" y="0" width="10" height="120" rx="4" fill="url(#gold-grad)"/>
+    <text x="40" y="38" fill="#fbbf24" font-size="14" font-weight="800">STEP 4. 맞춤 큐레이션 도출 및 후속 학습 연계</text>
+    <text x="40" y="68" fill="#ffffff" font-size="20" font-weight="800">🌟 실력 향상 맞춤 추천 가요 리스트 제공 &amp; MR 스튜디오 즉시 제작</text>
+    <text x="40" y="96" fill="#cbd5e1" font-size="14">추천 곡 클릭 시 상세 음역대 정보 모달 진입 ➔ 맞춤 키 조절 MR 생성 및 보컬 분석 녹음 페이지로 다이렉트 연결</text>
+  </g>
+</svg>
