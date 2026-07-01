@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "fix: enable full bidirectional Supabase cloud sync for submissions and analysis results across mobile and PC (v=29)"
+git commit -m "style: replace practice song analysis input wording from '부르신 곡명 선택/입력' to '원곡 가수의 노래 입력' (v=30)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main

@@ -1079,6 +1079,9 @@ window.switchSubmitTab = function(mode) {
   const title = document.getElementById('submit-page-title');
   const sub = document.getElementById('submit-page-sub');
   
+  const songLabel = document.getElementById('target-song-label');
+  const songInput = document.getElementById('target-song-input');
+  
   if (mode === 'practice') {
     if (tabP) { tabP.style.background = 'var(--accent)'; tabP.style.color = '#fff'; tabP.style.boxShadow = '0 4px 12px rgba(99,102,241,0.3)'; }
     if (tabO) { tabO.style.background = 'transparent'; tabO.style.color = 'var(--text-2)'; tabO.style.boxShadow = 'none'; }
@@ -1086,6 +1089,8 @@ window.switchSubmitTab = function(mode) {
     if (notO) notO.style.display = 'none';
     if (title) title.textContent = '🎤 연습곡 보컬 분석';
     if (sub) sub.textContent = '내가 직접 부른 연습곡 녹음 파일을 업로드하고 정밀 피드백을 받으세요';
+    if (songLabel) songLabel.innerHTML = '🎯 원곡 가수의 노래 입력 <span class="text-danger">*</span>';
+    if (songInput) songInput.placeholder = '예: 나였으면, 소주 한 잔, 밤편지 등 원곡 가수의 노래를 입력하거나 선택하세요';
   } else {
     if (tabP) { tabP.style.background = 'transparent'; tabP.style.color = 'var(--text-2)'; tabP.style.boxShadow = 'none'; }
     if (tabO) { tabO.style.background = '#10b981'; tabO.style.color = '#fff'; tabO.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)'; }
@@ -1093,6 +1098,8 @@ window.switchSubmitTab = function(mode) {
     if (notO) notO.style.display = 'block';
     if (title) title.textContent = '🎧 원곡 음원 정밀 분석';
     if (sub) sub.textContent = '가수의 원곡 음원 MP3를 업로드하여 곡의 최고음과 난이도 타임라인을 파악하세요';
+    if (songLabel) songLabel.innerHTML = '🎯 원곡 가수의 노래 입력 <span class="text-danger">*</span>';
+    if (songInput) songInput.placeholder = '분석할 원곡 가수의 노래를 입력하거나 선택하세요';
   }
 };
 
@@ -1142,9 +1149,9 @@ function renderSubmit() {
           <form id="submit-form">
             <!-- Target Song Selection Input -->
             <div class="form-group mb-24" style="margin-bottom:24px">
-              <label class="form-label" style="font-size:16px; font-weight:800; color:var(--text-main);">🎯 부르신 곡명 선택/입력 <span class="text-danger">*</span></label>
+              <label class="form-label" id="target-song-label" style="font-size:16px; font-weight:800; color:var(--text-main);">🎯 원곡 가수의 노래 입력 <span class="text-danger">*</span></label>
               <div style="position:relative;">
-                <input type="text" class="form-input" id="target-song-input" placeholder="예: 나였으면, 소주 한 잔, 밤편지 등 곡명을 입력하거나 선택하세요" style="font-size:16px; font-weight:700; padding:14px; border:2px solid var(--accent); border-radius:12px;" autocomplete="off" oninput="handleSongSearchInput(this.value)" onfocus="handleSongSearchInput(this.value)" />
+                <input type="text" class="form-input" id="target-song-input" placeholder="예: 나였으면, 소주 한 잔, 밤편지 등 원곡 가수의 노래를 입력하거나 선택하세요" style="font-size:16px; font-weight:700; padding:14px; border:2px solid var(--accent); border-radius:12px;" autocomplete="off" oninput="handleSongSearchInput(this.value)" onfocus="handleSongSearchInput(this.value)" />
                 <input type="hidden" id="target-song-id" value="" />
                 <div id="song-suggestions-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; max-height:220px; overflow-y:auto; background:var(--bg-card); border:2px solid var(--border); border-top:none; border-radius:0 0 12px 12px; z-index:1000; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
               </div>
@@ -2693,7 +2700,7 @@ function attachSubmitListeners() {
     form.addEventListener('submit', e => {
       e.preventDefault();
       const targetSongVal = document.getElementById('target-song-input')?.value.trim();
-      if (!targetSongVal) { showToast('분석할 곡명을 먼저 선택하거나 입력해주세요', 'error'); return; }
+      if (!targetSongVal) { showToast('원곡 가수의 노래를 먼저 선택하거나 입력해주세요', 'error'); return; }
       
       if (!window.selectedTargetSong) {
         const parts = targetSongVal.split('-');
