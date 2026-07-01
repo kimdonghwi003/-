@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "feat: expand vocal song database to 300 strictly verified songs based on NamuWiki & DC Vocal Gallery octave tier lists (v=38)"
+git commit -m "feat: simplify genre filter to 7 categories and implement 5 taste + 5 mastered song AI recommendation algorithm (v=39)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main

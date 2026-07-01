@@ -2096,38 +2096,71 @@ function renderStudentHome() {
 function renderStudentSongs() {
   const u = State.currentUser;
   const songs = DB.getSongs();
-  const genres = ['전체', ...new Set(songs.map(s => s.genre))];
+  const genres = ['전체', '발라드', '팝', '록', '인디', '댄스', '알앤비'];
   const difficulties = { easy: '쉬움', medium: '보통', hard: '어려움' };
   const diffColors = { easy: 'badge-success', medium: 'badge-info', hard: 'badge-danger' };
+
+  window.selectedTasteSongIds = window.selectedTasteSongIds || [];
+  window.selectedMasteredSongIds = window.selectedMasteredSongIds || [];
 
   return `
   <div class="animate-up">
     <div class="page-title">스마트 곡 추천</div>
-    <div class="page-sub">당신의 음역대와 완곡 능력을 분석하여 딱 맞는 맞춤 곡을 추천합니다</div>
+    <div class="page-sub">당신의 취향 곡 5개와 완창 가능한 곡 5개를 분석하여 최적의 AI 맞춤 큐레이션을 제공합니다</div>
 
-    <!-- 완곡 가능 곡 맞춤 추천 UI -->
-    <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:20px">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:var(--text)">완곡 가능한 곡 기반 맞춤 추천</div>
-          <div class="text-2" style="font-size:13px">현재 자신 있게 부를 수 있는 애창곡을 선택하면, 비슷한 난이도의 곡과 실력 향상을 위한 도전 곡을 추천해 드립니다</div>
+    <!-- 10곡 기반 AI 취향·실력 파악 맞춤 추천 UI -->
+    <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:22px;border-radius:16px;background:linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.05) 100%)">
+      <div style="margin-bottom:18px">
+        <div style="font-size:17px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
+          <span>🎯 AI 취향 · 실력 종합 알고리즘 맞춤 큐레이션</span>
+        </div>
+        <div class="text-2" style="font-size:13px;margin-top:4px">
+          평소 좋아하는 취향의 곡 5개와 현재 자신 있게 완곡 가능한 노래 5개를 선택해 주세요. AI가 음역대 한계와 선호 스타일을 종합 분석합니다.
         </div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <div style="position:relative;flex:0 0 210px">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px">🔍</span>
-          <input type="text" id="mastered-song-search" class="form-input" placeholder="애창곡 빠른 검색 (가수/곡명)" oninput="filterMasteredSelect()" style="padding-left:34px;font-size:13px;height:42px" />
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;margin-bottom:20px">
+        <!-- STEP 1: 취향인 곡 5개 선택 -->
+        <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)">
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#ec4899">❤️ 평소 좋아하는 취향 노래 (최대 5곡)</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="text" id="taste-search" class="form-input" placeholder="검색 (예: 아이유, 박효신)..." oninput="filterSongSelect('taste')" style="width:130px;font-size:12px;height:38px" />
+            <select id="taste-select" class="form-input" style="flex:1;font-size:13px;height:38px" onchange="addSelectedSong('taste', this.value)">
+              <option value="">+ 노래 선택 추가</option>
+              ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title}</option>`).join('')}
+            </select>
+          </div>
+          <div id="taste-selected-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:8px;background:var(--bg-2);border-radius:8px;border:1px dashed var(--border)">
+            ${renderSelectedBadges('taste')}
+          </div>
         </div>
-        <select id="mastered-song-select" class="form-input" style="flex:1;min-width:240px;font-size:14px;height:42px">
-          <option value="">-- 내가 완곡 가능한 노래 선택 (200곡 마스터 DB) --</option>
-          ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('')}
-        </select>
-        <button class="btn btn-primary" onclick="recommendByMasteredSong()" style="white-space:nowrap;padding:10px 20px;height:42px">맞춤 추천 분석</button>
+
+        <!-- STEP 2: 완창 가능한 곡 5개 선택 -->
+        <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)">
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#3b82f6">🎤 현재 완창 가능한 애창곡 (최대 5곡)</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="text" id="mastered-search" class="form-input" placeholder="검색 (예: 버즈, 이승철)..." oninput="filterSongSelect('mastered')" style="width:130px;font-size:12px;height:38px" />
+            <select id="mastered-select" class="form-input" style="flex:1;font-size:13px;height:38px" onchange="addSelectedSong('mastered', this.value)">
+              <option value="">+ 완곡 가능 선택 추가</option>
+              ${songs.map(s => `<option value="${s.id}">${s.artist} - ${s.title}</option>`).join('')}
+            </select>
+          </div>
+          <div id="mastered-selected-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:8px;background:var(--bg-2);border-radius:8px;border:1px dashed var(--border)">
+            ${renderSelectedBadges('mastered')}
+          </div>
+        </div>
       </div>
-      <div id="recommendation-results" style="margin-top:20px;display:none;border-top:1px dashed var(--border);padding-top:20px"></div>
+
+      <div style="text-align:center">
+        <button class="btn btn-primary" onclick="runComprehensiveSongAI()" style="font-size:15px;font-weight:700;padding:12px 32px;border-radius:30px;box-shadow:0 4px 15px rgba(99,102,241,0.4)">
+          🤖 AI 맞춤 알고리즘 큐레이션 실행
+        </button>
+      </div>
+
+      <div id="recommendation-results" style="margin-top:24px;display:none;border-top:1px dashed var(--border);padding-top:24px"></div>
     </div>
 
-    <!-- Search Bar & Genre Filter -->
+    <!-- Search Bar & 7 Genre Filter -->
     <div class="card mb-20" style="padding:16px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:20px;border-radius:12px">
       <div style="margin-bottom:12px">
         <div style="position:relative;display:flex;align-items:center">
@@ -3940,7 +3973,11 @@ function filterSongs(btn, genre) {
   items.forEach(item => {
     const title = item.querySelector('.song-title')?.textContent?.toLowerCase() || '';
     const artist = item.querySelector('.song-artist')?.textContent?.toLowerCase() || '';
-    const matchGenre = (selectedGenre === '전체' || item.dataset.genre === selectedGenre);
+    const itemGenre = item.dataset.genre || '';
+    let matchGenre = selectedGenre === '전체' || itemGenre.includes(selectedGenre);
+    if (selectedGenre === '알앤비' && (itemGenre.includes('R&B') || itemGenre.includes('알앤비'))) {
+      matchGenre = true;
+    }
     const matchQuery = !q || title.includes(q) || artist.includes(q);
     if (matchGenre && matchQuery) {
       item.style.display = 'flex';
@@ -4192,82 +4229,171 @@ function showSongDetail(songId) {
   );
 }
 
-function recommendByMasteredSong() {
-  const sel = document.getElementById('mastered-song-select');
-  if (!sel || !sel.value) {
-    showToast('완곡 가능한 애창곡을 목록에서 선택해 주세요!');
+function filterSongSelect(type) {
+  const q = (document.getElementById(`${type}-search`)?.value || '').trim().toLowerCase();
+  const sel = document.getElementById(`${type}-select`);
+  if (!sel) return;
+  const songs = DB.getSongs();
+  const filtered = !q ? songs : songs.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+  sel.innerHTML = `<option value="">+ 노래 선택 추가</option>` + 
+    filtered.map(s => `<option value="${s.id}">${s.artist} - ${s.title}</option>`).join('');
+}
+
+function renderSelectedBadges(type) {
+  const ids = type === 'taste' ? (window.selectedTasteSongIds || []) : (window.selectedMasteredSongIds || []);
+  if (ids.length === 0) {
+    return `<span class="text-3" style="font-size:12px">아직 선택된 곡이 없습니다. 상단에서 선택해 주세요 (0/5)</span>`;
+  }
+  const songs = DB.getSongs();
+  const color = type === 'taste' ? '#ec4899' : '#3b82f6';
+  return ids.map(id => {
+    const s = songs.find(x => x.id === id);
+    if (!s) return '';
+    return `
+      <span class="badge" style="background:${color};color:#fff;display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px">
+        ${s.artist} - ${s.title}
+        <span style="cursor:pointer;font-weight:900" onclick="removeSelectedSong('${type}', ${id})">×</span>
+      </span>`;
+  }).join('');
+}
+
+function addSelectedSong(type, val) {
+  if (!val) return;
+  const id = Number(val);
+  const ids = type === 'taste' ? (window.selectedTasteSongIds = window.selectedTasteSongIds || []) : (window.selectedMasteredSongIds = window.selectedMasteredSongIds || []);
+  if (ids.includes(id)) {
+    showToast('이미 목록에 추가된 노래입니다');
     return;
   }
-  const songId = Number(sel.value);
-  const songs = DB.getSongs();
-  const mSong = songs.find(s => s.id === songId);
-  if (!mSong) return;
+  if (ids.length >= 5) {
+    showToast('최대 5곡까지만 선택 가능합니다!');
+    return;
+  }
+  ids.push(id);
+  const container = document.getElementById(`${type}-selected-list`);
+  if (container) container.innerHTML = renderSelectedBadges(type);
+}
 
-  if (State.currentUser && State.userType === 'student') {
-    const students = DB.getStudents();
-    const idx = students.findIndex(s => s.id === State.currentUser.id);
-    if (idx >= 0) {
-      students[idx].masteredSongId = mSong.id;
-      students[idx].masteredSongTitle = `${mSong.artist} - ${mSong.title} (최고음: ${mSong.highestNote}, 난이도 ★${mSong.difficultyScore||5})`;
-      DB.setStudents(students);
-      State.currentUser = students[idx];
-      Auth._saveSession();
-    }
+function removeSelectedSong(type, id) {
+  let ids = type === 'taste' ? (window.selectedTasteSongIds = window.selectedTasteSongIds || []) : (window.selectedMasteredSongIds = window.selectedMasteredSongIds || []);
+  if (type === 'taste') {
+    window.selectedTasteSongIds = ids.filter(x => x !== id);
+  } else {
+    window.selectedMasteredSongIds = ids.filter(x => x !== id);
+  }
+  const container = document.getElementById(`${type}-selected-list`);
+  if (container) container.innerHTML = renderSelectedBadges(type);
+}
+
+function runComprehensiveSongAI() {
+  const tasteIds = window.selectedTasteSongIds || [];
+  const masteredIds = window.selectedMasteredSongIds || [];
+
+  if (tasteIds.length === 0 && masteredIds.length === 0) {
+    showToast('취향 곡이나 완곡 가능한 노래를 최소 1곡 이상 선택해 주세요!');
+    return;
   }
 
-  const mDiff = mSong.difficultyScore || 5;
-  const mMidi = mSong.highestMidi || 60;
-  const mGender = mSong.gender || 'X';
+  const songs = DB.getSongs();
+  const tasteSongs = tasteIds.map(id => songs.find(s => s.id === id)).filter(Boolean);
+  const masteredSongs = masteredIds.map(id => songs.find(s => s.id === id)).filter(Boolean);
 
-  // 1. 비슷한 난이도 (완곡 가능성 90%+)
-  const similar = songs.filter(s => {
-    if (s.id === mSong.id) return false;
-    const diffMatch = Math.abs((s.difficultyScore || 5) - mDiff) <= 1;
-    const midiMatch = Math.abs((s.highestMidi || 60) - mMidi) <= 2;
-    const genderMatch = (s.gender === mGender || s.gender === 'X' || mGender === 'X');
-    return diffMatch && midiMatch && genderMatch;
+  // 1. 알고리즘 취향 분석 (장르 선호도 분석)
+  const genreCounts = {};
+  tasteSongs.forEach(s => {
+    const g = s.genre || '발라드';
+    genreCounts[g] = (genreCounts[g] || 0) + 1;
   });
+  const topGenres = Object.keys(genreCounts).sort((a,b) => genreCounts[b] - genreCounts[a]);
+  const primaryGenre = topGenres[0] || '발라드';
 
-  // 2. 조금 더 어려운 도전 레벨업 곡
-  const challenge = songs.filter(s => {
-    if (s.id === mSong.id) return false;
-    const diffMatch = ((s.difficultyScore || 5) - mDiff >= 1) && ((s.difficultyScore || 5) - mDiff <= 3);
-    const midiMatch = ((s.highestMidi || 60) >= mMidi) && ((s.highestMidi || 60) - mMidi <= 4);
-    const genderMatch = (s.gender === mGender || s.gender === 'X' || mGender === 'X');
-    return diffMatch && midiMatch && genderMatch;
-  });
+  // 2. 알고리즘 실력 분석 (평균 최고음 MIDI, 최고 도달 옥타브, 평균 난이도)
+  let avgMidi = 70;
+  let maxMidi = 70;
+  let avgDiff = 6;
+  let maxNoteStr = '2옥라#(A#4)';
+
+  if (masteredSongs.length > 0) {
+    const totalMidi = masteredSongs.reduce((acc, s) => acc + (s.highestMidi || 70), 0);
+    avgMidi = Math.round(totalMidi / masteredSongs.length);
+    const maxSong = masteredSongs.reduce((prev, curr) => (curr.highestMidi || 70) > (prev.highestMidi || 70) ? curr : prev, masteredSongs[0]);
+    maxMidi = maxSong.highestMidi || 70;
+    maxNoteStr = maxSong.highestNote || '2옥라#(A#4)';
+    const totalDiff = masteredSongs.reduce((acc, s) => acc + (s.difficultyScore || 5), 0);
+    avgDiff = (totalDiff / masteredSongs.length).toFixed(1);
+  }
+
+  // 3. 맞춤 큐레이션 생성
+  const selectedAll = new Set([...tasteIds, ...masteredIds]);
+
+  // (1) 취향 저격 & 안정 완곡 (최고음 <= maxMidi + 1)
+  const safePicks = songs.filter(s => {
+    if (selectedAll.has(s.id)) return false;
+    const isGenreMatch = topGenres.length === 0 || topGenres.some(g => (s.genre || '').includes(g.split('/')[0]));
+    return isGenreMatch && (s.highestMidi || 70) <= maxMidi + 1;
+  }).slice(0, 5);
+
+  // (2) 실력 한계 돌파 도전 곡 (maxMidi + 1 ~ maxMidi + 4)
+  const challengePicks = songs.filter(s => {
+    if (selectedAll.has(s.id)) return false;
+    return (s.highestMidi || 70) >= maxMidi + 1 && (s.highestMidi || 70) <= maxMidi + 4;
+  }).slice(0, 5);
+
+  // (3) 숨은 명곡 큐레이션
+  const hiddenGems = songs.filter(s => {
+    if (selectedAll.has(s.id)) return false;
+    return (s.difficultyScore || 5) >= 4 && (s.difficultyScore || 5) <= 8;
+  }).slice(0, 5);
 
   const resDiv = document.getElementById('recommendation-results');
   if (!resDiv) return;
 
   const renderCard = (s) => `
-    <div class="card" style="padding:12px;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:8px" onclick="showSongDetail(${s.id})">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:24px">${s.emoji}</span>
+    <div class="card" style="padding:14px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:10px;border-radius:12px" onclick="showSongDetail(${s.id})">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">${s.emoji || '♪'}</span>
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text)">${s.title}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${s.title}</div>
           <div class="text-2" style="font-size:12px">${s.artist} · ${s.genre}</div>
         </div>
       </div>
       <div style="text-align:right">
         <span class="badge badge-accent" style="font-weight:700">★ ${s.difficultyScore || 5}/10</span>
-        <div class="text-3" style="font-size:11px;margin-top:2px;font-weight:600">최고음: ${s.highestNote}</div>
+        <div class="text-3" style="font-size:11px;margin-top:4px;font-weight:600">최고음: ${s.highestNote}</div>
       </div>
     </div>`;
 
   resDiv.style.display = 'block';
   resDiv.innerHTML = `
-    <div style="margin-bottom:20px">
-      <div style="font-size:15px;font-weight:700;color:var(--success);margin-bottom:10px">👍 비슷한 난이도 추천 (완곡 성공률 90%+)</div>
-      ${similar.length > 0 ? similar.slice(0, 5).map(renderCard).join('') : '<div class="text-2" style="font-size:13px;padding:10px">음역대와 난이도가 유사한 추천 곡이 없습니다. 다른 곡을 선택해 보세요.</div>'}
+    <!-- AI 분석 진단서 -->
+    <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--accent);margin-bottom:24px">
+      <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:8px">📊 AI 취향 & 실력 종합 프로파일링 진단서</div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px">
+        <div>🎵 선호 1순위 장르: <strong style="color:var(--text)">${primaryGenre}</strong></div>
+        <div>📈 안정 완곡 한계 음역대: <strong style="color:#10b981">${maxNoteStr}</strong></div>
+        <div>⭐️ 보컬 실력 레벨: <strong style="color:#f59e0b">평균 완곡 난이도 ★ ${avgDiff} / 10</strong></div>
+      </div>
     </div>
+
+    <div style="margin-bottom:24px">
+      <div style="font-size:15px;font-weight:700;color:#10b981;margin-bottom:12px">🎯 100% 취향 저격 & 안정 소화 추천 곡 Top 5</div>
+      ${safePicks.length > 0 ? safePicks.map(renderCard).join('') : '<div class="text-2" style="font-size:13px">해당 조건에 맞는 곡이 없습니다.</div>'}
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div style="font-size:15px;font-weight:700;color:#ec4899;margin-bottom:12px">🔥 실력 한계 돌파 레벨업 도전 곡 Top 5</div>
+      ${challengePicks.length > 0 ? challengePicks.map(renderCard).join('') : '<div class="text-2" style="font-size:13px">도전 곡이 없습니다. 이미 최상급 난이도를 마스터하셨습니다!</div>'}
+    </div>
+
     <div>
-      <div style="font-size:15px;font-weight:700;color:var(--accent);margin-bottom:10px">🔥 도전 레벨업 추천 (보컬 실력 향상용)</div>
-      ${challenge.length > 0 ? challenge.slice(0, 5).map(renderCard).join('') : '<div class="text-2" style="font-size:13px;padding:10px">상위 난이도 도전 곡이 없습니다. 이미 최고 수준의 곡을 마스터하셨습니다!</div>'}
+      <div style="font-size:15px;font-weight:700;color:#3b82f6;margin-bottom:12px">✨ 놓치면 아쉬운 숨은 명곡 큐레이션 Top 5</div>
+      ${hiddenGems.map(renderCard).join('')}
     </div>
   `;
-  showToast('AI 맞춤 분석이 완료되었습니다!');
+  showToast('AI 취약·실력 맞춤 알고리즘 분석 완료!');
 }
+
+function recommendByMasteredSong() { runComprehensiveSongAI(); }
 
 function showStoredAnalysis(submissionId) {
   const analysis = DB.getAnalyses().find(a => a.submissionId === submissionId);
@@ -4515,6 +4641,10 @@ window.showBookingModal = showBookingModal;
 window.showTrainerDetail = showTrainerDetail;
 window.showSongDetail = showSongDetail;
 window.recommendByMasteredSong = recommendByMasteredSong;
+window.filterSongSelect = filterSongSelect;
+window.addSelectedSong = addSelectedSong;
+window.removeSelectedSong = removeSelectedSong;
+window.runComprehensiveSongAI = runComprehensiveSongAI;
 window.handleLessonRequest = handleLessonRequest;
 window.cancelBooking = cancelBooking;
 window.showReviewModal = showReviewModal;
