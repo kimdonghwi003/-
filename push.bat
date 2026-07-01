@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "fix: correct verified highest notes for 김범수 보고 싶다 and 끝사랑 based on NamuWiki/DC inside vocal data (v=37)"
+git commit -m "feat: expand vocal song database to 300 strictly verified songs based on NamuWiki & DC Vocal Gallery octave tier lists (v=38)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
