@@ -56,7 +56,7 @@
       <rect width="520" height="105" rx="10" class="border-box"/>
       <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
       <text x="24" y="28" class="step-header">STEP A-3. DATABASE MAPPING</text>
-      <text x="24" y="54" class="box-title">600곡 검증 DB 연동 및 난이도 지수 산출</text>
+      <text x="24" y="54" class="box-title">수백 개의 보컬 명곡 검증 DB 연동 및 난이도 산출</text>
       <text x="24" y="80" class="box-desc">공식 옥타브 및 난이도 점수(1~10점) 매핑 • 사용자의 비교 대상 원곡 메타데이터 구축 및 리포트 데이터 생성</text>
     </g>
   </g>

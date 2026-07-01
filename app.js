@@ -390,7 +390,7 @@ const DB = {
 
     if (!needSeed) return;
 
-    // 200곡 검증된 가요 DB (나무위키 고음/노래 목록 철저 검증)
+    // 수백 개의 검증된 보컬 명곡 DB (나무위키 고음/저음 노래 목록 철저 검증)
     const songs = [
       { id: 1, title: '겁쟁이', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
       { id: 2, title: '가시', artist: '버즈', genre: '록/발라드', lowestNote: '1옥미(E3)', highestNote: '2옥라#(A#4)', difficulty: 'medium', difficultyScore: 6, highestMidi: 70, gender: 'M', emoji: '' },
@@ -1559,7 +1559,7 @@ function renderSubmit() {
                 <input type="hidden" id="target-song-id" value="" />
                 <div id="song-suggestions-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; max-height:220px; overflow-y:auto; background:var(--bg-card); border:2px solid var(--border); border-top:none; border-radius:0 0 12px 12px; z-index:1000; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
               </div>
-              <div class="form-hint" id="target-song-hint" style="color:var(--text-accent); font-weight:600; margin-top:6px;">💡 사전에 등록된 200대 보컬 명곡 중 선택하시면 원곡 최고음과의 정밀 비교 평가가 진행됩니다.</div>
+              <div class="form-hint" id="target-song-hint" style="color:var(--text-accent); font-weight:600; margin-top:6px;">💡 사전에 등록된 수백 개의 보컬 명곡 중 선택하시면 원곡 최고음과의 정밀 비교 평가가 진행됩니다.</div>
             </div>
 
             <!-- File Drop Zone -->
@@ -4382,7 +4382,7 @@ function filterMasteredSelect() {
   const currentVal = sel.value;
   const filtered = songs.filter(s => !q || s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
   
-  sel.innerHTML = `<option value="">-- 내가 완곡 가능한 노래 선택 (${q ? '검색 결과 ' + filtered.length + '곡' : '200곡 마스터 DB'}) --</option>` +
+  sel.innerHTML = `<option value="">-- 내가 완곡 가능한 노래 선택 (${q ? '검색 결과 ' + filtered.length + '곡' : '수백 개의 보컬 명곡 마스터 DB'}) --</option>` +
     filtered.map(s => `<option value="${s.id}" ${String(s.id) === currentVal ? 'selected' : ''}>${s.artist} - ${s.title} (최고음: ${s.highestNote}, 난이도 ★ ${s.difficultyScore || 5}/10)</option>`).join('');
 }
 
