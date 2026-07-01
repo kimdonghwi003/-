@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 920" width="100%" height="100%" style="background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <defs>
+    <style>
+      .title { font-size: 26px; font-weight: 700; fill: #f8fafc; letter-spacing: -0.5px; }
+      .subtitle { font-size: 15px; font-weight: 400; fill: #94a3b8; }
+      .step-header { font-size: 13px; font-weight: 600; fill: #0d9488; letter-spacing: 1px; }
+      .track-header { font-size: 16px; font-weight: 700; fill: #f8fafc; letter-spacing: 0.5px; }
+      .box-title { font-size: 17px; font-weight: 600; fill: #f8fafc; }
+      .box-desc { font-size: 13px; font-weight: 400; fill: #cbd5e1; line-height: 1.6; }
+      .sub-box-text { font-size: 13px; font-weight: 500; fill: #e2e8f0; }
+      .border-box { fill: #1e293b; stroke: #334155; stroke-width: 1.5px; }
+      .accent-box { fill: #132337; stroke: #0d9488; stroke-width: 1.5px; }
+      .inner-box { fill: #0f172a; stroke: #334155; stroke-width: 1px; }
+    </style>
+    <marker id="arrow-mono" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Title Section -->
+  <g transform="translate(600, 65)" text-anchor="middle">
+    <text x="0" y="0" class="title">원곡 분석 및 연습곡 보컬 분석 프로세스 아키텍처</text>
+    <text x="0" y="30" class="subtitle">가수 음원 데이터베이스 분석 및 실시간 녹음 오디오 6대 역량 비교 평가 시스템</text>
+  </g>
+
+  <!-- Track A: Original Song Analysis -->
+  <g transform="translate(60, 130)">
+    <!-- Header -->
+    <rect width="520" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="260" y="28" class="track-header" text-anchor="middle">TRACK A. 원곡 분석 파이프라인 (가수 음원 기준)</text>
+
+    <!-- Step A1 -->
+    <g transform="translate(0, 64)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">STEP A-1. AUDIO FILE INGESTION</text>
+      <text x="24" y="54" class="box-title">MP3 / WAV 음원 업로드 및 분석 서버 분기</text>
+      <text x="24" y="80" class="box-desc">정밀 분석 서버 연동 시 Demucs 기반 반주 제거 후 순수 보컬 추출 • 브라우저 로컬 모드 시 Web Audio API 버퍼 분석 진행</text>
+    </g>
+
+    <path d="M 260 169 L 260 195" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step A2 -->
+    <g transform="translate(0, 195)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">STEP A-2. PITCH TRACKING &amp; F0 DETECTION</text>
+      <text x="24" y="54" class="box-title">기본 주파수(F0) 탐지 및 최고음 매핑</text>
+      <text x="24" y="80" class="box-desc">Autocorrelation 및 FFT 연산 알고리즘을 통한 오디오 프레임 주파수 추출 • MIDI 노트 단위(예: C5, D5) 변환 및 음역 범위 산출</text>
+    </g>
+
+    <path d="M 260 300 L 260 326" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step A3 -->
+    <g transform="translate(0, 326)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">STEP A-3. DATABASE MAPPING</text>
+      <text x="24" y="54" class="box-title">600곡 검증 DB 연동 및 난이도 지수 산출</text>
+      <text x="24" y="80" class="box-desc">공식 옥타브 및 난이도 점수(1~10점) 매핑 • 사용자의 비교 대상 원곡 메타데이터 구축 및 리포트 데이터 생성</text>
+    </g>
+  </g>
+
+  <!-- Track B: Practice Song Analysis -->
+  <g transform="translate(620, 130)">
+    <!-- Header -->
+    <rect width="520" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="260" y="28" class="track-header" text-anchor="middle">TRACK B. 연습곡 분석 파이프라인 (사용자 보컬)</text>
+
+    <!-- Step B1 -->
+    <g transform="translate(0, 64)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">STEP B-1. VOCAL RECORDING INPUT</text>
+      <text x="24" y="54" class="box-title">실시간 마이크 가창 또는 연습 파일 로드</text>
+      <text x="24" y="80" class="box-desc">사용자 실시간 음성 스트림 또는 오디오 녹음 업로드 • 에코 및 잔향 없는 드라이(Dry) 녹음 파일 입력 검증</text>
+    </g>
+
+    <path d="M 260 169 L 260 195" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step B2 -->
+    <g transform="translate(0, 195)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">STEP B-2. DSP NOISE FILTERING</text>
+      <text x="24" y="54" class="box-title">Web Audio DSP 보컬 파형 분리 및 노이즈 제거</text>
+      <text x="24" y="80" class="box-desc">BiquadFilterNode 적용: 85Hz 이하 팝핑/거친 숨소리 대역 및 2200Hz 이상 쇳소리 차단 • RMS 에너지를 통한 무음 침묵 구간 필터링</text>
+    </g>
+
+    <path d="M 260 300 L 260 326" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+    <!-- Step B3 -->
+    <g transform="translate(0, 326)">
+      <rect width="520" height="105" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="5" height="105" rx="2.5" fill="#64748b"/>
+      <text x="24" y="28" class="step-header">STEP B-3. 6-AXIS VOCAL EVALUATION</text>
+      <text x="24" y="54" class="box-title">6대 핵심 보컬 역량 다각도 계량 분석</text>
+      <text x="24" y="80" class="box-desc">음정 정확도, 박자 리듬감, 발성 안정성, 호흡 지지력, 성량 강약 조절, 발음 명료도 정량화 및 6축 레이더 맵 구성</text>
+    </g>
+  </g>
+
+  <!-- Convergence Arrows -->
+  <path d="M 320 561 L 580 610" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+  <path d="M 880 561 L 620 610" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+
+  <!-- STEP 4: Comparative Convergence Evaluation -->
+  <g transform="translate(100, 610)">
+    <rect width="1000" height="230" rx="12" class="accent-box"/>
+    <rect x="0" y="0" width="6" height="230" rx="3" fill="#0d9488"/>
+    <text x="500" y="36" class="step-header" text-anchor="middle">FINAL INTEGRATION. COMPARATIVE PERFORMANCE EVALUATION</text>
+    <text x="500" y="66" class="box-title" text-anchor="middle">원곡 음원 데이터와 사용자 보컬의 성별 교차 비교 진단 리포트 생성</text>
+
+    <!-- 3 Sub Report Cards -->
+    <g transform="translate(35, 95)">
+      <rect width="295" height="105" rx="8" class="inner-box"/>
+      <text x="147.5" y="32" class="step-header" text-anchor="middle">PITCH REACH RATE</text>
+      <text x="147.5" y="58" class="sub-box-text" text-anchor="middle">도달 최고음 주파수 정밀 비교</text>
+      <text x="147.5" y="82" class="box-desc" text-anchor="middle">성별 불일치 시 주파수 교차 보정 산출</text>
+    </g>
+    <g transform="translate(352.5, 95)">
+      <rect width="295" height="105" rx="8" class="inner-box"/>
+      <text x="147.5" y="32" class="step-header" text-anchor="middle">COMPLETION GRADE</text>
+      <text x="147.5" y="58" class="sub-box-text" text-anchor="middle">원곡 소화 완곡 등급 판정</text>
+      <text x="147.5" y="82" class="box-desc" text-anchor="middle">종합 안정성 60% + 도달율 40% 반영</text>
+    </g>
+    <g transform="translate(670, 95)">
+      <rect width="295" height="105" rx="8" class="inner-box"/>
+      <text x="147.5" y="32" class="step-header" text-anchor="middle">SOLUTIONS &amp; KEYS</text>
+      <text x="147.5" y="58" class="sub-box-text" text-anchor="middle">1:1 맞춤 키 조절 및 훈련 가이드</text>
+      <text x="147.5" y="82" class="box-desc" text-anchor="middle">파사지오 극복을 위한 호흡·음정 처방</text>
+    </g>
+  </g>
+</svg>

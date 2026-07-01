@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" width="100%" height="100%" style="background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <defs>
+    <style>
+      .title { font-size: 26px; font-weight: 700; fill: #f8fafc; letter-spacing: -0.5px; }
+      .subtitle { font-size: 15px; font-weight: 400; fill: #94a3b8; }
+      .step-header { font-size: 13px; font-weight: 600; fill: #0d9488; letter-spacing: 1px; }
+      .box-title { font-size: 18px; font-weight: 600; fill: #f8fafc; }
+      .box-desc { font-size: 13.5px; font-weight: 400; fill: #cbd5e1; line-height: 1.6; }
+      .sub-box-text { font-size: 13px; font-weight: 500; fill: #e2e8f0; }
+      .border-box { fill: #1e293b; stroke: #334155; stroke-width: 1.5px; }
+      .accent-box { fill: #132337; stroke: #0d9488; stroke-width: 1.5px; }
+      .inner-box { fill: #0f172a; stroke: #334155; stroke-width: 1px; }
+    </style>
+    <marker id="arrow-mono" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Title Section -->
+  <g transform="translate(600, 65)" text-anchor="middle">
+    <text x="0" y="0" class="title">맞춤 곡 추천 및 알고리즘 큐레이션 프로세스 아키텍처</text>
+    <text x="0" y="30" class="subtitle">사용자 성별 및 실력 파라미터 기반 10곡 종합 분석 파이프라인</text>
+  </g>
+
+  <!-- STEP 1: User Profile & Parameter Initialization -->
+  <g transform="translate(100, 130)">
+    <rect width="1000" height="105" rx="10" class="border-box"/>
+    <rect x="0" y="0" width="6" height="105" rx="3" fill="#0d9488"/>
+    <text x="35" y="34" class="step-header">PHASE 1. USER PROFILE INITIALIZATION</text>
+    <text x="35" y="62" class="box-title">사용자 계정 및 성별 기준 음역대 파라미터 로딩</text>
+    <text x="35" y="86" class="box-desc">회원가입 및 설정 시 등록된 성별(남성/여성) 데이터 매칭 • 성별 기준 고유 음성 주파수 대역 및 파사지오(Passaggio) 임계치 수립</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 600 235 L 600 265" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+  <!-- STEP 2: Song Input (2 Columns) -->
+  <g transform="translate(100, 275)">
+    <!-- Taste Songs -->
+    <g transform="translate(0, 0)">
+      <rect width="485" height="135" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="6" height="135" rx="3" fill="#64748b"/>
+      <text x="30" y="32" class="step-header">PHASE 2-A. PREFERENCE ACQUISITION</text>
+      <text x="30" y="60" class="box-title">선호 취향 노래 데이터 수집 (5곡)</text>
+      <text x="30" y="86" class="box-desc">검색 필터(전체/남성곡/여성곡)를 통한 취향 곡 선정</text>
+      <text x="30" y="110" class="box-desc" fill="#94a3b8">장르 분포도 및 선호 아티스트 가중치 연산 모델링</text>
+    </g>
+
+    <!-- Mastered Songs -->
+    <g transform="translate(515, 0)">
+      <rect width="485" height="135" rx="10" class="border-box"/>
+      <rect x="0" y="0" width="6" height="135" rx="3" fill="#64748b"/>
+      <text x="30" y="32" class="step-header">PHASE 2-B. CAPABILITY ESTIMATION</text>
+      <text x="30" y="60" class="box-title">완창 가능한 애창곡 실력 데이터 수집 (5곡)</text>
+      <text x="30" y="86" class="box-desc">실제 소화 가능한 곡 선택 및 난이도 범위 매핑</text>
+      <text x="30" y="110" class="box-desc" fill="#94a3b8">평균 최고음 MIDI 피치 및 한계 음역 데이터베이스 추출</text>
+    </g>
+  </g>
+
+  <!-- Arrows -->
+  <path d="M 342 410 L 500 445" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+  <path d="M 857 410 L 700 445" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+  <!-- STEP 3: Core Algorithm Engine -->
+  <g transform="translate(100, 455)">
+    <rect width="1000" height="145" rx="12" class="accent-box"/>
+    <text x="500" y="36" class="step-header" text-anchor="middle">PHASE 3. ALGORITHMIC PROCESSING ENGINE</text>
+    <text x="500" y="65" class="box-title" text-anchor="middle">사용자 맞춤 알고리즘 연산 및 교차 음역 보정 가이드 산출</text>
+    
+    <!-- Sub boxes inside engine -->
+    <g transform="translate(35, 85)">
+      <rect width="295" height="42" rx="6" class="inner-box"/>
+      <text x="147.5" y="26" class="sub-box-text" text-anchor="middle">남성 사용자 • 여성 곡 : -4 ~ -5키 조절</text>
+    </g>
+    <g transform="translate(352.5, 85)">
+      <rect width="295" height="42" rx="6" class="inner-box"/>
+      <text x="147.5" y="26" class="sub-box-text" text-anchor="middle">여성 사용자 • 남성 곡 : +4 ~ +5키 조절</text>
+    </g>
+    <g transform="translate(670, 85)">
+      <rect width="295" height="42" rx="6" class="inner-box"/>
+      <text x="147.5" y="26" class="sub-box-text" text-anchor="middle">동성 사용자 : 원키(0키) 기준 발성 매칭</text>
+    </g>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 600 600 L 600 630" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-mono)"/>
+
+  <!-- STEP 4: Curation Output -->
+  <g transform="translate(100, 640)">
+    <rect width="1000" height="110" rx="10" class="border-box"/>
+    <rect x="0" y="0" width="6" height="110" rx="3" fill="#0d9488"/>
+    <text x="35" y="34" class="step-header">PHASE 4. CURATION OUTPUT &amp; STUDIO INTEGRATION</text>
+    <text x="35" y="62" class="box-title">도전 가능 맞춤 곡 추천 리스트 도출 및 MR 스튜디오 연계</text>
+    <text x="35" y="88" class="box-desc">추천 곡 상세 분석 보고서 제공 • 사용자 성별 맞춤 키 조절 MR 실시간 생성 및 보컬 분석 실습 연동</text>
+  </g>
+</svg>
