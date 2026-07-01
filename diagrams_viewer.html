@@ -2,34 +2,34 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>VocalAI - 핵심 프로세스 도식화</title>
+  <title>VocalAI - 시스템 아키텍처 및 프로세스 도식화</title>
   <style>
     body {
       background: #090d16;
       color: #f8fafc;
-      font-family: 'Pretendard', -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       margin: 0;
       padding: 40px 20px;
       text-align: center;
     }
-    h1 { font-size: 36px; font-weight: 900; background: linear-gradient(135deg, #6366f1, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
-    p { color: #94a3b8; font-size: 16px; margin-bottom: 40px; }
-    .nav-tabs { display: flex; justify-content: center; gap: 16px; margin-bottom: 32px; }
+    h1 { font-size: 32px; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px; margin-bottom: 8px; }
+    p { color: #94a3b8; font-size: 15px; margin-bottom: 36px; }
+    .nav-tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 28px; }
     .tab-btn {
-      padding: 12px 28px; font-size: 16px; font-weight: 800; border-radius: 30px; border: 2px solid #334155; background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.2s;
+      padding: 11px 24px; font-size: 14.5px; font-weight: 600; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.2s;
     }
-    .tab-btn.active { background: linear-gradient(135deg, #6366f1, #a855f7); border-color: #8b5cf6; color: #fff; box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
-    .diagram-container { max-width: 1250px; margin: 0 auto; background: #0f172a; border: 1px solid #334155; border-radius: 20px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
-    img, object { width: 100%; height: auto; border-radius: 12px; display: block; }
+    .tab-btn.active { background: #0f172a; border-color: #0d9488; color: #2dd4bf; box-shadow: 0 0 15px rgba(13, 148, 136, 0.2); }
+    .diagram-container { max-width: 1240px; margin: 0 auto; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+    object { width: 100%; height: auto; border-radius: 8px; display: block; }
   </style>
 </head>
 <body>
-  <h1>✨ 모두의 보컬 AI 시스템 핵심 프로세스 도식화</h1>
-  <p>남/녀 성별 맞춤 곡 추천 및 원곡·연습곡 투트랙 분석 파이프라인 아키텍처</p>
+  <h1>시스템 아키텍처 및 핵심 프로세스 파이프라인</h1>
+  <p>사용자 성별 맞춤 큐레이션 및 원곡·연습곡 비교 평가 도식화</p>
 
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="showTab('rec', this)">🎯 1. 맞춤 곡 추천 (사용자 맞춤 알고리즘)</button>
-    <button class="tab-btn" onclick="showTab('ana', this)">🎙️ 2. 곡 분석 (원곡 분석 & 연습곡 분석)</button>
+    <button class="tab-btn active" onclick="showTab('rec', this)">1. 맞춤 곡 추천 (사용자 맞춤 알고리즘)</button>
+    <button class="tab-btn" onclick="showTab('ana', this)">2. 곡 분석 (원곡 분석 &amp; 연습곡 분석)</button>
   </div>
 
   <div id="rec-diagram" class="diagram-container">
