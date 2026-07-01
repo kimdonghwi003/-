@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 echo [VocalAI] Adding and committing changes...
 git add .
-git commit -m "fix: precisely cross-verify and correct M.C the MAX (이수) highest notes for 사계, One Love, 행복하지 말아요, 입술의 말 (v=40)"
+git commit -m "feat: expand DB to 450 songs by learning and incorporating 150 verified masterpiece tracks from Instiz vocal tier tables across all octave ranges with exact genre analysis (v=41)"
 echo.
 echo [VocalAI] Pushing to GitHub...
 git push origin main
