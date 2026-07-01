@@ -1242,7 +1242,22 @@ function renderAnalysis(params) {
   ];
   window.currentAnalysisBookmarks = bookmarks;
   window.currentBmFilter = 'all';
-  setTimeout(() => { if (window.renderBookmarkListUI) window.renderBookmarkListUI(); }, 50);
+  setTimeout(async () => {
+    const audioEl = document.getElementById('vocal-analysis-audio');
+    const statusMsg = document.getElementById('audio-status-msg');
+    if (audioEl && !window.lastUploadedAudioBlobUrl && window.VocalAudioDB) {
+      let saved = await window.VocalAudioDB.get('audio_' + (a.fileName || ''));
+      if (!saved) saved = await window.VocalAudioDB.get('last_audio');
+      if (saved) {
+        window.lastUploadedAudioBlobUrl = URL.createObjectURL(saved);
+        audioEl.src = window.lastUploadedAudioBlobUrl;
+        if (statusMsg) {
+          statusMsg.innerHTML = `<span>💡 박자 이탈이나 음 불안 북마크를 클릭하면 해당 초(초점)로 즉시 이동해 재생됩니다.</span><span style="color:#10b981; font-weight:700">✔ 브라우저 DB 원본 음성 자동 로드됨</span>`;
+        }
+      }
+    }
+    if (window.renderBookmarkListUI) window.renderBookmarkListUI();
+  }, 50);
 
   return `
   <div class="page-wrap">
@@ -3015,6 +3030,10 @@ async function startAnalysis(file, requirements, guestEmail, userTargetSong) {
 
   if (typeof file !== 'string') {
     window.lastUploadedAudioBlobUrl = URL.createObjectURL(file);
+    if (window.VocalAudioDB) {
+      window.VocalAudioDB.save('last_audio', file);
+      window.VocalAudioDB.save('audio_' + file.name, file);
+    }
     try {
       realAudio = await decodeAndAnalyzeAudioFile(file);
     } catch(e) { console.warn('음성 디코딩 분석 오류:', e); }
@@ -4705,12 +4724,22 @@ window.relinkAnalysisAudio = function(input) {
   }
 };
 
-window.seekAndPlayVocalAudio = function(sec) {
+window.seekAndPlayVocalAudio = async function(sec) {
   const audioEl = document.getElementById('vocal-analysis-audio');
   if (audioEl) {
     if (!audioEl.src || audioEl.src === '' || audioEl.src === window.location.href) {
       if (window.lastUploadedAudioBlobUrl) {
         audioEl.src = window.lastUploadedAudioBlobUrl;
+      } else if (window.VocalAudioDB) {
+        let saved = await window.VocalAudioDB.get('last_audio');
+        if (saved) {
+          window.lastUploadedAudioBlobUrl = URL.createObjectURL(saved);
+          audioEl.src = window.lastUploadedAudioBlobUrl;
+        } else {
+          window.lastUploadedAudioBlobUrl = generateDemoAudioBlobUrl();
+          audioEl.src = window.lastUploadedAudioBlobUrl;
+          showToast('💡 원본 녹음이 로드되지 않아 보컬 웜업 피아노 반주가 재생됩니다. (상단 폴더 아이콘으로 본인 녹음 연동 가능)', 'info');
+        }
       } else {
         window.lastUploadedAudioBlobUrl = generateDemoAudioBlobUrl();
         audioEl.src = window.lastUploadedAudioBlobUrl;
@@ -4718,7 +4747,7 @@ window.seekAndPlayVocalAudio = function(sec) {
     }
     audioEl.currentTime = sec;
     audioEl.play().catch(e => console.warn('Audio play error:', e));
-    showToast(`⏱ ${formatSecToStr(sec)} 구간으로 이동하여 재생합니다.`, 'info');
+    showToast(`⏱ ${formatSecToStr(sec)} 초점 구간으로 이동하여 재생합니다.`, 'info');
   }
 };
 
@@ -4841,16 +4870,78 @@ function formatSecToStr(s) {
   return `${m < 10 ? '0'+m : m}:${rem < 10 ? '0'+rem : rem}`;
 }
 
+// ── 440Hz 삐 소리 대신 부드러운 보컬 웜업 아르페지오/코드 피아노 멜로디 생성
 function generateDemoAudioBlobUrl() {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const sampleRate = audioCtx.sampleRate;
-  const length = sampleRate * 15;
+  const length = sampleRate * 18;
   const buffer = audioCtx.createBuffer(1, length, sampleRate);
   const data = buffer.getChannelData(0);
+  
+  const chords = [
+    [261.63, 329.63, 392.00, 523.25], // C Major
+    [196.00, 246.94, 293.66, 392.00], // G Major
+    [220.00, 261.63, 329.63, 440.00], // A minor
+    [174.61, 220.00, 261.63, 349.23]  // F Major
+  ];
+  
   for (let i = 0; i < length; i++) {
-    data[i] = Math.sin(2 * Math.PI * 440 * (i / sampleRate)) * 0.15;
+    const t = i / sampleRate;
+    const chordIdx = Math.floor(t / 4.5) % chords.length;
+    const notes = chords[chordIdx];
+    
+    const beat = (t * 2) % 1;
+    const env = Math.sin(beat * Math.PI) * Math.exp(-beat * 2.0);
+    
+    let sample = 0;
+    const noteIdx = Math.floor((t * 2) % notes.length);
+    const arpFreq = notes[noteIdx];
+    
+    sample += Math.sin(2 * Math.PI * arpFreq * t) * 0.18 * env;
+    sample += Math.sin(2 * Math.PI * arpFreq * 2 * t) * 0.05 * env;
+    
+    notes.forEach(f => {
+      sample += Math.sin(2 * Math.PI * f * t) * 0.035;
+    });
+    
+    data[i] = sample;
   }
   const wavBlob = audioBufferToWavBlob(buffer);
   return URL.createObjectURL(wavBlob);
 }
+
+// ── 업로드된 오디오 원본 영구 저장을 위한 브라우저 IndexedDB 저장소
+window.VocalAudioDB = {
+  dbName: 'VocalAIAudioStorage',
+  storeName: 'audios',
+  open: function() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.dbName, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(this.storeName)) {
+          db.createObjectStore(this.storeName);
+        }
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror = e => reject(e);
+    });
+  },
+  save: async function(key, blobOrFile) {
+    try {
+      const db = await this.open();
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).put(blobOrFile, key);
+      return new Promise(resolve => tx.oncomplete = () => resolve(true));
+    } catch(e) { console.warn('IDB save error:', e); return false; }
+  },
+  get: async function(key) {
+    try {
+      const db = await this.open();
+      const tx = db.transaction(this.storeName, 'readonly');
+      const req = tx.objectStore(this.storeName).get(key);
+      return new Promise(resolve => req.onsuccess = () => resolve(req.result || null));
+    } catch(e) { return null; }
+  }
+};
 
