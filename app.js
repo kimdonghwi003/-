@@ -29,12 +29,25 @@ const DB = {
         stds.forEach(s => {
           const decEmail = decryptEmail(s.email);
           const cleanEmail = (decEmail || '').trim().toLowerCase();
+          let pgData = {};
+          let genresList = [];
+          if (Array.isArray(s.preferred_genres)) {
+            genresList = s.preferred_genres;
+          } else if (s.preferred_genres && typeof s.preferred_genres === 'object') {
+            pgData = s.preferred_genres;
+            genresList = pgData.list || pgData.genres || pgData.preferredGenres || [];
+          }
           stdMap.set(cleanEmail, {
             id: Number(s.id),
             email: cleanEmail,
             password: s.password_hash || '',
             nickname: s.nickname || '',
-            preferredGenres: s.preferred_genres || [],
+            preferredGenres: genresList,
+            gender: pgData.gender || 'M',
+            profileEmoji: pgData.profileEmoji || '🎵',
+            targetSongId: pgData.targetSongId || null,
+            selectedTasteSongIds: pgData.selectedTasteSongIds || [],
+            selectedMasteredSongIds: pgData.selectedMasteredSongIds || [],
             oauthProvider: s.oauth_provider || 'none',
             isActive: s.is_active !== false,
             createdAt: s.created_at ? s.created_at.slice(0, 10) : '2026-06-01'
@@ -44,19 +57,33 @@ const DB = {
           const cleanEmail = (ls.email || '').trim().toLowerCase();
           if (!stdMap.has(cleanEmail)) {
             stdMap.set(cleanEmail, ls);
-            // Push missing local signup to cloud
             window.supabaseClient.from('students').upsert({
               id: ls.id,
               email: encryptEmail(cleanEmail),
               password_hash: ls.password,
               nickname: ls.nickname,
-              preferred_genres: ls.preferredGenres || [],
+              preferred_genres: {
+                list: ls.preferredGenres || [],
+                gender: ls.gender || 'M',
+                profileEmoji: ls.profileEmoji || '🎵',
+                targetSongId: ls.targetSongId || null,
+                selectedTasteSongIds: ls.selectedTasteSongIds || [],
+                selectedMasteredSongIds: ls.selectedMasteredSongIds || []
+              },
               oauth_provider: ls.oauthProvider || 'none',
               is_active: true
             }, { onConflict: 'email' }).then(null, () => {});
+          } else {
+            const cItem = stdMap.get(cleanEmail);
+            stdMap.set(cleanEmail, { ...cItem, ...ls, id: cItem.id });
           }
         });
-        this._set('students', Array.from(stdMap.values()));
+        const finalStudents = Array.from(stdMap.values());
+        this._set('students', finalStudents);
+        if (State.currentUser && State.userType === 'student') {
+          const u = finalStudents.find(x => (x.email || '').trim().toLowerCase() === (State.currentUser.email || '').trim().toLowerCase() || x.id === State.currentUser.id);
+          if (u) State.currentUser = u;
+        }
       }
 
       // 2. Load trainers from Cloud DB & merge with local
@@ -226,39 +253,50 @@ const DB = {
   getStudents() { return this._get('students') || []; },
   setStudents(v) { 
     this._set('students', v); 
-    const latest = v[v.length - 1];
-    if (latest && window.supabaseClient) {
-      window.supabaseClient.from('students').upsert({
-        id: latest.id,
-        email: encryptEmail(latest.email),
-        password_hash: latest.password,
-        nickname: latest.nickname,
-        preferred_genres: latest.preferredGenres || [],
-        oauth_provider: latest.oauthProvider || 'none',
-        is_active: true
-      }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (student):', err));
+    if (window.supabaseClient && Array.isArray(v)) {
+      v.forEach(latest => {
+        if (!latest || !latest.email) return;
+        window.supabaseClient.from('students').upsert({
+          id: latest.id,
+          email: encryptEmail(latest.email),
+          password_hash: latest.password,
+          nickname: latest.nickname,
+          preferred_genres: {
+            list: latest.preferredGenres || [],
+            gender: latest.gender || 'M',
+            profileEmoji: latest.profileEmoji || '🎵',
+            targetSongId: latest.targetSongId || null,
+            selectedTasteSongIds: latest.selectedTasteSongIds || [],
+            selectedMasteredSongIds: latest.selectedMasteredSongIds || []
+          },
+          oauth_provider: latest.oauthProvider || 'none',
+          is_active: true
+        }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (student):', err));
+      });
     }
   },
 
   getTrainers() { return this._get('trainers') || []; },
   setTrainers(v) { 
     this._set('trainers', v); 
-    const latest = v[v.length - 1];
-    if (latest && window.supabaseClient) {
-      window.supabaseClient.from('trainers').upsert({
-        id: latest.id,
-        email: encryptEmail(latest.email),
-        password_hash: latest.password,
-        name: latest.name,
-        profile_image_url: latest.profileEmoji || '🎤',
-        introduction: latest.intro || '',
-        career_years: latest.careerYears || 0,
-        lesson_price: latest.lessonPrice || 0,
-        specialties: latest.specialties || [],
-        approval_status: latest.approvalStatus || 'pending',
-        oauth_provider: 'none',
-        is_active: true
-      }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (trainer):', err));
+    if (window.supabaseClient && Array.isArray(v)) {
+      v.forEach(latest => {
+        if (!latest || !latest.email) return;
+        window.supabaseClient.from('trainers').upsert({
+          id: latest.id,
+          email: encryptEmail(latest.email),
+          password_hash: latest.password,
+          name: latest.name,
+          profile_image_url: latest.profileEmoji || '🎤',
+          introduction: latest.intro || '',
+          career_years: latest.careerYears || 0,
+          lesson_price: latest.lessonPrice || 0,
+          specialties: latest.specialties || [],
+          approval_status: latest.approvalStatus || 'pending',
+          oauth_provider: 'none',
+          is_active: true
+        }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (trainer):', err));
+      });
     }
   },
 
@@ -1160,7 +1198,7 @@ const State = {
 // 3. AUTH
 // ══════════════════════════════════════════════
 const Auth = {
-  login(type, email, pw) {
+  async login(type, email, pw) {
     let user = null;
     const cleanEmail = (email || '').trim().toLowerCase();
     const isPwMatch = (p) => p === hash(pw) || p === legacyHash(pw);
@@ -1170,6 +1208,33 @@ const Auth = {
       user = DB.getTrainers().find(t => (t.email || '').trim().toLowerCase() === cleanEmail && isPwMatch(t.password));
     } else if (type === 'admin') {
       user = DB.getAdmins().find(a => (a.email || '').trim().toLowerCase() === cleanEmail && isPwMatch(a.password));
+    }
+    // 다른 PC에서 접속 시 로컬 DB에 아직 동기화 전이면 클라우드에서 실시간 조회 후 동기화
+    if (!user && window.supabaseClient && (type === 'student' || type === 'trainer')) {
+      showLoading('클라우드 서버에서 계정 정보를 조회하고 있습니다...');
+      try {
+        const table = type === 'student' ? 'students' : 'trainers';
+        const { data } = await window.supabaseClient.from(table).select('*');
+        if (data && data.length > 0) {
+          const found = data.find(item => {
+            const dec = decryptEmail(item.email);
+            const cln = (dec || '').trim().toLowerCase();
+            return cln === cleanEmail && isPwMatch(item.password_hash);
+          });
+          if (found) {
+            await DB.initCloud();
+            if (type === 'student') {
+              user = DB.getStudents().find(s => (s.email || '').trim().toLowerCase() === cleanEmail);
+            } else {
+              user = DB.getTrainers().find(t => (t.email || '').trim().toLowerCase() === cleanEmail);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Direct cloud login check failed:', err);
+      } finally {
+        hideLoading();
+      }
     }
     if (!user) return { ok: false, msg: '이메일 또는 비밀번호가 올바르지 않습니다.' };
     if (user.password === legacyHash(pw)) {
@@ -2431,8 +2496,8 @@ function renderStudentSongs() {
   const difficulties = { easy: '쉬움', medium: '보통', hard: '어려움' };
   const diffColors = { easy: 'badge-success', medium: 'badge-info', hard: 'badge-danger' };
 
-  window.selectedTasteSongIds = window.selectedTasteSongIds || [];
-  window.selectedMasteredSongIds = window.selectedMasteredSongIds || [];
+  window.selectedTasteSongIds = (u && u.selectedTasteSongIds && u.selectedTasteSongIds.length > 0) ? u.selectedTasteSongIds : (window.selectedTasteSongIds || []);
+  window.selectedMasteredSongIds = (u && u.selectedMasteredSongIds && u.selectedMasteredSongIds.length > 0) ? u.selectedMasteredSongIds : (window.selectedMasteredSongIds || []);
 
   return `
   <div class="animate-up">
@@ -4059,11 +4124,11 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
 function attachStudentAuthListeners() {
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
-    loginForm.addEventListener('submit', e => {
+    loginForm.addEventListener('submit', async e => {
       e.preventDefault();
       const email = document.getElementById('l-email')?.value;
       const pw = document.getElementById('l-pw')?.value;
-      const result = Auth.login('student', email, pw);
+      const result = await Auth.login('student', email, pw);
       if (result.ok) {
         showToast('로그인되었습니다!', 'success');
         navigate('student-dashboard', { sub: 'home' });
@@ -4098,11 +4163,11 @@ function attachStudentAuthListeners() {
 function attachTrainerAuthListeners() {
   const loginForm = document.getElementById('trainer-login-form');
   if (loginForm) {
-    loginForm.addEventListener('submit', e => {
+    loginForm.addEventListener('submit', async e => {
       e.preventDefault();
       const email = document.getElementById('tl-email')?.value;
       const pw = document.getElementById('tl-pw')?.value;
-      const result = Auth.login('trainer', email, pw);
+      const result = await Auth.login('trainer', email, pw);
       if (result.ok) {
         showToast('로그인되었습니다!', 'success');
         navigate('trainer-dashboard', { sub: 'home' });
@@ -4140,11 +4205,11 @@ function attachTrainerAuthListeners() {
 function attachAdminAuthListeners() {
   const form = document.getElementById('admin-login-form');
   if (form) {
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       const email = document.getElementById('al-email')?.value;
       const pw = document.getElementById('al-pw')?.value;
-      const result = Auth.login('admin', email, pw);
+      const result = await Auth.login('admin', email, pw);
       if (result.ok) {
         showToast('관리자 로그인 완료', 'success');
         navigate('admin-dashboard');
@@ -4686,6 +4751,13 @@ function addSelectedSong(type, val) {
     return;
   }
   ids.push(id);
+  if (State.currentUser && State.userType === 'student') {
+    State.currentUser.selectedTasteSongIds = window.selectedTasteSongIds;
+    State.currentUser.selectedMasteredSongIds = window.selectedMasteredSongIds;
+    const students = DB.getStudents();
+    const idx = students.findIndex(s => s.id === State.currentUser.id);
+    if (idx !== -1) { students[idx] = State.currentUser; DB.setStudents(students); }
+  }
   const container = document.getElementById(`${type}-selected-list`);
   if (container) container.innerHTML = renderSelectedBadges(type);
 }
@@ -4696,6 +4768,13 @@ function removeSelectedSong(type, id) {
     window.selectedTasteSongIds = ids.filter(x => x !== id);
   } else {
     window.selectedMasteredSongIds = ids.filter(x => x !== id);
+  }
+  if (State.currentUser && State.userType === 'student') {
+    State.currentUser.selectedTasteSongIds = window.selectedTasteSongIds;
+    State.currentUser.selectedMasteredSongIds = window.selectedMasteredSongIds;
+    const students = DB.getStudents();
+    const idx = students.findIndex(s => s.id === State.currentUser.id);
+    if (idx !== -1) { students[idx] = State.currentUser; DB.setStudents(students); }
   }
   const container = document.getElementById(`${type}-selected-list`);
   if (container) container.innerHTML = renderSelectedBadges(type);
