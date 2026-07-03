@@ -2126,8 +2126,50 @@ function renderAnalysis(params) {
               </div>
             </div>
           </div>
-          `;
         })() || ''}
+
+        <!-- 담당 트레이너 총괄 피드백 섹션 -->
+        ${(() => {
+          const subId = a.submissionId || 1;
+          const fb = a.trainerFeedback;
+          const isTrainer = State.currentUser && State.userType === 'trainer';
+          
+          if (isTrainer) {
+            return `
+            <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06)); border-radius:18px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <span class="badge badge-accent" style="font-size:12px;">👨‍🏫 트레이너 전용 코칭 권한</span>
+                <h3 style="font-size:18px; font-weight:800; color:var(--text); margin:0;">이 학생의 음성 파일에 총괄 피드백 작성 / 수정</h3>
+              </div>
+              <p class="text-2" style="font-size:13px; margin-bottom:16px;">
+                학생의 발성, 호흡, 발음 및 전반적인 노래 실력에 대한 종합 보컬 트레이너 피드백을 남겨주세요. 작성된 피드백은 학생의 분석 리포트에 실시간 반영됩니다.
+              </p>
+              ${fb ? `
+                <div style="background:var(--bg-card); border-left:4px solid var(--success); padding:12px 16px; border-radius:8px; margin-bottom:14px;">
+                  <div style="font-size:12px; font-weight:700; color:var(--success); margin-bottom:4px;">💡 현재 등록된 피드백 (${fb.trainerName} · ${fb.updatedAt})</div>
+                  <div style="font-size:14px; color:var(--text); white-space:pre-wrap; line-height:1.5;">"${fb.text}"</div>
+                </div>
+              ` : ''}
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <textarea id="detail-fb-text-${subId}" class="form-input" style="min-height:90px; flex:1; font-size:14px; line-height:1.6;" placeholder="학생에게 전할 총괄 보컬 피드백을 자유롭게 입력하세요...">${fb ? fb.text : ''}</textarea>
+                <button class="btn btn-primary" style="padding:0 24px; font-weight:800; height:auto; min-height:90px;" onclick="saveTrainerFeedback(${subId})">총괄 피드백<br>저장하기</button>
+              </div>
+            </div>`;
+          } else if (fb) {
+            return `
+            <div class="card mb-24" style="padding:28px; border:2px solid #10b981; background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.08)); border-radius:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:13px;">👨‍🏫 담당 트레이너 총괄 피드백</span>
+                  <span style="font-size:16px; font-weight:800; color:var(--text);">${fb.trainerName} 선생님</span>
+                </div>
+                <span class="text-3" style="font-size:12px; font-weight:600;">작성/수정일: ${fb.updatedAt}</span>
+              </div>
+              <div style="background:var(--bg-card); padding:18px; border-radius:12px; border:1px solid rgba(16,185,129,0.3); font-size:15px; color:var(--text); line-height:1.7; white-space:pre-wrap; box-shadow:0 4px 12px rgba(0,0,0,0.05);">"${fb.text}"</div>
+            </div>`;
+          }
+          return '';
+        })()}
 
         <!-- CTA for non-logged-in -->
         ${!State.currentUser ? `
@@ -2479,7 +2521,10 @@ function renderStudentHome() {
           <div class="card card-sm flex gap-16 items-center" style="cursor:pointer" onclick="${analysis ? `showStoredAnalysis(${s.id})` : ''}">
             <div style="font-size:28px">🎵</div>
             <div style="flex:1">
-              <div style="font-size:14px;font-weight:600">${s.fileName}</div>
+              <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">
+                ${s.fileName}
+                ${analysis && analysis.trainerFeedback ? `<span class="badge badge-success" style="font-size:11px">👨‍🏫 트레이너 총괄 피드백 도착</span>` : ''}
+              </div>
               <div class="text-3" style="font-size:12px">${s.createdAt}</div>
             </div>
             ${analysis ? `<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--accent)">${analysis.overall}</div><div class="text-3" style="font-size:11px">종합점수</div></div>` : `<div class="badge badge-warning">분석중</div>`}
@@ -3103,17 +3148,23 @@ function renderTrainerStudents() {
   const analyses = DB.getAnalyses();
   const bookings = DB.getBookings().filter(b => b.trainerId === t.id);
 
+  const sortedStudents = students.slice().sort((a, b) => {
+    const aBooked = bookings.some(bk => bk.studentId === a.id) ? 1 : 0;
+    const bBooked = bookings.some(bk => bk.studentId === b.id) ? 1 : 0;
+    return bBooked - aBooked;
+  });
+
   return `
   <div class="animate-up">
     <div class="page-title">학생 실력 및 보컬 분석 리포트 관리</div>
-    <div class="page-sub">수강생들의 완곡 가능 곡, 정밀 보컬 분석 리포트 내역, 피드백 및 약점을 종합적으로 조회합니다</div>
+    <div class="page-sub">수강생들의 완곡 가능 곡, 정밀 보컬 분석 리포트 내역, 피드백 및 약점을 종합적으로 조회하고 총괄 피드백을 작성합니다</div>
 
-    ${students.length === 0 ? `
+    ${sortedStudents.length === 0 ? `
     <div class="empty-state">
       <div class="empty-title">등록된 학생이 없습니다</div>
     </div>` : `
     <div style="display:flex;flex-direction:column;gap:20px">
-      ${students.map(st => {
+      ${sortedStudents.map(st => {
         const stSubs = submissions.filter(s => s.studentId === st.id);
         const stBookings = bookings.filter(b => b.studentId === st.id);
         const latestSub = stSubs.length > 0 ? stSubs[stSubs.length - 1] : null;
@@ -3121,7 +3172,7 @@ function renderTrainerStudents() {
         const masteredStr = st.masteredSongTitle || '선택하지 않음 (학생이 AI 맞춤 추천에서 선택 시 연동됨)';
 
         return `
-        <div class="card" style="padding:24px;border:1px solid var(--border);background:var(--bg-1)">
+        <div class="card" style="padding:24px;border:1px solid var(--border);background:var(--bg-1);${stBookings.length > 0 ? 'border-left:4px solid var(--accent);box-shadow:0 8px 24px rgba(99,102,241,0.1)' : ''}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:16px">
             <div style="display:flex;align-items:center;gap:14px">
               <div class="avatar avatar-lg" style="background:var(--grad-primary);font-size:24px">${st.nickname ? st.nickname[0] : '👤'}</div>
@@ -3129,7 +3180,7 @@ function renderTrainerStudents() {
                 <div style="font-size:18px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
                   ${st.nickname || '익명 학생'}
                   <span class="badge badge-accent" style="font-size:11px">가입일: ${st.createdAt || '2026-03-01'}</span>
-                  ${stBookings.length > 0 ? `<span class="badge badge-success" style="font-size:11px">레슨 횟수 ${stBookings.length}회</span>` : ''}
+                  ${stBookings.length > 0 ? `<span class="badge badge-success" style="font-size:11px">🎯 내게 레슨/코칭 신청 학생 (${stBookings.length}회)</span>` : ''}
                 </div>
                 <div class="text-2" style="font-size:13px;margin-top:2px">이메일: ${st.email}</div>
               </div>
@@ -3196,12 +3247,94 @@ function renderTrainerStudents() {
                 </div>` : ''}
               </div>
             `}
+
+            <!-- 트레이너 학생 음성 파일별 총괄 피드백 관리 섹션 -->
+            ${stSubs.length > 0 ? `
+            <div style="margin-top:18px;padding-top:16px;border-top:2px dashed var(--border)">
+              <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                <span>👨‍🏫 학생 음성 파일별 담당 트레이너 총괄 피드백 남기기</span>
+                ${stBookings.length > 0 ? `<span class="badge badge-success" style="font-size:11px">신청 학생 전용 맞춤 코칭</span>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                ${stSubs.slice().reverse().map(sub => {
+                  const ana = analyses.find(a => a.submissionId === sub.id) || {};
+                  const fb = ana.trainerFeedback || sub.trainerFeedback;
+                  return `
+                  <div style="background:var(--bg-0);padding:16px;border-radius:12px;border:1px solid var(--border-accent)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+                      <div style="font-size:14px;font-weight:800;color:var(--text)">
+                        🎵 음성 파일: <span style="color:var(--accent)">${sub.fileName}</span>
+                        <span class="badge badge-muted" style="margin-left:6px">${sub.mode === 'song' ? '원곡 분석' : '연습곡 분석'}</span>
+                        <span class="badge badge-info">AI 종합 ${ana.overall || '-'}점</span>
+                      </div>
+                      <button class="btn btn-secondary btn-sm" onclick="showStoredAnalysis(${sub.id})">🔍 AI 정밀분석 리포트 조회</button>
+                    </div>
+                    
+                    ${fb ? `
+                    <div style="background:var(--accent-dim);border-left:4px solid var(--accent);padding:12px;border-radius:8px;margin-bottom:12px">
+                      <div style="font-size:12px;font-weight:800;color:var(--text-accent);margin-bottom:4px">✅ 등록된 총괄 피드백 (${fb.trainerName} 선생님 · ${fb.updatedAt})</div>
+                      <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">"${fb.text}"</div>
+                    </div>` : ''}
+
+                    <div style="display:flex;flex-direction:column;gap:6px">
+                      <label style="font-size:12px;font-weight:700;color:var(--text-2)">✍️ 이 음성 파일에 대한 총괄 코칭 피드백 작성 / 수정:</label>
+                      <div style="display:flex;gap:8px;align-items:stretch">
+                        <textarea id="fb-text-${sub.id}" class="form-input" style="font-size:13px;min-height:64px;flex:1" placeholder="학생의 발성, 호흡, 발음, 음정 등 종합 보컬 트레이닝 총괄 피드백을 작성하세요...">${fb ? fb.text : ''}</textarea>
+                        <button class="btn btn-primary" style="height:auto;padding:0 20px;font-weight:800;white-space:nowrap" onclick="saveTrainerFeedback(${sub.id})">총괄 피드백<br>저장</button>
+                      </div>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>` : ''}
           </div>
         </div>`;
       }).join('')}
     </div>`}
-  </div>`;
 }
+
+function saveTrainerFeedback(submissionId) {
+  if (!State.currentUser || State.userType !== 'trainer') {
+    showToast('트레이너 계정으로 로그인해야 총괄 피드백을 남길 수 있습니다', 'error');
+    return;
+  }
+  const el = document.getElementById(`fb-text-${submissionId}`) || document.getElementById(`detail-fb-text-${submissionId}`);
+  if (!el) return;
+  const text = el.value.trim();
+  if (!text) {
+    showToast('총괄 피드백 내용을 입력해 주세요', 'warning');
+    return;
+  }
+  const analyses = DB.getAnalyses();
+  const idx = analyses.findIndex(a => a.submissionId === submissionId);
+  if (idx === -1) {
+    showToast('분석 결과를 찾을 수 없습니다', 'error');
+    return;
+  }
+  const feedbackObj = {
+    trainerId: State.currentUser.id,
+    trainerName: State.currentUser.name,
+    text: text,
+    updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+  };
+  analyses[idx].trainerFeedback = feedbackObj;
+  DB.setAnalyses(analyses);
+
+  const submissions = DB.getSubmissions();
+  const subIdx = submissions.findIndex(s => s.id === submissionId);
+  if (subIdx !== -1) {
+    submissions[subIdx].trainerFeedback = feedbackObj;
+    DB.setSubmissions(submissions);
+  }
+
+  showToast('🎉 학생 음성 파일에 총괄 피드백이 성공적으로 저장되었습니다!', 'success');
+  if (State.currentPage === 'trainer-dashboard') {
+    navigate('trainer-dashboard', { sub: 'students' });
+  } else if (State.currentPage === 'analysis') {
+    navigate('analysis', { analysis: analyses[idx] });
+  }
+}
+window.saveTrainerFeedback = saveTrainerFeedback;
 
 // ══════════════════════════════════════════════
 // 12. ADMIN DASHBOARD
