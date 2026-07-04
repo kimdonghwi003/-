@@ -2302,10 +2302,10 @@ function renderStudentAuth(params) {
             <label class="form-label">성별 (맞춤 분석 및 옥타브 기준 적용)</label>
             <div style="display:flex;gap:20px;margin-top:6px">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;font-weight:600">
-                <input type="radio" name="s-gender" value="M" checked /> 남성 👨
+                <input type="radio" name="s-gender" value="M" checked /> 남성
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;font-weight:600">
-                <input type="radio" name="s-gender" value="F" /> 여성 👩
+                <input type="radio" name="s-gender" value="F" /> 여성
               </label>
             </div>
           </div>
@@ -2386,10 +2386,10 @@ function renderTrainerAuth(params) {
             <label class="form-label">성별</label>
             <div style="display:flex;gap:20px;margin-top:6px">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;font-weight:600">
-                <input type="radio" name="ts-gender" value="M" checked /> 남성 👨
+                <input type="radio" name="ts-gender" value="M" checked /> 남성
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;font-weight:600">
-                <input type="radio" name="ts-gender" value="F" /> 여성 👩
+                <input type="radio" name="ts-gender" value="F" /> 여성
               </label>
             </div>
           </div>
@@ -2628,15 +2628,15 @@ function renderStudentSongs() {
         <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)">
           <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#ec4899">❤️ 평소 좋아하는 취향 노래 (최대 5곡)</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-            <button class="chip taste-gender active" onclick="setSelectGender('taste','ALL',this)" style="font-size:11px;padding:4px 8px">👫 전체</button>
-            <button class="chip taste-gender" onclick="setSelectGender('taste','M',this)" style="font-size:11px;padding:4px 8px">👨 남성곡</button>
-            <button class="chip taste-gender" onclick="setSelectGender('taste','F',this)" style="font-size:11px;padding:4px 8px">👩 여성곡</button>
+            <button class="chip taste-gender active" onclick="setSelectGender('taste','ALL',this)" style="font-size:11px;padding:4px 8px">전체</button>
+            <button class="chip taste-gender" onclick="setSelectGender('taste','M',this)" style="font-size:11px;padding:4px 8px">남성곡</button>
+            <button class="chip taste-gender" onclick="setSelectGender('taste','F',this)" style="font-size:11px;padding:4px 8px">여성곡</button>
           </div>
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <input type="text" id="taste-search" class="form-input" placeholder="검색 (예: 아이유, 박효신)..." oninput="filterSongSelect('taste')" style="width:130px;font-size:12px;height:38px" />
             <select id="taste-select" class="form-input" style="flex:1;font-size:13px;height:38px" onchange="addSelectedSong('taste', this.value)">
               <option value="">+ 노래 선택 추가 (전체)</option>
-              ${songs.map(s => `<option value="${s.id}">[${(s.gender||'M')==='F'?'👩여':'👨남'}] ${s.artist} - ${s.title}</option>`).join('')}
+              ${songs.map(s => `<option value="${s.id}">[${(s.gender||'M')==='F'?'여':'남'}] ${s.artist} - ${s.title}</option>`).join('')}
             </select>
           </div>
           <div id="taste-selected-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:8px;background:var(--bg-2);border-radius:8px;border:1px dashed var(--border)">
@@ -2648,15 +2648,15 @@ function renderStudentSongs() {
         <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)">
           <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#3b82f6">🎤 현재 완창 가능한 애창곡 (최대 5곡)</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-            <button class="chip mastered-gender active" onclick="setSelectGender('mastered','ALL',this)" style="font-size:11px;padding:4px 8px">👫 전체</button>
-            <button class="chip mastered-gender" onclick="setSelectGender('mastered','M',this)" style="font-size:11px;padding:4px 8px">👨 남성곡</button>
-            <button class="chip mastered-gender" onclick="setSelectGender('mastered','F',this)" style="font-size:11px;padding:4px 8px">👩 여성곡</button>
+            <button class="chip mastered-gender active" onclick="setSelectGender('mastered','ALL',this)" style="font-size:11px;padding:4px 8px">전체</button>
+            <button class="chip mastered-gender" onclick="setSelectGender('mastered','M',this)" style="font-size:11px;padding:4px 8px">남성곡</button>
+            <button class="chip mastered-gender" onclick="setSelectGender('mastered','F',this)" style="font-size:11px;padding:4px 8px">여성곡</button>
           </div>
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <input type="text" id="mastered-search" class="form-input" placeholder="검색 (예: 버즈, 이승철)..." oninput="filterSongSelect('mastered')" style="width:130px;font-size:12px;height:38px" />
             <select id="mastered-select" class="form-input" style="flex:1;font-size:13px;height:38px" onchange="addSelectedSong('mastered', this.value)">
               <option value="">+ 완곡 가능 선택 추가 (전체)</option>
-              ${songs.map(s => `<option value="${s.id}">[${(s.gender||'M')==='F'?'👩여':'👨남'}] ${s.artist} - ${s.title}</option>`).join('')}
+              ${songs.map(s => `<option value="${s.id}">[${(s.gender||'M')==='F'?'여':'남'}] ${s.artist} - ${s.title}</option>`).join('')}
             </select>
           </div>
           <div id="mastered-selected-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:8px;background:var(--bg-2);border-radius:8px;border:1px dashed var(--border)">
@@ -2686,9 +2686,9 @@ function renderStudentSongs() {
         ${genres.map(g => `<button class="chip genre-filter ${g === '전체' ? 'active' : ''}" data-genre="${g}" onclick="filterSongs(this,'${g}')">${g}</button>`).join('')}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="chip gender-filter active" data-gender="ALL" onclick="filterSongGender(this,'ALL')">👫 남녀 전체</button>
-        <button class="chip gender-filter" data-gender="M" onclick="filterSongGender(this,'M')">👨 남성 곡</button>
-        <button class="chip gender-filter" data-gender="F" onclick="filterSongGender(this,'F')">👩 여성 곡</button>
+        <button class="chip gender-filter active" data-gender="ALL" onclick="filterSongGender(this,'ALL')">남녀 전체</button>
+        <button class="chip gender-filter" data-gender="M" onclick="filterSongGender(this,'M')">남성곡</button>
+        <button class="chip gender-filter" data-gender="F" onclick="filterSongGender(this,'F')">여성곡</button>
       </div>
     </div>
 
@@ -2708,7 +2708,7 @@ function renderStudentSongs() {
             <div class="song-artist">${song.artist}</div>
           </div>
           <div class="song-meta" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <span class="badge ${song.gender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">${song.gender === 'F' ? '👩 여성곡' : '👨 남성곡'}</span>
+            <span class="badge ${song.gender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">${song.gender === 'F' ? '여성곡' : '남성곡'}</span>
             <span class="badge badge-accent" style="font-weight:700">★ ${song.difficultyScore || 5}/10</span>
             <span class="badge ${diffColors[song.difficulty] || 'badge-info'}">${difficulties[song.difficulty] || '보통'}</span>
             <span class="badge badge-muted">${song.genre}</span>
@@ -4809,11 +4809,11 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   }
 
   if (uGender === 'M' && songGender === 'F') {
-    evalComment += ` [👨 남성 보컬 맞춤 정밀 진단]: 여성 원곡의 고음역대를 고려하여 남성 음역대(-4키~-5키 조절 기준)로 교차 보정 및 평가가 적용되었습니다.`;
+    evalComment += ` [남성 보컬 맞춤 정밀 진단]: 여성 원곡의 고음역대를 고려하여 남성 음역대(-4키~-5키 조절 기준)로 교차 보정 및 평가가 적용되었습니다.`;
   } else if (uGender === 'F' && songGender === 'M') {
-    evalComment += ` [👩 여성 보컬 맞춤 정밀 진단]: 남성 원곡의 저음역대를 고려하여 여성 음역대(+4키~+5키 조절 기준)로 교차 보정 및 평가가 적용되었습니다.`;
+    evalComment += ` [여성 보컬 맞춤 정밀 진단]: 남성 원곡의 저음역대를 고려하여 여성 음역대(+4키~+5키 조절 기준)로 교차 보정 및 평가가 적용되었습니다.`;
   } else {
-    evalComment += ` [${uGender === 'F' ? '👩 여성' : '👨 남성'} 보컬 1:1 맞춤 진단]: 본인의 성별과 일치하는 음역대 분석으로 성대 접촉 및 음정 정밀 평가가 완료되었습니다.`;
+    evalComment += ` [${uGender === 'F' ? '여성' : '남성'} 보컬 1:1 맞춤 진단]: 본인의 성별과 일치하는 음역대 분석으로 성대 접촉 및 음정 정밀 평가가 완료되었습니다.`;
   }
   
   const comparativeEval = {
@@ -5463,7 +5463,7 @@ function showSongDetail(songId) {
       <div style="font-size:18px;font-weight:700;margin-bottom:4px">${song.title}</div>
       <div class="text-2 mb-16" style="margin-bottom:16px">${song.artist}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        <span class="badge ${sGender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">${sGender === 'F' ? '👩 여성 보컬 곡' : '👨 남성 보컬 곡'}</span>
+        <span class="badge ${sGender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">${sGender === 'F' ? '여성 보컬 곡' : '남성 보컬 곡'}</span>
         <span class="badge badge-accent" style="font-weight:700;font-size:13px">★ 난이도 ${song.difficultyScore || 5}/10</span>
         <span class="badge ${diffColors[song.difficulty] || 'badge-info'}">${difficulties[song.difficulty] || '보통'}</span>
         <span class="badge badge-muted">${song.genre}</span>
@@ -5507,9 +5507,9 @@ function filterSongSelect(type) {
     const matchG = genderFilter === 'ALL' || (s.gender || 'M') === genderFilter;
     return matchQ && matchG;
   });
-  const labelText = genderFilter === 'F' ? '👩여성' : genderFilter === 'M' ? '👨남성' : '전체';
+  const labelText = genderFilter === 'F' ? '여성' : genderFilter === 'M' ? '남성' : '전체';
   sel.innerHTML = `<option value="">+ 노래 선택 추가 (${labelText})</option>` + 
-    filtered.map(s => `<option value="${s.id}">[${(s.gender||'M')==='F'?'👩여':'👨남'}] ${s.artist} - ${s.title}</option>`).join('');
+    filtered.map(s => `<option value="${s.id}">[${(s.gender||'M')==='F'?'여':'남'}] ${s.artist} - ${s.title}</option>`).join('');
 }
 
 function renderSelectedBadges(type) {
@@ -5655,7 +5655,7 @@ function runComprehensiveSongAI() {
         <div>
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:15px;font-weight:700;color:var(--text)">${s.title}</span>
-            <span class="badge ${sGender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-size:10px;padding:2px 6px">${sGender === 'F' ? '👩여성' : '👨남성'}</span>
+            <span class="badge ${sGender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-size:10px;padding:2px 6px">${sGender === 'F' ? '여성' : '남성'}</span>
           </div>
           <div class="text-2" style="font-size:12px;margin-top:2px">${s.artist} · ${s.genre}</div>
           <div style="font-size:11px;margin-top:4px">${keyTip}</div>
@@ -5672,7 +5672,7 @@ function runComprehensiveSongAI() {
   resDiv.innerHTML = `
     <!-- AI 분석 진단서 -->
     <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--accent);margin-bottom:24px">
-      <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:8px">📊 AI 취향 & 실력 종합 프로파일링 진단서 (분석 기준: ${userGender === 'F' ? '👩 여성 보컬' : '👨 남성 보컬'})</div>
+      <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:8px">📊 AI 취향 & 실력 종합 프로파일링 진단서 (분석 기준: ${userGender === 'F' ? '여성 보컬' : '남성 보컬'})</div>
       <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px">
         <div>🎵 선호 1순위 장르: <strong style="color:var(--text)">${primaryGenre}</strong></div>
         <div>📈 안정 완곡 한계 음역대: <strong style="color:#10b981">${maxNoteStr}</strong></div>
@@ -6041,7 +6041,7 @@ function toggleUserGender() {
     const idx = trainers.findIndex(t => t.id === State.currentUser.id);
     if (idx !== -1) { trainers[idx].gender = next; DB.setTrainers(trainers); }
   }
-  showToast(`성별 분석 기준이 [${next === 'F' ? '여성 👩' : '남성 👨'}]으로 변경되었습니다!`, 'info');
+  showToast(`성별 분석 기준이 [${next === 'F' ? '여성' : '남성'}]으로 변경되었습니다!`, 'info');
   renderPage();
 }
 window.toggleUserGender = toggleUserGender;
