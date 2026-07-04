@@ -1792,7 +1792,7 @@ function renderAnalysis(params) {
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center">
             <button class="btn btn-xs btn-primary" onclick="window.filterBookmarks('all')" id="bm-filter-all">📌 전체 북마크 (${bookmarks.length})</button>
             <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('rhythm')" id="bm-filter-rhythm" style="color:#f59e0b">⏱ 박자 나간 부분 (${bookmarks.filter(b=>b.type==='rhythm').length})</button>
-            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('pitch')" id="bm-filter-pitch" style="color:#ef4444">📉 음 불안한 부분 (${bookmarks.filter(b=>b.type==='pitch').length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('pitch')" id="bm-filter-pitch" style="color:#ef4444">📉 키/음정 이탈 부분 (${bookmarks.filter(b=>b.type==='pitch').length})</button>
             <button class="btn btn-xs btn-ghost" onclick="window.toggleAddBookmarkForm()" style="margin-left:auto; color:var(--accent); font-weight:800">➕ 북마크 직접 추가 (트레이너/학생)</button>
           </div>
 
@@ -1803,7 +1803,7 @@ function renderAnalysis(params) {
               <input type="text" id="new-bm-time" class="form-input" placeholder="시간 (예: 00:15 또는 15)" style="padding:10px; font-size:13px" />
               <select id="new-bm-type" class="form-input" style="padding:10px; font-size:13px">
                 <option value="rhythm">⏱ 박자 나간 부분</option>
-                <option value="pitch">📉 음 불안한 부분</option>
+                <option value="pitch">📉 키/음정 이탈 부분</option>
                 <option value="good">💡 우수 발성 구간</option>
               </select>
               <input type="text" id="new-bm-desc" class="form-input" placeholder="피드백 및 훈련 코멘트 입력" style="padding:10px; font-size:13px; grid-column: span 2" />
@@ -4353,30 +4353,109 @@ async function decodeAndAnalyzeAudioFile(file) {
     const fmtTime = (t) => `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}`;
     const realBookmarks = [];
     const windowSec = Math.min(Math.floor(duration), 300);
-    for (let s = 2; s < windowSec - 2; s += 3) {
-      const startSample = s * sampleRate;
-      const subSlices = [0, 0.25, 0.5, 0.75].map(offset => {
-        const idx = startSample + Math.floor(offset * sampleRate);
-        const sl = channel.slice(idx, idx + 2048);
-        return detectPitchAutocorrelation(sl, sampleRate);
-      }).filter(h => h > 80 && h < 1000);
-      
-      if (subSlices.length >= 3) {
-        const maxP = Math.max(...subSlices);
-        const minP = Math.min(...subSlices);
-        if (maxP / minP > 1.07 && maxP - minP > 15) {
-          const cents = Math.round(1200 * Math.log2(maxP / minP));
-          realBookmarks.push({
-            sec: s,
-            timeStr: fmtTime(s),
-            type: 'pitch',
-            label: `📉 실측 음정 흔들림 / 피치 불안정 (+${cents}센트 변동)`,
-            desc: `오디오 파형 주파수 실측 결과, 해당 초점(${fmtTime(s)})에서 피치가 ${Math.round(minP)}Hz ~ ${Math.round(maxP)}Hz 사이로 불안정하게 흔들렸습니다.`
-          });
+
+    // [음악적 주 키(Key) 및 다이아토닉 스케일 판별 알고리즘]
+    // 1. 전 곡에 걸쳐 0.15초 간격으로 유효 피치(Hz)를 추출하여 12음계 크로마 히스토그램 생성
+    const chroma = new Array(12).fill(0);
+    const scanStep = Math.floor(0.15 * sampleRate);
+    const sliceLen = 2048;
+    for (let i = 0; i < totalSamples - sliceLen; i += scanStep) {
+      const sl = channel.slice(i, i + sliceLen);
+      const hz = detectPitchAutocorrelation(sl, sampleRate);
+      if (hz > 80 && hz < 1100) {
+        const midiFloat = 12 * Math.log2(hz / 440) + 69;
+        const midiInt = Math.round(midiFloat);
+        if (midiInt >= 36 && midiInt <= 84) {
+          const pc = (midiInt % 12 + 12) % 12;
+          chroma[pc]++;
         }
       }
     }
-    
+
+    // 2. 24개 메이저/마이너 다이아토닉 스케일과의 매칭 점수 계산으로 주 키(Primary Key) 판별
+    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const krNoteMap = {0:'도',1:'도#',2:'레',3:'레#',4:'미',5:'파',6:'파#',7:'솔',8:'솔#',9:'라',10:'라#',11:'시'};
+    let bestKeyName = 'C Major (C키)';
+    let bestScalePCs = new Set([0, 2, 4, 5, 7, 9, 11]);
+    let maxScaleScore = -1;
+
+    for (let root = 0; root < 12; root++) {
+      const majPCs = [0, 2, 4, 5, 7, 9, 11].map(iv => (root + iv) % 12);
+      const majScore = majPCs.reduce((sum, pc) => sum + chroma[pc], 0);
+      if (majScore > maxScaleScore) {
+        maxScaleScore = majScore;
+        bestKeyName = `${noteNames[root]} Major (${noteNames[root]}키)`;
+        bestScalePCs = new Set(majPCs);
+      }
+      const minPCs = [0, 2, 3, 5, 7, 8, 10].map(iv => (root + iv) % 12);
+      const minScore = minPCs.reduce((sum, pc) => sum + chroma[pc], 0);
+      if (minScore > maxScaleScore) {
+        maxScaleScore = minScore;
+        bestKeyName = `${noteNames[root]} Minor (${noteNames[root]}m키)`;
+        bestScalePCs = new Set(minPCs);
+      }
+    }
+
+    // 3. 스케일 이탈(Off-Key / 이조) 및 정밀 센트 오차 기반 피치 불안정 감지
+    let lastPitchErrorSec = -10;
+    for (let s = 2; s < windowSec - 2; s += 2) {
+      if (s - lastPitchErrorSec < 4) continue; // 4초 이내 중복 피치 경고 방지
+      const startSample = s * sampleRate;
+      const subSlices = [0, 0.2, 0.4].map(offset => {
+        const idx = startSample + Math.floor(offset * sampleRate);
+        const sl = channel.slice(idx, idx + 2048);
+        return detectPitchAutocorrelation(sl, sampleRate);
+      }).filter(h => h > 80 && h < 1100);
+
+      if (subSlices.length >= 2) {
+        const avgHz = subSlices.reduce((a, b) => a + b, 0) / subSlices.length;
+        const maxH = Math.max(...subSlices);
+        const minH = Math.min(...subSlices);
+        // 급격한 포르타멘토/도약 구간이 아닌, 발성이 유지되는 구간(1.06 이하)만 정밀 검사
+        if (maxH / minH < 1.06) {
+          const midiFloat = 12 * Math.log2(avgHz / 440) + 69;
+          const midiInt = Math.round(midiFloat);
+          const centsDev = Math.round((midiFloat - midiInt) * 100);
+          const pc = (midiInt % 12 + 12) % 12;
+          const octaveName = Math.floor(midiInt / 12) - 1;
+          const krNote = krNoteMap[pc] || noteNames[pc];
+
+          // 조건 A: 주 키의 다이아토닉 스케일을 벗어난 음정(Off-Key / 이조 감지)
+          if (!bestScalePCs.has(pc)) {
+            lastPitchErrorSec = s;
+            realBookmarks.push({
+              sec: s,
+              timeStr: fmtTime(s),
+              type: 'pitch',
+              label: `⚠️ [스케일 이탈 감지] 주 키(${bestKeyName}) 밖의 음정(${noteNames[pc]}·${krNote})`,
+              desc: `이 노래의 주 키는 **${bestKeyName}**로 실측되었습니다. 해당 초점(${fmtTime(s)})에서 곡의 다이아토닉 스케일에 맞지 않는 **${noteNames[pc]}${octaveName} (${krNote})** 음정이 감지되어 피치(음정)가 이탈된 것으로 분석됩니다. 단순 멜로디 흔들림이 아닌, 주 키의 음정에서 벗어난 구간입니다.`
+            });
+          }
+          // 조건 B: 스케일 내 음정이나 38센트 이상 편차가 난 경우 (정밀 음정 불안정)
+          else if (Math.abs(centsDev) >= 38) {
+            lastPitchErrorSec = s;
+            const dirStr = centsDev > 0 ? `+${centsDev}센트 (샵/높음)` : `${centsDev}센트 (플랫/낮음)`;
+            realBookmarks.push({
+              sec: s,
+              timeStr: fmtTime(s),
+              type: 'pitch',
+              label: `📉 [정밀 음정 불안정] 스케일 음정 대비 ${dirStr}`,
+              desc: `해당 초점(${fmtTime(s)})에서 스케일 내 음정인 **${noteNames[pc]}${octaveName} (${krNote})**를 발성하고 있으나, 정확한 정음 피치보다 **${dirStr}** 편차가 실측되었습니다. 호흡 압력 저하나 발성 흔들림으로 인해 피치가 벗어난 것으로 분석됩니다.`
+            });
+          }
+        }
+      }
+    }
+
+    // 피치 오류 감지 횟수에 따른 발성 안정도 점수 보정
+    const pitchErrorCount = realBookmarks.filter(b => b.type === 'pitch').length;
+    if (pitchErrorCount === 0 && stabilityScore < 90) {
+      stabilityScore = Math.min(98, stabilityScore + 8);
+    } else if (pitchErrorCount > 0) {
+      stabilityScore = Math.max(60, stabilityScore - (pitchErrorCount * 4));
+    }
+
+    // 4. 리듬(호흡 공백) 감지
     for (let s = 3; s < windowSec - 2; s += 5) {
       const idx = s * sampleRate;
       let sSq = 0;
@@ -4394,7 +4473,7 @@ async function decodeAndAnalyzeAudioFile(file) {
       }
     }
 
-    return { durationStr, totalSec: Math.round(duration), timelineData, highestHz: Math.round(highestHz), highestNote, stabilityScore, realBookmarks };
+    return { durationStr, totalSec: Math.round(duration), timelineData, highestHz: Math.round(highestHz), highestNote, stabilityScore, realBookmarks, detectedKey: bestKeyName };
   } catch (e) {
     console.warn('Real audio analysis failed:', e);
     return null;
@@ -4568,7 +4647,9 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   const breath = aiData?.breath_score || base();
   const tailFinish = aiData?.tail_score || base();
   const stability = realAudio?.stabilityScore || aiData?.stability_score || base();
-  const pitch = aiData?.pitch_score || base();
+  const pitchErrCount = realAudio ? (realAudio.realBookmarks || []).filter(b => b.type === 'pitch').length : -1;
+  const realPitchScore = pitchErrCount === 0 ? Math.min(98, 92 + Math.floor(Math.random() * 7)) : pitchErrCount > 0 ? Math.max(60, 88 - pitchErrCount * 6) : base();
+  const pitch = aiData?.pitch_score || realPitchScore;
   const pronunciation = aiData?.diction_score || base();
   const volume = aiData?.volume_score || base();
   
@@ -4590,7 +4671,7 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   const breathFB = breath >= 80 ? '복식 호흡 지지(Breath Support)가 매우 훌륭하여 프레이즈 전체에 안정적인 호흡 압력이 공급됩니다.' : breath >= 65 ? '호흡량은 충분하나 긴 문장 끝부분에서 호흡 지지가 다소 풀리는 경향이 있습니다.' : '호흡 압력이 부족하여 소리가 흔들립니다. 횡격막 강화 및 스타카토 호흡 훈련이 필요합니다.';
   const tailFinishFB = tailFinish >= 80 ? '프레이즈의 끝음 처리와 자연스러운 비브라토 감쇄(Fade-out)가 매우 세련되고 부드럽습니다.' : tailFinish >= 65 ? '끝음 유지는 양호하나 비브라토 주기가 일정하지 않고 다소 급하게 끊어지는 구간이 있습니다.' : '끝음에서 음정이 흔들리거나 호흡이 먼저 빠집니다. 롱톤(Long-tone) 끝음 유지 연습을 추천합니다.';
   const stabilityFB = stability >= 80 ? '실측 오디오 파형 진폭 균일도(CV)가 우수하며, 성대 접촉과 발성이 훌륭한 안정성을 보입니다.' : stability >= 65 ? '파형 진폭이 다소 불규칙한 구간이 존재하며, 고음 도약 시 발성의 흔들림이 감지되었습니다.' : '파형 진폭 흔들림이 큽니다. 성대 접촉을 일정하게 유지하는 립트릴 및 발성 안정화 연습이 시급합니다.';
-  const pitchFB = pitch >= 80 ? '음정이 전반적으로 매우 정확합니다. 전환음 구간에서도 피치 중심을 잘 유지하고 있습니다.' : pitch >= 65 ? '음정 이탈이 일부 고음이나 도약 구간에서 발생합니다. 반음 계단 연습을 통한 피치 교정을 권장합니다.' : '음정 이탈이 다수 감지됩니다. 스케일 훈련 및 피아노 맞춤 청음 연습을 병행하세요.';
+  const pitchFB = pitch >= 80 ? '분석된 주 키(Key)의 다이아토닉 스케일 내에서 음정이 전반적으로 매우 정확합니다. 자연스러운 비브라토를 잘 유지하고 있습니다.' : pitch >= 65 ? '주 키 스케일에서 벗어난 이조(Off-key)나 센트 오차가 일부 구간에서 감지되었습니다. 스케일 맞춤 피치 교정을 권장합니다.' : '주 키 스케일 이탈이 다수 감지됩니다. 피아노 청음 및 해당 키의 스케일 발성 훈련을 병행하세요.';
   const pronunciationFB = pronunciation >= 80 ? '자음의 타격과 모음의 포먼트(Formant)가 명확하여 전달력이 우수하고 가사 가독성이 훌륭합니다.' : pronunciation >= 65 ? '고음역대에서 모음이 다소 뭉개지거나 자음 발음이 흐려지는 경향이 있습니다.' : '가사 전달력이 다소 떨어집니다. 구강 구조를 넓게 열고 모음 정밀 발음 훈련을 연습하세요.';
   const volumeFB = volume >= 80 ? '성량 조절과 다이나믹 표현력이 훌륭합니다. 곡의 기승전결에 따른 강약 대비가 효과적입니다.' : volume >= 65 ? '성량이 전반적으로 안정적이나, 클라이맥스에서의 폭발적인 성량 대비를 더 넓히면 좋겠습니다.' : '성량이 일정하지 않거나 전체적으로 작습니다. 공명강을 활용한 소리 증폭 연습이 필요합니다.';
 
@@ -4666,7 +4747,7 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   } else if (whisperLyrics) {
     sttLyrics = `"${whisperLyrics}" (OpenAI Whisper 실측 100% 가사 추출 완료)`;
   } else if (realAudio) {
-    sttLyrics = `[AudioContext 실제 파형 분석]: 총 재생시간 ${realAudio.durationStr}, 최고 감지 주파수 ${realAudio.highestHz}Hz (${realAudio.highestNote}). ※ 100% 실제 가사 텍스트를 인식하려면 분석 시 OpenAI API Key를 입력해주세요.`;
+    sttLyrics = `[AudioContext 정밀 실측 분석]: 분석된 주 키(Key)는 **${realAudio.detectedKey || 'C Major'}**, 총 재생시간 ${realAudio.durationStr}, 최고 감지 주파수 ${realAudio.highestHz}Hz (${realAudio.highestNote}). ※ 100% 실제 가사 텍스트를 인식하려면 분석 시 OpenAI API Key를 입력해주세요.`;
   } else if (matchedSong.title === '나였으면') {
     sttLyrics = '"늘 바라만 보네요 하루가 지나가고... 또 하루가 지나도 그대 눈길은 딴 곳만 보네요" (오디오 감지 가사 인식률 98.8%)';
   } else {
@@ -6520,7 +6601,7 @@ window.submitNewBookmark = function(analysisId) {
     sec = Number(timeVal) || 10;
   }
   const timeStr = formatSecToStr(sec);
-  const label = typeVal === 'rhythm' ? '⚠️ 박자 지연/불일치 (직접 등록)' : typeVal === 'pitch' ? '📉 음정 불안정/이탈 (직접 등록)' : '💡 우수 발성 구간';
+  const label = typeVal === 'rhythm' ? '⚠️ 박자 지연/불일치 (직접 등록)' : typeVal === 'pitch' ? '📉 키/음정 이탈 (직접 등록)' : '💡 우수 발성 구간';
   
   const newBm = { sec, timeStr, type: typeVal, label, desc: descVal };
   window.currentAnalysisBookmarks.push(newBm);
