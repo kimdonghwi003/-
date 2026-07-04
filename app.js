@@ -4088,13 +4088,13 @@ window.handleSongSearchInput = function(val) {
   
   dropdown.style.display = 'block';
   dropdown.innerHTML = matches.map(s => `
-    <div style="padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='var(--bg-1)'" onmouseout="this.style.background='transparent'" onclick="selectTargetSong(${s.id}, '${s.title.replace(/'/g, "")}', '${s.artist.replace(/'/g, "")}', '${s.highestNote || "확인 불가 (공식 정보 없음)"}', ${s.difficulty || 5})">
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='var(--bg-1)'" onmouseout="this.style.background='transparent'" onclick="selectTargetSong(${s.id}, '${s.title.replace(/'/g, "")}', '${s.artist.replace(/'/g, "")}', '${s.highestNote || "확인 불가 (공식 정보 없음)"}', '${s.difficultyScore || s.difficulty || 5}')">
       <div>
         <span style="font-weight:800; color:var(--text-main);">${s.title}</span>
         <span style="font-size:13px; color:var(--text-2); margin-left:6px;">- ${s.artist}</span>
       </div>
       <div style="font-size:12px; font-weight:700; color:var(--accent); background:rgba(99,102,241,0.1); padding:4px 8px; border-radius:6px;">
-        최고음 ${s.highestNote || '확인 불가'} · 난이도 ${s.difficulty || 5}/10
+        최고음 ${s.highestNote || '확인 불가'} · 난이도 ${s.difficultyScore || s.difficulty || 5}/10
       </div>
     </div>
   `).join('');
