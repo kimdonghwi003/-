@@ -1426,7 +1426,7 @@ function renderNav() {
 
   nav.innerHTML = `
     <div class="nav-inner">
-      <div class="nav-logo" onclick="navigate('home')">VocalAI</div>
+      <div class="nav-logo" onclick="navigate('home')">내일의 보컬</div>
       <div class="nav-links">${links}</div>
       <div class="nav-actions">${actions}</div>
     </div>`;
@@ -1547,8 +1547,8 @@ function renderHome() {
 
   <footer style="border-top:1px solid var(--border);padding:32px 0;text-align:center">
     <div class="container">
-      <div class="nav-logo" style="font-size:18px;margin-bottom:8px">VocalAI</div>
-      <p class="text-3" style="font-size:13px">© 2026 VocalAI. 보컬 정밀 분석 및 트레이닝 매칭 플랫폼.</p>
+      <div class="nav-logo" style="font-size:18px;margin-bottom:8px">내일의 보컬</div>
+      <p class="text-3" style="font-size:13px">© 2026 내일의 보컬. 보컬 정밀 분석 및 트레이닝 매칭 플랫폼.</p>
     </div>
   </footer>`;
 }
@@ -2249,7 +2249,7 @@ function renderStudentAuth(params) {
   return `
   <div class="auth-wrap">
     <div class="auth-card animate-up">
-      <div class="auth-logo grad-text">VocalAI</div>
+      <div class="auth-logo grad-text">내일의 보컬</div>
       <div class="auth-subtitle">학생 계정</div>
       <div class="tabs mb-24" style="margin-bottom:28px">
         <button class="tab-btn ${tab === 'login' ? 'active' : ''}" id="tab-login" onclick="switchAuthTab('login')">로그인</button>
@@ -2326,7 +2326,7 @@ function renderTrainerAuth(params) {
   return `
   <div class="auth-wrap">
     <div class="auth-card animate-up" style="max-width:560px">
-      <div class="auth-logo grad-text">VocalAI</div>
+      <div class="auth-logo grad-text">내일의 보컬</div>
       <div class="auth-subtitle">트레이너 계정</div>
       <div class="tabs mb-24" style="margin-bottom:28px">
         <button class="tab-btn ${tab === 'login' ? 'active' : ''}" onclick="switchAuthTab('login')">로그인</button>
@@ -2413,7 +2413,7 @@ function renderAdminAuth() {
   return `
   <div class="auth-wrap">
     <div class="auth-card animate-up">
-      <div class="auth-logo grad-text">VocalAI</div>
+      <div class="auth-logo grad-text">내일의 보컬</div>
       <div class="auth-subtitle">관리자 로그인</div>
       <form id="admin-login-form">
         <div class="form-group mb-16" style="margin-bottom:16px">
@@ -3610,7 +3610,7 @@ function renderAdminDashboard(params) {
               <span class="badge badge-accent" style="font-size:12px;">🛡️ 최고 관리자 권한 (Admin Control Center)</span>
               <span style="font-size:13px; color:var(--text-3);">${new Date().toISOString().slice(0,10)} 기준 실시간 동기화</span>
             </div>
-            <div class="page-title" style="font-size:28px; margin-bottom:4px;">모두의 보컬 관리자 플랫폼</div>
+            <div class="page-title" style="font-size:28px; margin-bottom:4px;">내일의 보컬 관리자 플랫폼</div>
             <div class="page-sub" style="margin:0;">전체 트레이너 및 수강생 만족도 체크, 코칭 피드백 열람, 업로드 음성 파일 및 회원 심사 관리</div>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
