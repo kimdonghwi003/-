@@ -1426,7 +1426,7 @@ function renderNav() {
 
   nav.innerHTML = `
     <div class="nav-inner">
-      <div class="nav-logo" onclick="navigate('home')">내일의 보컬</div>
+      <div class="nav-logo" style="cursor:pointer;" onclick="navigate(State.currentUser ? (State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard') : 'home')">내일의 보컬</div>
       <div class="nav-links">${links}</div>
       <div class="nav-actions">${actions}</div>
     </div>`;
@@ -1447,15 +1447,24 @@ function renderHome() {
       <h1 class="hero-title">당신의 목소리를<br><span class="grad-text">과학적으로 분석합니다</span></h1>
       <p class="hero-sub">음성 파일 하나만 업로드하면 음정·박자·성량·음색을 정밀 분석하고,<br>맞춤 트레이너를 연결해 드립니다. <strong>로그인 없이 바로 시작하세요.</strong></p>
       <div class="hero-cta">
-        <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('submit')">
-          무료로 분석 시작
-        </button>
-        <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'login'})">
-          로그인
-        </button>
-        <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'signup'})">
-          회원가입
-        </button>
+        ${State.currentUser ? `
+          <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('${State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard'}')">
+            👉 내 대시보드로 이동
+          </button>
+          <button class="btn btn-secondary btn-xl" onclick="navigate('submit')">
+            🎙 보컬 녹음 분석
+          </button>
+        ` : `
+          <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('submit')">
+            무료로 분석 시작
+          </button>
+          <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'login'})">
+            로그인
+          </button>
+          <button class="btn btn-secondary btn-xl" onclick="navigate('student-auth',{tab:'signup'})">
+            회원가입
+          </button>
+        `}
       </div>
 
     </div>
@@ -1533,9 +1542,14 @@ function renderHome() {
         <h2 style="font-size:28px;font-weight:900;margin-bottom:12px">지금 바로 시작해보세요</h2>
         <p class="text-2 mb-24">로그인 없이도 음성 정밀 분석이 가능합니다</p>
         <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-primary btn-lg" onclick="navigate('submit')">무료 분석 시작</button>
-          <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'login'})">로그인</button>
-          <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'signup'})">회원가입</button>
+          ${State.currentUser ? `
+            <button class="btn btn-primary btn-lg" onclick="navigate('${State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard'}')">👉 내 대시보드로 이동</button>
+            <button class="btn btn-secondary btn-lg" onclick="navigate('submit')">🎙 보컬 녹음 분석</button>
+          ` : `
+            <button class="btn btn-primary btn-lg" onclick="navigate('submit')">무료 분석 시작</button>
+            <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'login'})">로그인</button>
+            <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'signup'})">회원가입</button>
+          `}
         </div>
         <p class="text-3 mt-12" style="font-size:12px">
           트레이너이신가요? <span class="text-accent" style="cursor:pointer" onclick="navigate('trainer-auth',{tab:'signup'})">트레이너 등록</span>
@@ -1547,7 +1561,7 @@ function renderHome() {
 
   <footer style="border-top:1px solid var(--border);padding:32px 0;text-align:center">
     <div class="container">
-      <div class="nav-logo" style="font-size:18px;margin-bottom:8px">내일의 보컬</div>
+      <div class="nav-logo" style="font-size:18px;margin-bottom:8px;cursor:pointer;" onclick="navigate(State.currentUser ? (State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard') : 'home')">내일의 보컬</div>
       <p class="text-3" style="font-size:13px">© 2026 내일의 보컬. 보컬 정밀 분석 및 트레이닝 매칭 플랫폼.</p>
     </div>
   </footer>`;
@@ -1882,7 +1896,7 @@ function renderAnalysis(params) {
             <div>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
                 <span class="badge badge-accent" style="background:#6366f1; color:#fff;">🎯 원곡 대비 보컬 완성도 정밀 비교 평가</span>
-                <span class="badge ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">분석 대상 성별: ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? '👩 여성 보컬' : '👨 남성 보컬'}</span>
+                <span class="badge ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">분석 대상 성별: ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? '여성 보컬' : '남성 보컬'}</span>
               </div>
               <h2 style="font-size:24px; font-weight:900; margin:0; color:var(--text-1);">
                 선택하신 기준 원곡: <span style="color:#6366f1;">${songInfo.comparativeEval.origTitle}</span> (${songInfo.comparativeEval.origArtist})
@@ -2466,10 +2480,10 @@ function renderStudentApp(params) {
           <div class="avatar">${State.currentUser.nickname[0]}</div>
           <div>
             <div style="font-size:14px;font-weight:700">${State.currentUser.nickname}</div>
-            <div style="display:flex;gap:4px;margin-top:4px">
-              <span class="badge badge-accent" style="font-size:11px;padding:2px 8px">학생</span>
-              <span class="badge badge-info" style="font-size:11px;padding:2px 8px;cursor:pointer" onclick="toggleUserGender()" title="클릭하여 남성/여성 분석 기준 전환">
-                ${(State.currentUser.gender || 'M') === 'F' ? '👩 여성 (클릭전환)' : '👨 남성 (클릭전환)'}
+            <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:nowrap;">
+              <span class="badge badge-accent" style="font-size:11px; padding:3px 8px; white-space:nowrap;">학생</span>
+              <span class="badge badge-info" style="font-size:11px; padding:3px 8px; white-space:nowrap; cursor:pointer;" onclick="toggleUserGender()" title="클릭하여 남성/여성 분석 기준 전환">
+                ${(State.currentUser.gender || 'M') === 'F' ? '여성' : '남성'}
               </span>
             </div>
           </div>
@@ -3044,10 +3058,10 @@ function renderTrainerApp(params) {
           <div class="avatar avatar-lg">${t.name[0]}</div>
           <div>
             <div style="font-size:14px;font-weight:700">${t.name}</div>
-            <div style="display:flex;gap:4px;margin-top:4px">
-              <span class="badge badge-accent" style="font-size:11px;padding:2px 8px">트레이너</span>
-              <span class="badge badge-info" style="font-size:11px;padding:2px 8px;cursor:pointer" onclick="toggleUserGender()" title="클릭하여 남성/여성 분석 기준 전환">
-                ${(t.gender || 'M') === 'F' ? '👩 여성 (클릭전환)' : '👨 남성 (클릭전환)'}
+            <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:nowrap;">
+              <span class="badge badge-accent" style="font-size:11px; padding:3px 8px; white-space:nowrap;">트레이너</span>
+              <span class="badge badge-info" style="font-size:11px; padding:3px 8px; white-space:nowrap; cursor:pointer;" onclick="toggleUserGender()" title="클릭하여 남성/여성 분석 기준 전환">
+                ${(t.gender || 'M') === 'F' ? '여성' : '남성'}
               </span>
             </div>
           </div>
@@ -6636,18 +6650,18 @@ window.renderBookmarkListUI = function() {
     const badgeColor = b.type === 'rhythm' ? '#f59e0b' : b.type === 'pitch' ? '#ef4444' : '#10b981';
     const bgTint = b.type === 'rhythm' ? 'rgba(245,158,11,0.06)' : b.type === 'pitch' ? 'rgba(239,68,68,0.06)' : 'rgba(16,185,129,0.06)';
     return `
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 18px; background:${bgTint}; border:1px solid var(--border); border-left:4px solid ${badgeColor}; border-radius:12px">
-      <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:260px">
-        <button class="btn btn-sm" style="background:${badgeColor}; color:#fff; font-weight:800; white-space:nowrap" onclick="window.seekAndPlayVocalAudio(${b.sec})">
-          ▶ ${b.timeStr} 재생
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 16px; background:${bgTint}; border:1px solid var(--border); border-left:4px solid ${badgeColor}; border-radius:12px">
+      <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; flex-wrap:wrap;">
+        <button class="btn btn-xs" style="background:${badgeColor}; color:#fff; font-weight:800; font-size:12px; padding:6px 10px; border-radius:8px; white-space:nowrap; flex-shrink:0;" onclick="window.seekAndPlayVocalAudio(${b.sec})">
+          ▶ ${b.timeStr ? b.timeStr.split('~')[0].trim() : '00:00'} 재생
         </button>
-        <div>
-          <div style="font-weight:800; font-size:14px; color:var(--text-1); margin-bottom:2px">${b.label}</div>
-          <div style="font-size:13px; color:var(--text-2); line-height:1.5">${b.desc}</div>
+        <div style="flex:1; min-width:180px;">
+          <div style="font-weight:800; font-size:14px; color:var(--text-1); margin-bottom:2px; word-break:keep-all;">${b.label}</div>
+          <div style="font-size:13px; color:var(--text-2); line-height:1.5; word-break:keep-all;">${b.desc}</div>
         </div>
       </div>
-      <div style="display:flex; gap:6px">
-        <button class="btn btn-ghost btn-xs" onclick="window.loopVocalAudioSection(${b.sec}, ${b.sec + 5})" style="font-weight:700; color:var(--text-2)">
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="btn btn-ghost btn-xs" onclick="window.loopVocalAudioSection(${b.sec}, ${b.sec + 5})" style="font-weight:700; color:var(--text-2); white-space:nowrap;">
           🔁 5초 반복
         </button>
       </div>
