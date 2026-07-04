@@ -242,6 +242,12 @@ CREATE TABLE IF NOT EXISTS vocal_analysis_results (
     overall_feedback    TEXT,
     weak_areas          JSONB,                          -- ["고음처리","호흡"]
     chart_data          JSONB,
+    trainer_feedback    TEXT,                           -- 트레이너 총괄 피드백 내용
+    trainer_id          BIGINT          REFERENCES trainers(id) ON DELETE SET NULL,
+    satisfaction_rating SMALLINT        CHECK (satisfaction_rating BETWEEN 1 AND 5), -- 수강생의 피드백 별점 만족도 (1~5점)
+    satisfaction_comment TEXT,                          -- 만족도 평가 한줄평
+    satisfaction_rated_at TIMESTAMPTZ,                  -- 만족도 평가 일시
+    json_data           JSONB,                          -- 프론트엔드 전체 분석 데이터 호환용
     analysis_engine     VARCHAR(100),
     processing_time_ms  INTEGER,
     created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW()

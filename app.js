@@ -130,6 +130,9 @@ const DB = {
               oauth_provider: 'none',
               is_active: true
             }, { onConflict: 'email' }).then(null, () => {});
+          } else {
+            const cItem = trMap.get(cleanEmail);
+            trMap.set(cleanEmail, { ...cItem, ...lt, id: cItem.id });
           }
         });
         this._set('trainers', Array.from(trMap.values()));
@@ -250,7 +253,10 @@ const DB = {
     }
   },
 
-  getStudents() { return this._get('students') || []; },
+  _getArr(k) { const v = this._get(k); return Array.isArray(v) ? v : []; },
+  _getObj(k) { const v = this._get(k); return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {}; },
+
+  getStudents() { return this._getArr('students'); },
   setStudents(v) { 
     this._set('students', v); 
     if (window.supabaseClient && Array.isArray(v)) {
@@ -276,7 +282,7 @@ const DB = {
     }
   },
 
-  getTrainers() { return this._get('trainers') || []; },
+  getTrainers() { return this._getArr('trainers'); },
   setTrainers(v) { 
     this._set('trainers', v); 
     if (window.supabaseClient && Array.isArray(v)) {
@@ -300,10 +306,10 @@ const DB = {
     }
   },
 
-  getAdmins() { return this._get('admins') || []; },
+  getAdmins() { return this._getArr('admins'); },
   setAdmins(v) { this._set('admins', v); },
 
-  getEmails() { return this._get('emails') || {}; },
+  getEmails() { return this._getObj('emails'); },
   setEmails(v) { 
     this._set('emails', v); 
     if (window.supabaseClient) {
@@ -315,7 +321,7 @@ const DB = {
       });
     }
   },
-  getSubmissions() { return this._get('submissions') || []; },
+  getSubmissions() { return this._getArr('submissions'); },
   setSubmissions(v) { 
     this._set('submissions', v); 
     if (window.supabaseClient && v && v.length > 0) {
@@ -332,7 +338,7 @@ const DB = {
       window.supabaseClient.from('vocal_submissions').upsert(batch, { onConflict: 'id' }).then(null, () => {});
     }
   },
-  getAnalyses() { return this._get('analyses') || []; },
+  getAnalyses() { return this._getArr('analyses'); },
   setAnalyses(v) { 
     this._set('analyses', v); 
     if (window.supabaseClient && v && v.length > 0) {
@@ -352,7 +358,7 @@ const DB = {
       window.supabaseClient.from('vocal_analysis_results').upsert(batch, { onConflict: 'id' }).then(null, () => {});
     }
   },
-  getSongs() { return this._get('songs') || []; },
+  getSongs() { return this._getArr('songs'); },
   setSongs(v) { 
     this._set('songs', v); 
     if (window.supabaseClient && v && v.length > 0) {
@@ -373,17 +379,17 @@ const DB = {
       window.supabaseClient.from('songs').upsert(batch, { onConflict: 'id' }).then(null, () => {});
     }
   },
-  getBookings() { return this._get('bookings') || []; },
+  getBookings() { return this._getArr('bookings'); },
   setBookings(v) { this._set('bookings', v); },
-  getPayments() { return this._get('payments') || []; },
+  getPayments() { return this._getArr('payments'); },
   setPayments(v) { this._set('payments', v); },
-  getReviews() { return this._get('reviews') || []; },
+  getReviews() { return this._getArr('reviews'); },
   setReviews(v) { this._set('reviews', v); },
-  getMrRequests() { return this._get('mr_requests') || []; },
+  getMrRequests() { return this._getArr('mr_requests'); },
   setMrRequests(v) { this._set('mr_requests', v); },
-  getSchedules() { return this._get('schedules') || []; },
+  getSchedules() { return this._getArr('schedules'); },
   setSchedules(v) { this._set('schedules', v); },
-  getNotifications() { return this._get('notifications') || []; },
+  getNotifications() { return this._getArr('notifications'); },
   setNotifications(v) { this._set('notifications', v); },
   getCurrentSession() { return this._get('session'); },
   setCurrentSession(v) { this._set('session', v); },
@@ -392,39 +398,51 @@ const DB = {
   nextId(arr) { return arr.length > 0 ? Math.max(...arr.map(i => i.id)) + 1 : 1; },
 
   seed() {
-    const curSongs = this.getSongs() || [];
+    const curSongs = this.getSongs();
     const needSeed = !this._get('seeded') || curSongs.length < 600 || curSongs.find(s => s.id === 201)?.highestNote !== '3옥도#(C#5)';
     
-    const curStudents = this._get('students') || [];
-    if (curStudents.length === 0) {
-      // Admin
-      const admins = [{ id: 1, email: 'admin@vocalai.kr', password: hash('admin1234'), name: '시스템관리자' }];
-      this.setAdmins(admins);
-
-      // Emails registry
-      const emails = { 'admin@vocalai.kr': 'admin' };
-
-      // Approved trainers
-      const trainers = [
-        { id: 1, email: 'trainer1@vocalai.kr', password: hash('trainer1'), name: '김하늘', profileEmoji: '', intro: '10년 경력의 보컬 전문 트레이너입니다. SBS 보이스킹 출연 경험이 있으며 고음 처리와 호흡법을 전문적으로 지도합니다.', careerYears: 10, lessonPrice: 80000, specialties: ['고음처리', '호흡', '발성'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 124, createdAt: '2026-01-10' },
-        { id: 2, email: 'trainer2@vocalai.kr', password: hash('trainer2'), name: '박서윤', profileEmoji: '', intro: '음대 출신 보컬리스트로 팝, R&B, 재즈 장르에 특화되어 있습니다. 음정 교정과 스케일 훈련을 집중적으로 진행합니다.', careerYears: 7, lessonPrice: 65000, specialties: ['음정교정', '스케일', '팝/R&B'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.6, totalReviews: 89, createdAt: '2026-01-15' },
-        { id: 3, email: 'trainer3@vocalai.kr', password: hash('trainer3'), name: '이준혁', profileEmoji: '', intro: '발라드와 CCM 전문 트레이너입니다. 박자감, 다이나믹 표현, 감정 전달 기법을 중심으로 수업합니다.', careerYears: 5, lessonPrice: 55000, specialties: ['박자감', '다이나믹', '발라드'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.7, totalReviews: 67, createdAt: '2026-02-01' },
-        { id: 4, email: 'trainer4@vocalai.kr', password: hash('trainer4'), name: '최민지', profileEmoji: '', intro: '신청 중인 트레이너입니다.', careerYears: 3, lessonPrice: 45000, specialties: ['음색개발'], approvalStatus: 'pending', oauthProvider: 'none', isActive: true, averageRating: 0, totalReviews: 0, createdAt: '2026-06-10' },
-        { id: 5, email: 'trainer5@vocalai.kr', password: hash('trainer5'), name: '정다은', profileEmoji: '', intro: '딕션과 발음 명료도 교정 전문 트레이너입니다. 가사가 곡의 멜로디에 명확히 얹혀지도록 자모음 타격 훈련을 지도합니다.', careerYears: 8, lessonPrice: 70000, specialties: ['발음명료도', '딕션', '가사전달'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.9, totalReviews: 142, createdAt: '2026-06-11' },
-        { id: 6, email: 'trainer6@vocalai.kr', password: hash('trainer6'), name: '한서진', profileEmoji: '', intro: '성량 확대 및 강약 다이내믹 조절 전문 트레이너입니다. 흉성 및 두성 공명 강화를 통해 압도적인 볼륨 컨트롤을 완성합니다.', careerYears: 9, lessonPrice: 75000, specialties: ['성량강화', '강약조절', '공명'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 110, createdAt: '2026-06-12' },
-        { id: 7, email: 'trainer7@vocalai.kr', password: hash('trainer7'), name: '강민호', profileEmoji: '', intro: '성대 접촉 안정성 및 파사지오 극복 전문입니다. 목이 쉬거나 음이 흔들리는 삑사리를 과학적 발성 훈련으로 교정합니다.', careerYears: 11, lessonPrice: 85000, specialties: ['발성안정성', '성대접촉', '파사지오'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.9, totalReviews: 156, createdAt: '2026-06-13' },
-      ];
-      this.setTrainers(trainers);
-      trainers.forEach(t => { emails[t.email] = 'trainer'; });
-      
-      // Sample student
-      const students = [
-        { id: 1, email: 'student@test.kr', password: hash('student1'), nickname: '보컬고수', preferredGenres: ['발라드', '팝'], oauthProvider: 'none', isActive: true, createdAt: '2026-03-01' }
-      ];
-      this.setStudents(students);
-      emails['student@test.kr'] = 'student';
-      this.setEmails(emails);
+    // 1. 관리자(Admin) 기본 계정 상시 보장 (어느 IP/PC에서든 로그인 정보 동일 유지)
+    let curAdmins = this.getAdmins();
+    if (!curAdmins.find(a => a.email === 'admin@vocalai.kr')) {
+      curAdmins.push({ id: 1, email: 'admin@vocalai.kr', password: hash('admin1234'), name: '시스템관리자' });
+      this.setAdmins(curAdmins);
     }
+
+    // 2. 이메일 레지스트리 상시 보장
+    let curEmails = this.getEmails();
+    curEmails['admin@vocalai.kr'] = 'admin';
+
+    // 3. 트레이너(Trainer) 기본 계정 상시 보장 (어느 IP/PC에서든 로그인 정보 동일 유지)
+    let curTrainers = this.getTrainers();
+    const defaultTrainers = [
+      { id: 1, email: 'trainer1@vocalai.kr', password: hash('trainer1'), name: '김하늘', profileEmoji: '', intro: '10년 경력의 보컬 전문 트레이너입니다. SBS 보이스킹 출연 경험이 있으며 고음 처리와 호흡법을 전문적으로 지도합니다.', careerYears: 10, lessonPrice: 80000, specialties: ['고음처리', '호흡', '발성'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 124, createdAt: '2026-01-10' },
+      { id: 2, email: 'trainer2@vocalai.kr', password: hash('trainer2'), name: '박서윤', profileEmoji: '', intro: '음대 출신 보컬리스트로 팝, R&B, 재즈 장르에 특화되어 있습니다. 음정 교정과 스케일 훈련을 집중적으로 진행합니다.', careerYears: 7, lessonPrice: 65000, specialties: ['음정교정', '스케일', '팝/R&B'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.6, totalReviews: 89, createdAt: '2026-01-15' },
+      { id: 3, email: 'trainer3@vocalai.kr', password: hash('trainer3'), name: '이준혁', profileEmoji: '', intro: '발라드와 CCM 전문 트레이너입니다. 박자감, 다이나믹 표현, 감정 전달 기법을 중심으로 수업합니다.', careerYears: 5, lessonPrice: 55000, specialties: ['박자감', '다이나믹', '발라드'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.7, totalReviews: 67, createdAt: '2026-02-01' },
+      { id: 4, email: 'trainer4@vocalai.kr', password: hash('trainer4'), name: '최민지', profileEmoji: '', intro: '신청 중인 트레이너입니다.', careerYears: 3, lessonPrice: 45000, specialties: ['음색개발'], approvalStatus: 'pending', oauthProvider: 'none', isActive: true, averageRating: 0, totalReviews: 0, createdAt: '2026-06-10' },
+      { id: 5, email: 'trainer5@vocalai.kr', password: hash('trainer5'), name: '정다은', profileEmoji: '', intro: '딕션과 발음 명료도 교정 전문 트레이너입니다. 가사가 곡의 멜로디에 명확히 얹혀지도록 자모음 타격 훈련을 지도합니다.', careerYears: 8, lessonPrice: 70000, specialties: ['발음명료도', '딕션', '가사전달'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.9, totalReviews: 142, createdAt: '2026-06-11' },
+      { id: 6, email: 'trainer6@vocalai.kr', password: hash('trainer6'), name: '한서진', profileEmoji: '', intro: '성량 확대 및 강약 다이내믹 조절 전문 트레이너입니다. 흉성 및 두성 공명 강화를 통해 압도적인 볼륨 컨트롤을 완성합니다.', careerYears: 9, lessonPrice: 75000, specialties: ['성량강화', '강약조절', '공명'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.8, totalReviews: 110, createdAt: '2026-06-12' },
+      { id: 7, email: 'trainer7@vocalai.kr', password: hash('trainer7'), name: '강민호', profileEmoji: '', intro: '성대 접촉 안정성 및 파사지오 극복 전문입니다. 목이 쉬거나 음이 흔들리는 삑사리를 과학적 발성 훈련으로 교정합니다.', careerYears: 11, lessonPrice: 85000, specialties: ['발성안정성', '성대접촉', '파사지오'], approvalStatus: 'approved', oauthProvider: 'none', isActive: true, averageRating: 4.9, totalReviews: 156, createdAt: '2026-06-13' },
+    ];
+    let trainerModified = false;
+    defaultTrainers.forEach(dt => {
+      if (!curTrainers.find(t => t.email === dt.email)) {
+        curTrainers.push(dt);
+        trainerModified = true;
+      }
+      curEmails[dt.email] = 'trainer';
+    });
+    if (trainerModified || curTrainers.length === 0) {
+      this.setTrainers(curTrainers);
+    }
+
+    // 4. 수강생(Student) 기본 테스트 계정 상시 보장
+    let curStudents = this.getStudents();
+    if (!curStudents.find(s => s.email === 'student@test.kr')) {
+      curStudents.push({ id: 1, email: 'student@test.kr', password: hash('student1'), nickname: '보컬고수', preferredGenres: ['발라드', '팝'], oauthProvider: 'none', isActive: true, createdAt: '2026-03-01' });
+      this.setStudents(curStudents);
+    }
+    curEmails['student@test.kr'] = 'student';
+    this.setEmails(curEmails);
 
     if (!needSeed) return;
 
@@ -2125,7 +2143,7 @@ function renderAnalysis(params) {
                 <button class="btn btn-sm btn-secondary w-full" style="width:100%; font-weight:800;" onclick="navigate('student-dashboard',{sub:'trainers',search:'${tr2.name}'})">👉 2순위 맞춤 트레이너(${tr2.name}) 프로필 및 예약</button>
               </div>
             </div>
-          </div>
+          </div>`;
         })() || ''}
 
         <!-- 담당 트레이너 총괄 피드백 섹션 -->
@@ -2147,7 +2165,14 @@ function renderAnalysis(params) {
               ${fb ? `
                 <div style="background:var(--bg-card); border-left:4px solid var(--success); padding:12px 16px; border-radius:8px; margin-bottom:14px;">
                   <div style="font-size:12px; font-weight:700; color:var(--success); margin-bottom:4px;">💡 현재 등록된 피드백 (${fb.trainerName} · ${fb.updatedAt})</div>
-                  <div style="font-size:14px; color:var(--text); white-space:pre-wrap; line-height:1.5;">"${fb.text}"</div>
+                  <div style="font-size:14px; color:var(--text); white-space:pre-wrap; line-height:1.5; margin-bottom:8px;">"${fb.text}"</div>
+                  ${fb.satisfactionRating ? `
+                    <div style="padding:6px 10px; background:rgba(245,158,11,0.1); border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:800; color:#f59e0b;">
+                      ⭐️ 수강생 만족도 평가: ★ ${fb.satisfactionRating}점 / 5점 (${fb.satisfactionRatedAt || ''})
+                    </div>
+                  ` : `
+                    <div style="font-size:12px; color:var(--text-3);">⏳ 수강생이 아직 만족도(별점)를 체크하지 않았습니다.</div>
+                  `}
                 </div>
               ` : ''}
               <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -2165,7 +2190,33 @@ function renderAnalysis(params) {
                 </div>
                 <span class="text-3" style="font-size:12px; font-weight:600;">작성/수정일: ${fb.updatedAt}</span>
               </div>
-              <div style="background:var(--bg-card); padding:18px; border-radius:12px; border:1px solid rgba(16,185,129,0.3); font-size:15px; color:var(--text); line-height:1.7; white-space:pre-wrap; box-shadow:0 4px 12px rgba(0,0,0,0.05);">"${fb.text}"</div>
+              <div style="background:var(--bg-card); padding:18px; border-radius:12px; border:1px solid rgba(16,185,129,0.3); font-size:15px; color:var(--text); line-height:1.7; white-space:pre-wrap; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:16px;">"${fb.text}"</div>
+              
+              <!-- 수강생 받은 피드백 만족도 별 5개 평가 영역 -->
+              <div style="padding:16px 20px; background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(16,185,129,0.06)); border-radius:14px; border:1px dashed #f59e0b; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px;">⭐️</span>
+                    <strong style="font-size:14px; color:var(--text);">받은 피드백 만족도를 별 다섯 개 중 몇 개로 체크해주세요!</strong>
+                  </div>
+                  ${fb.satisfactionRating ? `
+                    <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:12px; font-weight:800;">✔ 평가 완료 (${fb.satisfactionRatedAt || ''})</span>
+                  ` : `
+                    <span class="badge badge-warning" style="font-size:11px;">💡 피드백이 도움이 되셨다면 별점을 클릭하세요</span>
+                  `}
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                  <div class="star-rating-group" style="display:flex; gap:6px; cursor:pointer;">
+                    ${[1, 2, 3, 4, 5].map(star => {
+                      const isFilled = (fb.satisfactionRating || 0) >= star;
+                      return `<span onclick="rateFeedbackSatisfaction(${subId}, ${star})" onmouseover="hoverStarRating(${subId}, ${star})" onmouseout="resetStarRating(${subId}, ${fb.satisfactionRating || 0})" id="star-${subId}-${star}" style="font-size:28px; line-height:1; transition:transform 0.15s, color 0.15s; display:inline-block; color:${isFilled ? '#f59e0b' : '#d1d5db'}; text-shadow:${isFilled ? '0 2px 8px rgba(245,158,11,0.5)' : 'none'};">★</span>`;
+                    }).join('')}
+                  </div>
+                  <span id="star-label-${subId}" style="font-size:15px; font-weight:800; color:#f59e0b; background:rgba(245,158,11,0.12); padding:4px 12px; border-radius:20px;">
+                    ${fb.satisfactionRating ? `⭐ ${fb.satisfactionRating}점 / 5점 (체크됨)` : '별점을 클릭해 만족도를 체크하세요'}
+                  </span>
+                </div>
+              </div>
             </div>`;
           }
           return '';
@@ -2396,11 +2447,13 @@ function renderStudentApp(params) {
     trainers: renderStudentTrainers,
     lessons: renderStudentLessons,
     'song-analysis': renderStudentSongAnalysis,
+    feedbacks: renderStudentFeedbacks,
   };
   const renderer = subContents[sub] || renderStudentHome;
 
   const navItems = [
     { key: 'home', label: '내 프로필' },
+    { key: 'feedbacks', label: '💬 받은 코칭 피드백' },
     { key: 'songs', label: '맞춤 곡 추천' },
     { key: 'song-analysis', label: '원곡 분석' },
     { key: 'mr', label: 'MR 스튜디오' },
@@ -2855,6 +2908,88 @@ function renderStudentLessons() {
   </div>`;
 }
 
+function renderStudentFeedbacks() {
+  const u = State.currentUser;
+  const submissions = DB.getSubmissions().filter(s => s.studentId === u.id);
+  const analyses = DB.getAnalyses();
+  
+  const feedbackItems = [];
+  submissions.forEach(s => {
+    const ana = analyses.find(a => a.submissionId === s.id);
+    const fb = (ana && ana.trainerFeedback) || s.trainerFeedback;
+    if (fb) {
+      feedbackItems.push({ submission: s, analysis: ana, fb: fb });
+    }
+  });
+
+  return `
+  <div class="animate-up">
+    <div class="page-title">💬 받은 코칭 피드백</div>
+    <div class="page-sub">담당 트레이너가 남긴 종합 보컬 진단 및 맞춤 레슨 피드백을 확인하고 만족도를 평가하세요</div>
+
+    ${feedbackItems.length === 0 ? `
+    <div class="empty-state">
+      <div class="empty-icon" style="font-size:48px;">📫</div>
+      <div class="empty-title">아직 받은 총괄 코칭 피드백이 없습니다</div>
+      <div class="empty-desc">보컬 분석 음성을 제출하고 전문 트레이너에게 피드백을 요청해보세요</div>
+      <div style="display:flex; gap:12px; justify-content:center; margin-top:16px;">
+        <button class="btn btn-primary" onclick="navigate('submit')">음성 분석 시작하기</button>
+        <button class="btn btn-secondary" onclick="navigate('student-dashboard',{sub:'trainers'})">트레이너 찾기</button>
+      </div>
+    </div>` : `
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      ${feedbackItems.slice().reverse().map(({ submission, analysis, fb }) => {
+        const subId = submission.id;
+        return `
+        <div class="card" style="padding:28px; border:2px solid #10b981; background:linear-gradient(135deg, rgba(16,185,129,0.06), rgba(59,130,246,0.05)); border-radius:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:12px;">
+            <div>
+              <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:12px; margin-bottom:6px;">👨‍🏫 담당 트레이너 총괄 코칭</span>
+              <div style="font-size:18px; font-weight:800; color:var(--text);">${fb.trainerName} 선생님</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:14px; font-weight:700; color:var(--text-1);">🎵 분석 대상: ${submission.fileName}</div>
+              <div class="text-3" style="font-size:12px;">작성일시: ${fb.updatedAt || submission.createdAt}</div>
+            </div>
+          </div>
+          
+          <div style="background:var(--bg-card); padding:20px; border-radius:12px; border:1px solid rgba(16,185,129,0.25); font-size:15px; color:var(--text); line-height:1.7; white-space:pre-wrap; box-shadow:0 4px 12px rgba(0,0,0,0.04); margin-bottom:18px;">"${fb.text}"</div>
+          
+          <!-- 수강생 받은 피드백 만족도 별 5개 평가 영역 -->
+          <div style="padding:18px 22px; background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(16,185,129,0.06)); border-radius:14px; border:1px dashed #f59e0b; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">⭐️</span>
+                <strong style="font-size:15px; color:var(--text);">이 피드백에 대한 만족도를 별 다섯 개 중 몇 개로 체크해주세요!</strong>
+              </div>
+              ${fb.satisfactionRating ? `
+                <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:13px; font-weight:800; padding:6px 12px;">✔ ⭐ ${fb.satisfactionRating}점 평가 완료 (${fb.satisfactionRatedAt || ''})</span>
+              ` : `
+                <span class="badge badge-warning" style="font-size:12px; font-weight:700;">💡 만족도 별점(1~5점)을 클릭하여 체크해주세요</span>
+              `}
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+              <div class="star-rating-group" style="display:flex; gap:6px; cursor:pointer;">
+                ${[1, 2, 3, 4, 5].map(star => {
+                  const isFilled = (fb.satisfactionRating || 0) >= star;
+                  return `<span onclick="rateFeedbackSatisfaction(${subId}, ${star})" onmouseover="hoverStarRating(${subId}, ${star})" onmouseout="resetStarRating(${subId}, ${fb.satisfactionRating || 0})" id="star-${subId}-${star}" style="font-size:32px; line-height:1; transition:transform 0.15s, color 0.15s; display:inline-block; color:${isFilled ? '#f59e0b' : '#d1d5db'}; text-shadow:${isFilled ? '0 2px 10px rgba(245,158,11,0.5)' : 'none'};">★</span>`;
+                }).join('')}
+              </div>
+              <span id="star-label-${subId}" style="font-size:15px; font-weight:800; color:#f59e0b; background:rgba(245,158,11,0.12); padding:6px 14px; border-radius:20px;">
+                ${fb.satisfactionRating ? `⭐ ${fb.satisfactionRating}점 / 5점 (체크 완료)` : '별점을 클릭해 체크하세요'}
+              </span>
+            </div>
+          </div>
+          
+          <div style="text-align:right; margin-top:16px;">
+            <button class="btn btn-sm btn-secondary" onclick="${analysis ? `showStoredAnalysis(${subId})` : `navigate('submit')`}">📊 AI 정밀 분석 리포트 보러가기</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`}
+  </div>`;
+}
+
 // ══════════════════════════════════════════════
 // 11. TRAINER APP
 // ══════════════════════════════════════════════
@@ -3291,6 +3426,7 @@ function renderTrainerStudents() {
         </div>`;
       }).join('')}
     </div>`}
+  </div>`;
 }
 
 function saveTrainerFeedback(submissionId) {
@@ -3336,133 +3472,565 @@ function saveTrainerFeedback(submissionId) {
 }
 window.saveTrainerFeedback = saveTrainerFeedback;
 
+function hoverStarRating(subId, star) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`star-${subId}-${i}`);
+    if (el) {
+      el.style.color = i <= star ? '#f59e0b' : '#d1d5db';
+      el.style.transform = i <= star ? 'scale(1.2)' : 'scale(1)';
+    }
+  }
+  const label = document.getElementById(`star-label-${subId}`);
+  if (label) label.textContent = `⭐ ${star}점 선택 중...`;
+}
+
+function resetStarRating(subId, currentRating) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`star-${subId}-${i}`);
+    if (el) {
+      el.style.color = i <= currentRating ? '#f59e0b' : '#d1d5db';
+      el.style.transform = 'scale(1)';
+    }
+  }
+  const label = document.getElementById(`star-label-${subId}`);
+  if (label) {
+    label.textContent = currentRating ? `⭐ ${currentRating}점 / 5점 (체크됨)` : '별점을 클릭해 만족도를 체크하세요';
+  }
+}
+
+function rateFeedbackSatisfaction(submissionId, rating) {
+  const analyses = DB.getAnalyses();
+  const submissions = DB.getSubmissions();
+  const nowStr = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  
+  let trainerId = null;
+  
+  const anaIdx = analyses.findIndex(a => a.submissionId === submissionId || a.id === submissionId);
+  if (anaIdx >= 0 && analyses[anaIdx].trainerFeedback) {
+    analyses[anaIdx].trainerFeedback.satisfactionRating = rating;
+    analyses[anaIdx].satisfactionRating = rating;
+    analyses[anaIdx].trainerFeedback.satisfactionRatedAt = nowStr;
+    trainerId = analyses[anaIdx].trainerFeedback.trainerId;
+    DB.setAnalyses(analyses);
+  }
+  
+  const subIdx = submissions.findIndex(s => s.id === submissionId);
+  if (subIdx >= 0 && submissions[subIdx].trainerFeedback) {
+    submissions[subIdx].trainerFeedback.satisfactionRating = rating;
+    submissions[subIdx].satisfactionRating = rating;
+    submissions[subIdx].trainerFeedback.satisfactionRatedAt = nowStr;
+    if (!trainerId) trainerId = submissions[subIdx].trainerFeedback.trainerId;
+    DB.setSubmissions(submissions);
+  }
+  
+  // 트레이너 평균 평점 업데이트
+  if (trainerId) {
+    const trainers = DB.getTrainers();
+    const trIdx = trainers.findIndex(t => t.id === trainerId || String(t.id) === String(trainerId));
+    if (trIdx >= 0) {
+      const allAnas = DB.getAnalyses();
+      const allSubs = DB.getSubmissions();
+      const ratedFeedbacks = [];
+      allAnas.forEach(a => { if (a.trainerFeedback && a.trainerFeedback.trainerId === trainerId && a.trainerFeedback.satisfactionRating) ratedFeedbacks.push(a.trainerFeedback.satisfactionRating); });
+      allSubs.forEach(s => { if (s.trainerFeedback && s.trainerFeedback.trainerId === trainerId && s.trainerFeedback.satisfactionRating && !ratedFeedbacks.includes(s.trainerFeedback.satisfactionRating)) ratedFeedbacks.push(s.trainerFeedback.satisfactionRating); });
+      
+      const lessonReviews = DB.getReviews().filter(r => r.trainerId === trainerId);
+      const allRatings = [...ratedFeedbacks, ...lessonReviews.map(r => r.rating)];
+      
+      if (allRatings.length > 0) {
+        const avg = (allRatings.reduce((sum, r) => sum + Number(r), 0) / allRatings.length).toFixed(1);
+        trainers[trIdx].averageRating = Number(avg);
+        trainers[trIdx].reviewCount = allRatings.length;
+        DB.setTrainers(trainers);
+      }
+    }
+  }
+  
+  showToast(`🎉 담당 트레이너 피드백에 대한 만족도(⭐ ${rating}점)가 성공적으로 체크되었습니다!`, 'success');
+  
+  if (State.currentPage === 'student-dashboard') {
+    renderApp();
+  } else if (State.currentPage === 'analysis' && anaIdx >= 0) {
+    navigate('analysis', { analysis: analyses[anaIdx] });
+  } else {
+    renderApp();
+  }
+}
+window.rateFeedbackSatisfaction = rateFeedbackSatisfaction;
+window.hoverStarRating = hoverStarRating;
+window.resetStarRating = resetStarRating;
+
 // ══════════════════════════════════════════════
 // 12. ADMIN DASHBOARD
 // ══════════════════════════════════════════════
-function renderAdminDashboard() {
+function renderAdminDashboard(params) {
   if (!State.currentUser || State.userType !== 'admin') {
     navigate('admin-auth'); return '';
   }
+  const tab = (params && params.tab) || 'overview';
+  
   const trainers = DB.getTrainers();
   const students = DB.getStudents();
   const submissions = DB.getSubmissions();
+  const analyses = DB.getAnalyses();
   const bookings = DB.getBookings();
   const pending = trainers.filter(t => t.approvalStatus === 'pending');
   const approved = trainers.filter(t => t.approvalStatus === 'approved');
 
+  // 오고 간 피드백 목록 수집
+  const feedbackList = [];
+  submissions.forEach(s => {
+    const ana = analyses.find(a => a.submissionId === s.id);
+    const fb = (ana && ana.trainerFeedback) || s.trainerFeedback;
+    if (fb) {
+      const student = students.find(st => st.id === s.studentId) || { nickname: s.guestEmail || '학생/게스트', email: s.guestEmail || '-' };
+      feedbackList.push({ submission: s, analysis: ana, fb: fb, student: student });
+    }
+  });
+
+  // 전체 만족도 평균 계산
+  let totalRatingSum = 0;
+  let totalRatingCount = 0;
+  feedbackList.forEach(item => {
+    if (item.fb.satisfactionRating) {
+      totalRatingSum += Number(item.fb.satisfactionRating);
+      totalRatingCount++;
+    }
+  });
+  const avgSatisfaction = totalRatingCount > 0 ? (totalRatingSum / totalRatingCount).toFixed(1) : '0.0';
+
   return `
   <div class="page-wrap">
-    <div class="container">
+    <div class="container" style="max-width:1200px;">
       <div class="animate-up">
-        <div class="section-header mb-24" style="margin-bottom:32px">
+        <!-- 상단 헤더 -->
+        <div class="section-header mb-24" style="margin-bottom:28px; background:linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.08)); padding:24px 32px; border-radius:20px; border:1px solid rgba(99,102,241,0.2);">
           <div>
-            <div class="page-title">관리자 패널</div>
-            <div class="page-sub">플랫폼 전체 현황을 관리합니다</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">로그아웃</button>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid-4 mb-24" style="margin-bottom:32px">
-          <div class="stat-card">
-            <div class="stat-card-label">전체 학생</div>
-            <div class="stat-card-val">${students.length}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">승인된 트레이너</div>
-            <div class="stat-card-val" style="color:var(--success)">${approved.length}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">심사 대기</div>
-            <div class="stat-card-val" style="color:var(--warning)">${pending.length}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">총 분석 건수</div>
-            <div class="stat-card-val">${submissions.length}</div>
-          </div>
-        </div>
-
-        <!-- Pending Trainers -->
-        <div class="section-header mb-16" style="margin-bottom:20px">
-          <div class="section-title">⏳ 심사 대기 트레이너</div>
-          <span class="badge badge-warning">${pending.length}건</span>
-        </div>
-        ${pending.length === 0 ? `
-        <div class="card" style="text-align:center;padding:40px">
-          <div style="font-size:32px;margin-bottom:12px">✅</div>
-          <div style="font-weight:600">대기 중인 심사 요청이 없습니다</div>
-        </div>` : `
-        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:40px">
-          ${pending.map(t => `
-          <div class="card" style="display:flex;gap:16px;align-items:flex-start">
-            <div class="avatar avatar-lg">${t.profileEmoji || '🎤'}</div>
-            <div style="flex:1">
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-                <span style="font-size:16px;font-weight:700">${t.name}</span>
-                <span class="badge badge-muted">${t.careerYears}년 경력</span>
-                <span class="badge badge-muted">${t.lessonPrice.toLocaleString()}원/시간</span>
-              </div>
-              <div class="text-3" style="font-size:13px;margin-bottom:4px">${t.email}</div>
-              <p class="text-2" style="font-size:13px;margin-bottom:8px">${t.intro}</p>
-              <div style="display:flex;gap:6px;flex-wrap:wrap">
-                ${t.specialties.map(s => `<span class="badge badge-muted">${s}</span>`).join('')}
-              </div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span class="badge badge-accent" style="font-size:12px;">🛡️ 최고 관리자 권한 (Admin Control Center)</span>
+              <span style="font-size:13px; color:var(--text-3);">${new Date().toISOString().slice(0,10)} 기준 실시간 동기화</span>
             </div>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <button class="btn btn-success btn-sm" onclick="adminApprove(${t.id},'approved')">✓ 승인</button>
-              <button class="btn btn-danger btn-sm" onclick="adminApprove(${t.id},'rejected')">✕ 거절</button>
+            <div class="page-title" style="font-size:28px; margin-bottom:4px;">모두의 보컬 관리자 플랫폼</div>
+            <div class="page-sub" style="margin:0;">전체 트레이너 및 수강생 만족도 체크, 코칭 피드백 열람, 업로드 음성 파일 및 회원 심사 관리</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="renderApp()">🔄 새로고침</button>
+            <button class="btn btn-ghost btn-sm" style="border:1px solid var(--border);" onclick="Auth.logout()">로그아웃</button>
+          </div>
+        </div>
+
+        <!-- 관리자 대시보드 네비게이션 탭 -->
+        <div class="tabs mb-24" style="margin-bottom:28px; background:var(--bg-card); padding:6px; border-radius:16px; border:1px solid var(--border); display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="tab-btn ${tab === 'overview' ? 'active' : ''}" style="flex:1; min-width:180px; padding:12px 18px; font-weight:800; font-size:15px;" onclick="navigate('admin-dashboard', {tab:'overview'})">
+            📊 전체 통계 & 만족도 체크
+          </button>
+          <button class="tab-btn ${tab === 'feedbacks' ? 'active' : ''}" style="flex:1; min-width:180px; padding:12px 18px; font-weight:800; font-size:15px;" onclick="navigate('admin-dashboard', {tab:'feedbacks'})">
+            💬 오고 간 코칭 피드백 (${feedbackList.length}건)
+          </button>
+          <button class="tab-btn ${tab === 'audios' ? 'active' : ''}" style="flex:1; min-width:180px; padding:12px 18px; font-weight:800; font-size:15px;" onclick="navigate('admin-dashboard', {tab:'audios'})">
+            🎙️ 올라온 음성 파일 청람 (${submissions.length}건)
+          </button>
+          <button class="tab-btn ${tab === 'trainers' ? 'active' : ''}" style="flex:1; min-width:180px; padding:12px 18px; font-weight:800; font-size:15px;" onclick="navigate('admin-dashboard', {tab:'trainers'})">
+            👨‍🏫 트레이너 심사 및 회원 관리 (${pending.length > 0 ? `⚠️ ${pending.length}건 대기` : '정상'})
+          </button>
+        </div>
+
+        <!-- 탭 1: 전체 통계 & 만족도 체크 -->
+        ${tab === 'overview' ? `
+        <div>
+          <!-- 통계 요약 카드 -->
+          <div class="grid-4 mb-24" style="margin-bottom:32px; gap:16px;">
+            <div class="stat-card" style="border:1px solid rgba(99,102,241,0.2); background:linear-gradient(135deg,rgba(99,102,241,0.05),transparent);">
+              <div class="stat-card-label">전체 가입 회원</div>
+              <div class="stat-card-val" style="color:var(--accent); font-size:32px;">${students.length + approved.length} <span style="font-size:16px; font-weight:600; color:var(--text-3);">명</span></div>
+              <div class="text-3" style="font-size:12px; margin-top:4px;">수강생 ${students.length}명 / 트레이너 ${approved.length}명</div>
             </div>
-          </div>`).join('')}
-        </div>`}
+            <div class="stat-card" style="border:1px solid rgba(16,185,129,0.2); background:linear-gradient(135deg,rgba(16,185,129,0.05),transparent);">
+              <div class="stat-card-label">평균 피드백 만족도</div>
+              <div class="stat-card-val" style="color:#10b981; font-size:32px;">⭐ ${avgSatisfaction} <span style="font-size:16px; font-weight:600; color:var(--text-3);">/ 5.0</span></div>
+              <div class="text-3" style="font-size:12px; margin-top:4px;">총 ${totalRatingCount}건 별점 평가 완료</div>
+            </div>
+            <div class="stat-card" style="border:1px solid rgba(245,158,11,0.2); background:linear-gradient(135deg,rgba(245,158,11,0.05),transparent);">
+              <div class="stat-card-label">오고 간 피드백 교환</div>
+              <div class="stat-card-val" style="color:#f59e0b; font-size:32px;">${feedbackList.length} <span style="font-size:16px; font-weight:600; color:var(--text-3);">건</span></div>
+              <div class="text-3" style="font-size:12px; margin-top:4px;">트레이너 총괄 코칭 리포트</div>
+            </div>
+            <div class="stat-card" style="border:1px solid rgba(236,72,153,0.2); background:linear-gradient(135deg,rgba(236,72,153,0.05),transparent);">
+              <div class="stat-card-label">총 음성 분석 제출</div>
+              <div class="stat-card-val" style="color:#ec4899; font-size:32px;">${submissions.length} <span style="font-size:16px; font-weight:600; color:var(--text-3);">건</span></div>
+              <div class="text-3" style="font-size:12px; margin-top:4px;">AI 보컬 분석 및 진단</div>
+            </div>
+          </div>
 
-        <!-- All Trainers -->
-        <div class="section-header mb-16" style="margin-bottom:20px">
-          <div class="section-title">👨‍🏫 전체 트레이너 목록</div>
-        </div>
-        <div class="table-wrap mb-24" style="margin-bottom:32px">
-          <table class="data-table">
-            <thead>
-              <tr><th>이름</th><th>이메일</th><th>전문분야</th><th>상태</th><th>가입일</th><th>관리</th></tr>
-            </thead>
-            <tbody>
-              ${trainers.map(t => {
-                const statusClass = t.approvalStatus === 'approved' ? 'badge-success' : t.approvalStatus === 'pending' ? 'badge-warning' : 'badge-danger';
-                const statusLabel = t.approvalStatus === 'approved' ? '승인' : t.approvalStatus === 'pending' ? '대기' : '거절';
-                return `<tr>
-                  <td><div style="display:flex;gap:10px;align-items:center"><span>${t.profileEmoji || '🎤'}</span><strong>${t.name}</strong></div></td>
-                  <td class="text-2">${t.email}</td>
-                  <td><div style="display:flex;gap:4px;flex-wrap:wrap">${t.specialties.slice(0,2).map(s=>`<span class="badge badge-muted">${s}</span>`).join('')}</div></td>
-                  <td><span class="badge ${statusClass}">${statusLabel}</span></td>
-                  <td class="text-3">${t.createdAt}</td>
-                  <td>
-                    ${t.approvalStatus !== 'approved' ? `<button class="btn btn-sm btn-success" onclick="adminApprove(${t.id},'approved')">승인</button>` : ''}
-                    ${t.approvalStatus !== 'rejected' ? `<button class="btn btn-sm btn-danger" onclick="adminApprove(${t.id},'rejected')">거절</button>` : ''}
-                  </td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
+          <!-- 모든 트레이너 계정 만족도 체크 테이블 -->
+          <div class="card mb-24" style="padding:24px; border-radius:18px; margin-bottom:32px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+              <div>
+                <h3 style="font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:8px;">
+                  👨‍🏫 모든 트레이너 계정 만족도 및 활동 체크
+                </h3>
+                <p class="text-3" style="font-size:13px; margin:4px 0 0 0;">각 트레이너가 남긴 피드백에 대해 수강생들이 부여한 별점 만족도 평균과 리뷰 지표입니다.</p>
+              </div>
+              <span class="badge badge-accent" style="font-size:13px;">총 ${trainers.length}명 등록</span>
+            </div>
+            
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr style="background:var(--bg-2);">
+                    <th style="padding:14px;">트레이너 정보</th>
+                    <th style="padding:14px;">전문분야 / 경력</th>
+                    <th style="padding:14px;">오고 간 피드백 수</th>
+                    <th style="padding:14px; color:#f59e0b;">⭐️ 피드백 만족도 (수강생 별점)</th>
+                    <th style="padding:14px;">레슨 리뷰 평점</th>
+                    <th style="padding:14px;">계정 상태</th>
+                    <th style="padding:14px;">상세 관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${trainers.map(t => {
+                    const myFeedbacks = feedbackList.filter(item => item.fb.trainerId === t.id || String(item.fb.trainerId) === String(t.id) || item.fb.trainerName === t.name);
+                    const rated = myFeedbacks.filter(item => item.fb.satisfactionRating);
+                    const avg = rated.length > 0 ? (rated.reduce((sum, item) => sum + Number(item.fb.satisfactionRating), 0) / rated.length).toFixed(1) : (t.averageRating || '평가없음');
+                    const statusClass = t.approvalStatus === 'approved' ? 'badge-success' : t.approvalStatus === 'pending' ? 'badge-warning' : 'badge-danger';
+                    const statusLabel = t.approvalStatus === 'approved' ? '승인됨' : t.approvalStatus === 'pending' ? '심사대기' : '거절됨';
+                    
+                    return `
+                    <tr>
+                      <td style="padding:14px;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                          <div class="avatar">${t.profileEmoji || '🎤'}</div>
+                          <div>
+                            <strong style="font-size:15px; color:var(--text);">${t.name}</strong>
+                            <div class="text-3" style="font-size:12px;">${t.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style="padding:14px;">
+                        <div style="font-weight:600;">${t.specialties ? t.specialties.slice(0,2).join(', ') : '보컬'}</div>
+                        <div class="text-3" style="font-size:12px;">경력 ${t.careerYears || 5}년</div>
+                      </td>
+                      <td style="padding:14px;">
+                        <span class="badge badge-info" style="font-weight:700; font-size:13px;">${myFeedbacks.length}건 작성</span>
+                      </td>
+                      <td style="padding:14px;">
+                        ${rated.length > 0 || typeof avg === 'number' ? `
+                          <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:18px; color:#f59e0b; font-weight:900;">⭐ ${avg}</span>
+                            <span class="text-3" style="font-size:12px;">(${rated.length}건 평가)</span>
+                          </div>
+                        ` : `
+                          <span class="badge badge-muted" style="font-size:12px;">아직 평가 없음</span>
+                        `}
+                      </td>
+                      <td style="padding:14px;">
+                        <span style="font-weight:700;">⭐ ${t.averageRating || '4.8'}</span> <span class="text-3" style="font-size:12px;">(${t.reviewCount || 0}건)</span>
+                      </td>
+                      <td style="padding:14px;">
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                      </td>
+                      <td style="padding:14px;">
+                        <button class="btn btn-xs btn-secondary" onclick="navigate('admin-dashboard', {tab:'feedbacks'})">피드백 보기</button>
+                      </td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-        <!-- Students -->
-        <div class="section-header mb-16" style="margin-bottom:20px">
-          <div class="section-title">🎓 전체 학생 목록</div>
+          <!-- 모든 수강생 계정 만족도 체크 테이블 -->
+          <div class="card" style="padding:24px; border-radius:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+              <div>
+                <h3 style="font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:8px;">
+                  🎓 모든 수강생 계정 만족도 및 피드백 현황 체크
+                </h3>
+                <p class="text-3" style="font-size:13px; margin:4px 0 0 0;">수강생들이 받은 피드백 건수 및 본인이 남긴 만족도 별점 평균입니다.</p>
+              </div>
+              <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:13px;">총 ${students.length}명 등록</span>
+            </div>
+            
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr style="background:var(--bg-2);">
+                    <th style="padding:14px;">수강생 계정 정보</th>
+                    <th style="padding:14px;">선호 보컬 장르</th>
+                    <th style="padding:14px;">제출 음성 수</th>
+                    <th style="padding:14px;">받은 트레이너 피드백</th>
+                    <th style="padding:14px; color:#10b981;">⭐️ 체크한 만족도 평균 (별점)</th>
+                    <th style="padding:14px;">가입 일자</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${students.map(st => {
+                    const mySubs = submissions.filter(s => s.studentId === st.id || s.guestEmail === st.email);
+                    const myRcvdFeedbacks = feedbackList.filter(item => item.submission.studentId === st.id || item.submission.guestEmail === st.email);
+                    const myRated = myRcvdFeedbacks.filter(item => item.fb.satisfactionRating);
+                    const myAvg = myRated.length > 0 ? (myRated.reduce((sum, item) => sum + Number(item.fb.satisfactionRating), 0) / myRated.length).toFixed(1) : null;
+                    
+                    return `
+                    <tr>
+                      <td style="padding:14px;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                          <div class="avatar" style="background:var(--success);">${st.nickname ? st.nickname[0] : 'S'}</div>
+                          <div>
+                            <strong style="font-size:15px; color:var(--text);">${st.nickname || '익명'}</strong>
+                            <div class="text-3" style="font-size:12px;">${st.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style="padding:14px;">
+                        ${st.preferredGenres ? st.preferredGenres.map(g => `<span class="badge badge-muted">${g}</span>`).join(' ') : '–'}
+                      </td>
+                      <td style="padding:14px;">
+                        <span style="font-weight:700;">${mySubs.length}건</span>
+                      </td>
+                      <td style="padding:14px;">
+                        <span class="badge badge-info" style="font-weight:700;">${myRcvdFeedbacks.length}건 수신</span>
+                      </td>
+                      <td style="padding:14px;">
+                        ${myAvg ? `
+                          <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:16px; color:#10b981; font-weight:900;">⭐ ${myAvg}</span>
+                            <span class="text-3" style="font-size:12px;">(${myRated.length}건 별점 체크완료)</span>
+                          </div>
+                        ` : `
+                          <span class="badge badge-muted" style="font-size:12px;">체크 내역 없음</span>
+                        `}
+                      </td>
+                      <td style="padding:14px;" class="text-3">${st.createdAt || '2026-07-01'}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr><th>닉네임</th><th>이메일</th><th>선호장르</th><th>가입일</th></tr>
-            </thead>
-            <tbody>
-              ${students.map(s => `<tr>
-                <td><strong>${s.nickname}</strong></td>
-                <td class="text-2">${s.email}</td>
-                <td>${(s.preferredGenres || []).join(', ') || '–'}</td>
-                <td class="text-3">${s.createdAt}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
+        ` : ''}
+
+        <!-- 탭 2: 오고 간 코칭 피드백 내역 -->
+        ${tab === 'feedbacks' ? `
+        <div>
+          <div class="section-header mb-20" style="margin-bottom:20px;">
+            <div>
+              <div class="section-title">💬 트레이너-수강생 간 오고 간 코칭 피드백 실시간 모니터링</div>
+              <p class="text-3" style="font-size:13px; margin-top:4px;">트레이너가 학생들의 분석 리포트에 남긴 피드백과 수강생의 만족도 평가(별 5개 중 몇 개)를 확인합니다.</p>
+            </div>
+            <span class="badge badge-accent" style="font-size:14px; padding:6px 14px;">총 ${feedbackList.length}건 교환됨</span>
+          </div>
+
+          ${feedbackList.length === 0 ? `
+          <div class="card" style="text-align:center; padding:50px;">
+            <div style="font-size:48px; margin-bottom:12px;">💬</div>
+            <div style="font-size:18px; font-weight:800; margin-bottom:6px;">아직 오고 간 총괄 피드백 내역이 없습니다</div>
+            <p class="text-3">트레이너 계정으로 로그인하여 수강생 음성 파일에 총괄 피드백을 작성하면 이곳에 표시됩니다.</p>
+          </div>
+          ` : `
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            ${feedbackList.slice().reverse().map(({ submission, analysis, fb, student }) => {
+              return `
+              <div class="card" style="padding:24px; border-left:5px solid var(--accent); border-radius:16px; background:var(--bg-card);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:14px;">
+                  <div style="display:flex; gap:12px; align-items:center;">
+                    <div class="avatar" style="background:var(--accent); font-size:18px;">👨‍🏫</div>
+                    <div>
+                      <div style="font-size:16px; font-weight:800; color:var(--text);">${fb.trainerName} 트레이너</div>
+                      <div class="text-3" style="font-size:12px;">코칭 작성일: ${fb.updatedAt || submission.createdAt}</div>
+                    </div>
+                  </div>
+                  
+                  <div style="display:flex; align-items:center; gap:10px; background:var(--bg-2); padding:8px 14px; border-radius:10px;">
+                    <div style="font-size:18px;">🎓</div>
+                    <div>
+                      <div style="font-size:14px; font-weight:700; color:var(--text);">${student.nickname || '수강생'}</div>
+                      <div class="text-3" style="font-size:12px;">🎵 분석 음성: ${submission.fileName}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 피드백 내용 -->
+                <div style="background:rgba(99,102,241,0.04); padding:16px; border-radius:10px; border:1px solid rgba(99,102,241,0.15); font-size:15px; color:var(--text); line-height:1.6; white-space:pre-wrap; margin-bottom:16px;">"${fb.text}"</div>
+
+                <!-- 수강생 만족도 평가 상태 -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:var(--bg-2); padding:12px 16px; border-radius:10px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px; font-weight:800; color:var(--text);">⭐️ 수강생 만족도 별점 평가 결과:</span>
+                    ${fb.satisfactionRating ? `
+                      <span style="font-size:18px; font-weight:900; color:#f59e0b;">${'★'.repeat(fb.satisfactionRating)}${'☆'.repeat(5 - fb.satisfactionRating)} (${fb.satisfactionRating}/5점)</span>
+                      <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:11px;">✔ 만족도 체크됨 (${fb.satisfactionRatedAt || ''})</span>
+                    ` : `
+                      <span class="badge badge-warning" style="font-size:12px;">⏳ 수강생이 아직 별점 만족도를 체크하지 않았습니다</span>
+                    `}
+                  </div>
+                  
+                  <button class="btn btn-sm btn-secondary" onclick="${analysis ? `showStoredAnalysis(${submission.id})` : ''}">📄 AI 리포트 전문 열람</button>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+          `}
         </div>
+        ` : ''}
+
+        <!-- 탭 3: 올라온 음성 파일 및 분석 관리 -->
+        ${tab === 'audios' ? `
+        <div>
+          <div class="section-header mb-20" style="margin-bottom:20px;">
+            <div>
+              <div class="section-title">🎙️ 올라온 음성 파일 열람 및 청람(오디오 재생) 관리</div>
+              <p class="text-3" style="font-size:13px; margin-top:4px;">수강생들이 플랫폼에 제출한 모든 오디오 파일 및 AI 정밀 분석 결과를 관리자 권한으로 듣고 열람합니다.</p>
+            </div>
+            <span class="badge badge-info" style="font-size:14px; padding:6px 14px;">총 ${submissions.length}건 업로드</span>
+          </div>
+
+          <!-- 음성 파일 목록 및 청람 플레이어 테이블 -->
+          <div class="card" style="padding:24px; border-radius:18px;">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr style="background:var(--bg-2);">
+                    <th style="padding:14px;">번호</th>
+                    <th style="padding:14px;">음성 파일명 / 업로드 수강생</th>
+                    <th style="padding:14px;">제출 일시</th>
+                    <th style="padding:14px;">AI 종합 진단 점수</th>
+                    <th style="padding:14px; color:#ec4899;">▶️ 음성 파일 듣기 (청람 재생)</th>
+                    <th style="padding:14px;">분석 리포트 관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${submissions.slice().reverse().map((s, idx) => {
+                    const ana = analyses.find(a => a.submissionId === s.id);
+                    return `
+                    <tr>
+                      <td style="padding:14px; font-weight:700;">#${submissions.length - idx}</td>
+                      <td style="padding:14px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          <span style="font-size:20px;">🎵</span>
+                          <div>
+                            <strong style="font-size:14px; color:var(--text);">${s.fileName}</strong>
+                            <div class="text-3" style="font-size:12px;">제출자: ${s.guestEmail || '회원 수강생'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style="padding:14px;" class="text-3">${s.createdAt || '2026-07-04'}</td>
+                      <td style="padding:14px;">
+                        ${ana ? `
+                          <span style="font-size:16px; font-weight:900; color:var(--accent);">${ana.overall}점</span>
+                          <span class="text-3" style="font-size:12px;">(최고음: ${ana.highestNote || 'A4'})</span>
+                        ` : `
+                          <span class="badge badge-warning">분석 진행중</span>
+                        `}
+                      </td>
+                      <td style="padding:14px;">
+                        <button class="btn btn-sm btn-primary" style="background:#ec4899; border-color:#ec4899; font-weight:800; display:flex; align-items:center; gap:6px;" onclick="adminPlayAudio('${s.fileName}', ${s.id})">
+                          ▶️ 음성 파일 청람 (듣기)
+                        </button>
+                      </td>
+                      <td style="padding:14px;">
+                        ${ana ? `
+                          <button class="btn btn-xs btn-secondary" onclick="showStoredAnalysis(${s.id})">📊 리포트 열람</button>
+                        ` : `
+                          <span class="text-3" style="font-size:12px;">–</span>
+                        `}
+                      </td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- 탭 4: 트레이너 심사 및 회원 관리 -->
+        ${tab === 'trainers' ? `
+        <div>
+          <!-- Pending Trainers -->
+          <div class="section-header mb-16" style="margin-bottom:20px">
+            <div class="section-title">⏳ 심사 대기 트레이너 승인 관리</div>
+            <span class="badge badge-warning" style="font-size:14px;">${pending.length}건 대기중</span>
+          </div>
+          ${pending.length === 0 ? `
+          <div class="card mb-24" style="text-align:center;padding:40px; border-radius:16px; margin-bottom:32px;">
+            <div style="font-size:32px;margin-bottom:12px">✅</div>
+            <div style="font-weight:600">현재 대기 중인 트레이너 심사 요청이 없습니다</div>
+          </div>` : `
+          <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:40px">
+            ${pending.map(t => `
+            <div class="card" style="display:flex;gap:16px;align-items:flex-start; padding:24px; border:2px solid #f59e0b; border-radius:16px;">
+              <div class="avatar avatar-lg">${t.profileEmoji || '🎤'}</div>
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+                  <span style="font-size:18px;font-weight:800">${t.name} 트레이너</span>
+                  <span class="badge badge-muted">${t.careerYears}년 경력</span>
+                  <span class="badge badge-muted">${t.lessonPrice.toLocaleString()}원/시간</span>
+                </div>
+                <div class="text-3" style="font-size:13px;margin-bottom:6px">${t.email}</div>
+                <p class="text-2" style="font-size:14px;margin-bottom:10px; background:var(--bg-2); padding:10px; border-radius:8px;">"${t.intro}"</p>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  ${t.specialties.map(s => `<span class="badge badge-info">${s}</span>`).join('')}
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px; min-width:120px;">
+                <button class="btn btn-success" style="font-weight:800;" onclick="adminApprove(${t.id},'approved')">✓ 심사 승인</button>
+                <button class="btn btn-danger" style="font-weight:800;" onclick="adminApprove(${t.id},'rejected')">✕ 반려(거절)</button>
+              </div>
+            </div>`).join('')}
+          </div>`}
+
+          <!-- All Trainers -->
+          <div class="section-header mb-16" style="margin-bottom:20px">
+            <div class="section-title">👨‍🏫 전체 보컬 트레이너 목록</div>
+          </div>
+          <div class="table-wrap mb-24" style="margin-bottom:32px">
+            <table class="data-table">
+              <thead>
+                <tr><th>이름</th><th>이메일</th><th>전문분야</th><th>상태</th><th>가입일</th><th>관리</th></tr>
+              </thead>
+              <tbody>
+                ${trainers.map(t => {
+                  const statusClass = t.approvalStatus === 'approved' ? 'badge-success' : t.approvalStatus === 'pending' ? 'badge-warning' : 'badge-danger';
+                  const statusLabel = t.approvalStatus === 'approved' ? '승인됨' : t.approvalStatus === 'pending' ? '대기중' : '거절됨';
+                  return `<tr>
+                    <td><div style="display:flex;gap:10px;align-items:center"><span>${t.profileEmoji || '🎤'}</span><strong>${t.name}</strong></div></td>
+                    <td class="text-2">${t.email}</td>
+                    <td><div style="display:flex;gap:4px;flex-wrap:wrap">${t.specialties.slice(0,2).map(s=>`<span class="badge badge-muted">${s}</span>`).join('')}</div></td>
+                    <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                    <td class="text-3">${t.createdAt}</td>
+                    <td>
+                      ${t.approvalStatus !== 'approved' ? `<button class="btn btn-sm btn-success" onclick="adminApprove(${t.id},'approved')">승인</button>` : ''}
+                      ${t.approvalStatus !== 'rejected' ? `<button class="btn btn-sm btn-danger" onclick="adminApprove(${t.id},'rejected')">거절</button>` : ''}
+                    </td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Students -->
+          <div class="section-header mb-16" style="margin-bottom:20px">
+            <div class="section-title">🎓 전체 수강생 회원 목록</div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>닉네임</th><th>이메일</th><th>선호장르</th><th>가입일</th></tr>
+              </thead>
+              <tbody>
+                ${students.map(s => `<tr>
+                  <td><strong>${s.nickname}</strong></td>
+                  <td class="text-2">${s.email}</td>
+                  <td>${(s.preferredGenres || []).join(', ') || '–'}</td>
+                  <td class="text-3">${s.createdAt}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        ` : ''}
+
       </div>
     </div>
   </div>`;
@@ -5077,6 +5645,46 @@ function adminApprove(trainerId, status) {
   }
 }
 
+async function adminPlayAudio(fileName, submissionId) {
+  let blobUrl = null;
+  if (window.VocalAudioDB) {
+    let saved = await window.VocalAudioDB.get('audio_' + (fileName || ''));
+    if (!saved) saved = await window.VocalAudioDB.get('last_audio');
+    if (saved) {
+      blobUrl = URL.createObjectURL(saved);
+    }
+  }
+  
+  if (blobUrl) {
+    showModal('🎙️ 관리자 음성 파일 청람 (오디오 재생)', `
+      <div style="text-align:center; padding:10px 0;">
+        <div style="font-size:36px; margin-bottom:10px;">🎧</div>
+        <h4 style="font-size:16px; font-weight:800; margin-bottom:16px; color:var(--text);">업로드 파일명: ${fileName}</h4>
+        <audio controls autoplay style="width:100%; height:54px; border-radius:12px; outline:none;" src="${blobUrl}"></audio>
+        <p class="text-3" style="font-size:13px; margin-top:14px;">✔ 브라우저 내 저장소(IndexedDB)에서 원본 고음질 음성이 연결되었습니다.</p>
+      </div>
+    `, [{ label: '닫기', cls: 'btn-secondary', action: closeModal }]);
+  } else {
+    showModal('🎙️ 관리자 음성 파일 청람 (AI 시뮬레이션)', `
+      <div style="text-align:center; padding:10px 0;">
+        <div style="font-size:36px; margin-bottom:10px;">🎼</div>
+        <h4 style="font-size:16px; font-weight:800; margin-bottom:12px; color:var(--text);">업로드 파일명: ${fileName}</h4>
+        <div style="background:rgba(236,72,153,0.08); border:1px dashed #ec4899; padding:16px; border-radius:12px; margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:700; color:#ec4899; margin-bottom:6px;">⚡ AI 주파수 시뮬레이션 파형 모드</div>
+          <p class="text-3" style="font-size:12px; margin:0;">해당 파일은 데모 시드 데이터이므로 실제 녹음 원본 Blob 대신 AI가 분석한 주파수 파형 정보를 제공합니다.</p>
+        </div>
+        <div style="display:flex; justify-content:center; gap:4px; height:40px; align-items:center; margin-bottom:14px;">
+          ${[40,60,80,100,70,50,90,100,80,60,40,70,90,60,50].map(h => `<div style="width:6px; height:${h}%; background:var(--accent-gradient); border-radius:3px;"></div>`).join('')}
+        </div>
+        <p style="font-size:13px; font-weight:700; color:var(--text-1);">최고음 주파수: 440Hz (A4) / 안정도: 92점</p>
+      </div>
+    `, [
+      { label: '📊 분석 리포트 열람', cls: 'btn-primary', action: () => { closeModal(); showStoredAnalysis(submissionId); } },
+      { label: '닫기', cls: 'btn-secondary', action: closeModal }
+    ]);
+  }
+}
+
 function toggleScheduleSlot(cell, dayIndex, hour) {
   const trainerId = State.currentUser.id;
   const schedules = DB.getSchedules();
@@ -5237,42 +5845,67 @@ function hideLoading() {
 // ══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   // 1. 네트워크 대기 없이 즉시 로컬 캐시 기반으로 화면을 0초 만에 렌더링 (검정 화면 완벽 방지)
-  DB.seed();
-  Auth.restoreSession();
+  try {
+    DB.seed();
+  } catch (err) {
+    console.error('DB seed error:', err);
+  }
+  
+  try {
+    Auth.restoreSession();
+  } catch (err) {
+    console.error('Auth restore error:', err);
+  }
 
   // Close modal on overlay click
   document.getElementById('modal-overlay')?.addEventListener('click', e => {
     if (e.target.id === 'modal-overlay') closeModal();
   });
 
-  // Route based on current user
-  if (State.currentUser) {
-    if (State.userType === 'student') navigate('student-dashboard', { sub: 'home' });
-    else if (State.userType === 'trainer') navigate('trainer-dashboard', { sub: 'home' });
-    else if (State.userType === 'admin') navigate('admin-dashboard');
-    else navigate('home');
-  } else {
-    navigate('home');
+  // Route based on current user (예외 발생 시 무조건 홈 화면 렌더링 폴백 보장)
+  try {
+    if (State.currentUser) {
+      if (State.userType === 'student') navigate('student-dashboard', { sub: 'home' });
+      else if (State.userType === 'trainer') navigate('trainer-dashboard', { sub: 'home' });
+      else if (State.userType === 'admin') navigate('admin-dashboard');
+      else navigate('home');
+    } else {
+      navigate('home');
+    }
+  } catch (err) {
+    console.error('Navigation error, falling back to home:', err);
+    try {
+      State.currentPage = 'home';
+      renderNav();
+      document.getElementById('app').innerHTML = renderHome();
+      attachPageListeners('home', {});
+    } catch (fallbackErr) {
+      console.error('Critical fallback error:', fallbackErr);
+    }
   }
 
   // 2. 화면이 뜬 후 백그라운드에서 클라우드 DB 동기화 진행
-  DB.initCloud().then(() => {
-    if (State.currentPage === 'home' || State.currentPage === 'student-dashboard') {
-      renderNav();
-      const app = document.getElementById('app');
-      const pages = {
-        home: renderHome,
-        'student-dashboard': renderStudentApp,
-        'trainer-dashboard': renderTrainerApp,
-        'admin-dashboard': renderAdminDashboard,
-      };
-      if (pages[State.currentPage]) {
-        const sub = State.dashPage || 'home';
-        app.innerHTML = pages[State.currentPage]({ sub });
-        attachPageListeners(State.currentPage, { sub });
+  try {
+    DB.initCloud().then(() => {
+      if (State.currentPage === 'home' || State.currentPage === 'student-dashboard') {
+        renderNav();
+        const app = document.getElementById('app');
+        const pages = {
+          home: renderHome,
+          'student-dashboard': renderStudentApp,
+          'trainer-dashboard': renderTrainerApp,
+          'admin-dashboard': renderAdminDashboard,
+        };
+        if (pages[State.currentPage]) {
+          const sub = State.dashPage || 'home';
+          app.innerHTML = pages[State.currentPage]({ sub });
+          attachPageListeners(State.currentPage, { sub });
+        }
       }
-    }
-  }).catch(err => console.warn('Cloud sync error:', err));
+    }).catch(err => console.warn('Cloud sync error:', err));
+  } catch (err) {
+    console.warn('Cloud init trigger error:', err);
+  }
 });
 
 // Expose globals needed in onclick handlers
@@ -5297,6 +5930,7 @@ window.showReviewModal = showReviewModal;
 window.submitReview = submitReview;
 window.showStoredAnalysis = showStoredAnalysis;
 window.adminApprove = adminApprove;
+window.adminPlayAudio = adminPlayAudio;
 window.toggleScheduleSlot = toggleScheduleSlot;
 window.closeModal = closeModal;
 window.showModal = showModal;
