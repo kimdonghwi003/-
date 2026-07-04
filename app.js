@@ -1676,6 +1676,27 @@ function renderSubmit() {
               <div class="form-hint">※ 입력한 키는 브라우저 외부로 저장되지 않고 오직 가사 인식 요청에만 사용됩니다.</div>
             </div>
 
+            <!-- Professional Trainer Feedback Option (4,900 -> 2,900) -->
+            <div style="margin-bottom:28px; padding:20px; background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.08)); border:2px solid #f59e0b; border-radius:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="badge" style="background:#f59e0b; color:#fff; font-size:12px; font-weight:800;">🔥 대학생 런칭 특가</span>
+                  <strong style="font-size:16px; color:var(--text-1);">👨‍🏫 전문 트레이너 1:1 정밀 피드백 (북마크 구간 + 한 줄 진단)</strong>
+                </div>
+                <div>
+                  <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
+                  <span style="font-size:20px; font-weight:900; color:#ef4444;">할인가 2,900원</span>
+                </div>
+              </div>
+              <p style="font-size:13px; line-height:1.6; color:var(--text-2); margin-bottom:14px;">
+                ☕ 커피 한 잔보다 저렴한 가격! AI 분석 완료 후 전문 보컬 트레이너가 내 녹음 파일을 직접 듣고 <b>문제 구간 타임스탬프 북마크 + 맞춤 발성 솔루션 한 줄 피드백</b>을 작성해 드립니다.
+              </p>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:15px; font-weight:800; color:var(--text-1); background:rgba(255,255,255,0.05); padding:12px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.4);">
+                <input type="checkbox" id="request-trainer-fb" value="yes" checked style="width:20px; height:20px; accent-color:#f59e0b; cursor:pointer;" />
+                <span>네! 단돈 2,900원(할인가)으로 트레이너 맞춤 첨삭도 함께 신청할게요!</span>
+              </label>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-full btn-lg">
               분석 시작
             </button>
@@ -2175,7 +2196,26 @@ function renderAnalysis(params) {
               </div>
             </div>`;
           }
-          return '';
+          return `
+          <div class="card mb-24" style="padding:28px; border:2px solid #f59e0b; background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(239,68,68,0.06)); border-radius:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="badge" style="background:#f59e0b; color:#fff; font-size:13px; font-weight:800;">🔥 대학생 런칭 프로모션</span>
+                <h3 style="font-size:18px; font-weight:900; color:var(--text-1); margin:0;">👨‍🏫 전문 트레이너 1:1 정밀 피드백 신청</h3>
+              </div>
+              <div>
+                <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
+                <span style="font-size:22px; font-weight:900; color:#ef4444;">할인가 2,900원</span>
+              </div>
+            </div>
+            <p style="font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:18px;">
+                ☕ 커피 한 잔 아끼고 내 노래의 진짜 문제점을 진단받으세요!<br>
+                AI 분석 데이터와 함께 전문 보컬 트레이너가 음성 파일을 청취하여 <b>💡 초점 이동 북마크 피드백 + ✍️ 발성 교정 핵심 한 줄 솔루션</b>을 24시간 이내에 작성해 드립니다.
+            </p>
+            <button class="btn btn-primary w-full" style="background:linear-gradient(135deg, #f59e0b, #ef4444); border:none; padding:16px; font-size:16px; font-weight:900; box-shadow:0 8px 20px rgba(245,158,11,0.3);" onclick="alert('🎉 2,900원(할인가) 트레이너 피드백 신청이 접수되었습니다! 24시간 이내에 담당 트레이너 배정 후 첨삭 리포트가 업데이트됩니다.');">
+              🚀 단돈 2,900원에 트레이너 맞춤 피드백 신청하기 (정상가 4,900원)
+            </button>
+          </div>`;
         })()}
 
         <!-- CTA for non-logged-in -->
