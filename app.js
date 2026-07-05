@@ -2723,8 +2723,10 @@ function renderStudentMR() {
   const mrList = DB.getMrRequests().filter(r => r.studentId === State.currentUser.id);
   return `
   <div class="animate-up">
-    <div class="page-title">MR 스튜디오</div>
-    <div class="page-sub">원곡에서 보컬을 제거하고, 원하는 키로 조절한 MR을 생성합니다</div>
+    <div class="page-title" style="display:flex;align-items:center;gap:10px">
+      MR 스튜디오 <span class="badge badge-accent" style="font-size:12px;padding:4px 10px">DSP 고도화 v2.0</span>
+    </div>
+    <div class="page-sub">주파수 대역 분리 위상 반전(저음역대 보존) 및 템포 변화 없는 정밀 피치 조절 엔진이 작동합니다</div>
 
     <div class="grid-2 mb-24" style="margin-bottom:32px">
       <!-- MR Generation Form -->
@@ -2773,7 +2775,7 @@ function renderStudentMR() {
                 <span style="font-size:14px;font-weight:800;color:var(--accent)">MR</span>
                 <div style="flex:1">
                   <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
-                  <div class="text-3" style="font-size:12px">키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
+                  <div class="text-3" style="font-size:12px">키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 (템포 100% 유지) · ${mr.createdAt}</div>
                 </div>
                 <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '완료' : mr.status === 'processing' ? '처리중' : '대기'}</div>
                 ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="downloadMrFile(${mr.id})">다운로드</button>` : ''}
@@ -5030,7 +5032,8 @@ function attachMrListeners() {
       if (!document.getElementById('copyright-agree')?.checked) { showToast('저작권 가이드라인에 동의해주세요', 'error'); return; }
       const keyShift = parseInt(document.getElementById('key-slider')?.value || '0');
 
-      showLoading(keyShift !== 0 ? `키 ${keyShift > 0 ? '+' : ''}${keyShift}반음 적용 중...` : '오디오 처리 중...');
+      showLoading(keyShift !== 0 ? `DSP 주파수 분리 및 템포 유지 키(${keyShift > 0 ? '+' : ''}${keyShift}) 조절 중...` : 'DSP 주파수 대역 분리 보컬 제거 중...');
+      await new Promise(r => setTimeout(r, 50));
 
       const mrList = DB.getMrRequests();
       const newId = DB.nextId(mrList);
@@ -5085,7 +5088,115 @@ function audioBufferToWavBlob(buffer) {
   return new Blob([ab], { type: 'audio/wav' });
 }
 
-// ── 보컬 제거 (위상 반전, OOPS) 및 키 조절 오디오 처리
+// ── 주파수 대역 분리 위상 반전 (Multiband Phase Cancellation)
+// 저음역대(~200Hz, 베이스/킥드럼)와 고음역대(7500Hz~, 공간감/심벌즈)를 스테레오로 보존하고
+// 보컬이 집중된 중음역대(200Hz~7500Hz)에만 정밀 위상 반전(L-R)을 적용하여 '깡통 소리' 현상을 해결
+async function applyMultibandVocalRemoval(buffer) {
+  if (buffer.numberOfChannels < 2) return buffer;
+  const len = buffer.length;
+  const sr = buffer.sampleRate;
+  const offCtx = new OfflineAudioContext(2, len, sr);
+
+  // 1) 중음역대 보컬 상쇄를 위한 OOPS 버퍼 생성
+  const oopsBuf = offCtx.createBuffer(2, len, sr);
+  const L = buffer.getChannelData(0);
+  const R = buffer.getChannelData(1);
+  const oopsL = oopsBuf.getChannelData(0);
+  const oopsR = oopsBuf.getChannelData(1);
+  for (let i = 0; i < len; i++) {
+    const diff = (L[i] - R[i]) * 0.75;
+    oopsL[i] = diff;
+    oopsR[i] = diff;
+  }
+
+  // 2) 저음역대 (~200Hz): 원본 스테레오 베이스 및 킥드럼 타격감 100% 보존
+  const srcLow = offCtx.createBufferSource();
+  srcLow.buffer = buffer;
+  const lowPass = offCtx.createBiquadFilter();
+  lowPass.type = 'lowpass';
+  lowPass.frequency.value = 200;
+  lowPass.Q.value = 0.707;
+  srcLow.connect(lowPass);
+  lowPass.connect(offCtx.destination);
+  srcLow.start(0);
+
+  // 3) 고음역대 (7500Hz~): 원본 스테레오 심벌즈 및 공간감 보존
+  const srcHigh = offCtx.createBufferSource();
+  srcHigh.buffer = buffer;
+  const highPass = offCtx.createBiquadFilter();
+  highPass.type = 'highpass';
+  highPass.frequency.value = 7500;
+  highPass.Q.value = 0.707;
+  srcHigh.connect(highPass);
+  highPass.connect(offCtx.destination);
+  srcHigh.start(0);
+
+  // 4) 중음역대 (200Hz ~ 7500Hz): 보컬이 제거된 반주 대역 결합
+  const srcMid = offCtx.createBufferSource();
+  srcMid.buffer = oopsBuf;
+  const bpLow = offCtx.createBiquadFilter();
+  bpLow.type = 'highpass';
+  bpLow.frequency.value = 200;
+  bpLow.Q.value = 0.707;
+  const bpHigh = offCtx.createBiquadFilter();
+  bpHigh.type = 'lowpass';
+  bpHigh.frequency.value = 7500;
+  bpHigh.Q.value = 0.707;
+  srcMid.connect(bpLow);
+  bpLow.connect(bpHigh);
+  bpHigh.connect(offCtx.destination);
+  srcMid.start(0);
+
+  return await offCtx.startRendering();
+}
+
+// ── 시간 영역 피치 시프팅 (Time-Domain Overlap-Add Pitch Shifting)
+// 재생 속도(템포/BPM)와 곡 길이를 100% 유지하면서 음정만 ±반음 단위로 독립 변환
+function shiftPitchOLA(buffer, keyShift) {
+  if (keyShift === 0) return buffer;
+  const pitchFactor = Math.pow(2, keyShift / 12);
+  const numCh = buffer.numberOfChannels;
+  const len = buffer.length;
+  const sr = buffer.sampleRate;
+
+  let outBuf;
+  try {
+    outBuf = new AudioBuffer({ length: len, numberOfChannels: numCh, sampleRate: sr });
+  } catch (e) {
+    const tmpCtx = new OfflineAudioContext(numCh, len, sr);
+    outBuf = tmpCtx.createBuffer(numCh, len, sr);
+  }
+
+  const windowSize = 2048; // ~46ms (44.1kHz 기준 보컬/악기 최적 윈도우)
+  const hopSize = windowSize / 4; // 75% 오버랩으로 금속성 노이즈 및 끊김 방지
+  const win = new Float32Array(windowSize);
+  for (let i = 0; i < windowSize; i++) {
+    win[i] = 0.25 * (1 - Math.cos((2 * Math.PI * i) / windowSize));
+  }
+
+  for (let ch = 0; ch < numCh; ch++) {
+    const src = buffer.getChannelData(ch);
+    const dst = outBuf.getChannelData(ch);
+    let k = 0;
+    while (k * hopSize + windowSize < len) {
+      const inPos = k * hopSize;
+      const outPos = k * hopSize;
+      for (let i = 0; i < windowSize; i++) {
+        const exactIdx = inPos + (i - windowSize / 2) * pitchFactor + windowSize / 2;
+        if (exactIdx >= 0 && exactIdx < len - 1) {
+          const idx0 = Math.floor(exactIdx);
+          const frac = exactIdx - idx0;
+          const sample = src[idx0] * (1 - frac) + src[idx0 + 1] * frac;
+          dst[outPos + i] += sample * win[i];
+        }
+      }
+      k++;
+    }
+  }
+  return outBuf;
+}
+
+// ── 보컬 제거 (주파수 대역 분리 위상 반전) 및 템포 유지 키 조절 오디오 처리
 async function processMrAudio(file, keyShift, mrId) {
   try {
     const arrayBuf = await file.arrayBuffer();
@@ -5093,42 +5204,23 @@ async function processMrAudio(file, keyShift, mrId) {
     const decoded  = await audioCtx.decodeAudioData(arrayBuf);
     await audioCtx.close();
 
-    // ① 보컬 제거 (위상 반전: L - R)
-    // 센터에 위치한 보컬을 상쇄하여 반주만 남김 (스테레오 곡 한정)
-    if (decoded.numberOfChannels >= 2) {
-      const L = decoded.getChannelData(0);
-      const R = decoded.getChannelData(1);
-      for (let i = 0; i < L.length; i++) {
-        const diff = (L[i] - R[i]) * 0.7; // 상쇄 후 볼륨 보정
-        L[i] = diff;
-        R[i] = diff; // 양쪽 채널에 동일하게 적용하여 듀얼 모노 MR 생성
-      }
-    }
+    // ① 1단계: 주파수 대역 분리 보컬 제거 (저음 베이스 및 고음 심벌즈 원본 보존)
+    const vocalRemovedBuffer = await applyMultibandVocalRemoval(decoded);
 
-    // ② 키 조절 (OfflineAudioContext + playbackRate)
-    const rate   = Math.pow(2, keyShift / 12);
-    const newLen = Math.round(decoded.length / rate);
-    const offCtx = new OfflineAudioContext(decoded.numberOfChannels, newLen, decoded.sampleRate);
-    
-    const src    = offCtx.createBufferSource();
-    src.buffer = decoded;
-    src.playbackRate.value = rate;
-    src.connect(offCtx.destination);
-    src.start(0);
+    // ② 2단계: 템포 변화 없는 시간 영역 정밀 피치 시프팅 (원곡 속도 100% 유지)
+    const finalBuffer = shiftPitchOLA(vocalRemovedBuffer, keyShift);
 
-    // ③ 최종 WAV 인코딩 및 저장
-    const rendered = await offCtx.startRendering();
-    const wavBlob  = audioBufferToWavBlob(rendered);
+    // ③ 최종 WAV 인코딩 및 메모리 스토어 저장
+    const wavBlob  = audioBufferToWavBlob(finalBuffer);
     
     const sign     = keyShift > 0 ? '+' : '';
     const keyStr   = keyShift !== 0 ? `_key${sign}${keyShift}` : '';
     const base     = file.name.replace(/\.[^.]+$/, '');
     
-    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${keyStr}.wav` };
+    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR_v2${keyStr}.wav` };
   } catch (err) {
     console.error('MR 오디오 처리 중 오류 발생:', err);
     alert('오디오 처리 중 오류가 발생했습니다: ' + err.message + '\n(원본 파일이 다운로드됩니다)');
-    // 실패 시 원본 파일 폴백
     MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
   }
 }
