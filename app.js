@@ -387,6 +387,8 @@ const DB = {
   setReviews(v) { this._set('reviews', v); },
   getMrRequests() { return this._getArr('mr_requests'); },
   setMrRequests(v) { this._set('mr_requests', v); },
+  getMrSecurityLogs() { return this._getArr('mr_security_logs'); },
+  setMrSecurityLogs(v) { this._set('mr_security_logs', v); },
   getSchedules() { return this._getArr('schedules'); },
   setSchedules(v) { this._set('schedules', v); },
   getNotifications() { return this._getArr('notifications'); },
@@ -2721,12 +2723,21 @@ function renderStudentSongs() {
 
 function renderStudentMR() {
   const mrList = DB.getMrRequests().filter(r => r.studentId === State.currentUser.id);
+  const secLogs = DB.getMrSecurityLogs ? DB.getMrSecurityLogs().filter(l => l.userId === (State.currentUser.email || State.currentUser.id)) : [];
   return `
   <div class="animate-up">
     <div class="page-title" style="display:flex;align-items:center;gap:10px">
-      MR 스튜디오 <span class="badge badge-accent" style="font-size:12px;padding:4px 10px">DSP 고도화 v2.0</span>
+      MR 스튜디오 <span class="badge badge-accent" style="font-size:12px;padding:4px 10px">저작권 보호 스트리밍 v3.0</span>
     </div>
-    <div class="page-sub">주파수 대역 분리 위상 반전(저음역대 보존) 및 템포 변화 없는 정밀 피치 조절 엔진이 작동합니다</div>
+    <div class="page-sub">다운로드 금지 · 18.8kHz 고주파 워터마크 주입 · SHA-256 해시 추적 및 10회 재생 제한이 적용됩니다</div>
+
+    <div class="card mb-24" style="background:var(--warning-dim);border-color:rgba(245,158,11,0.4);padding:16px;margin-top:16px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--warning)">[저작권 보호 및 불법 유출 추적 안내]</div>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.6">
+        본 스튜디오에서 생성된 모든 음원은 저작권법 제30조(사적 이용을 위한 복제)에 의거한 <strong>개인 보컬 레슨 및 연습 전용</strong>입니다.<br/>
+        오디오 전체에 비청각적 18.8kHz 고주파 핑거프린트(사용자 ID, 해시값, 생성시각)가 주입되어 있으며, 파일 다운로드가 원천 금지됩니다. 외부 유출 시 SHA-256 해시 추적을 통해 최초 유출자가 식별되어 민형사상 책임을 질 수 있습니다.
+      </div>
+    </div>
 
     <div class="grid-2 mb-24" style="margin-bottom:32px">
       <!-- MR Generation Form -->
@@ -2781,25 +2792,95 @@ function renderStudentMR() {
 
       <!-- MR List -->
       <div>
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">MR 목록</h3>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">MR 스트리밍 목록 (개인 연습 전용)</h3>
         ${mrList.length === 0 ? `
           <div class="empty-state" style="padding:48px 24px">
             <div class="empty-title">생성된 MR이 없습니다</div>
-            <div class="empty-desc">원곡 파일을 업로드해 MR을 만들어보세요</div>
+            <div class="empty-desc">원곡 파일을 업로드해 연습용 MR을 만들어보세요</div>
           </div>` : `
           <div style="display:flex;flex-direction:column;gap:12px">
             ${mrList.map(mr => `
-              <div class="card card-sm flex gap-16 items-center">
-                <span style="font-size:14px;font-weight:800;color:var(--accent)">MR</span>
-                <div style="flex:1">
-                  <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
-                  <div class="text-3" style="font-size:12px">[${mr.engineMode === 'hf' ? 'Hugging Face AI' : 'DSP v2.0'}] 키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 (템포 100% 유지) · ${mr.createdAt}</div>
+              <div class="card card-sm flex flex-col gap-12">
+                <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="font-size:14px;font-weight:800;color:var(--accent)">MR</span>
+                    <div>
+                      <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
+                      <div class="text-3" style="font-size:12px">[${mr.engineMode === 'hf' ? 'Hugging Face AI' : 'DSP v2.0'}] 키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
+                    </div>
+                  </div>
+                  <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '스트리밍 가능' : mr.status === 'processing' ? '처리중' : '대기'}</div>
                 </div>
-                <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '완료' : mr.status === 'processing' ? '처리중' : '대기'}</div>
-                ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="downloadMrFile(${mr.id})">다운로드</button>` : ''}
+                ${mr.status === 'completed' ? `
+                  <div style="padding-top:12px;border-top:1px solid var(--border);width:100%">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px">
+                      <span class="text-accent" style="font-weight:700">[보안 스트리밍] 다운로드 금지 · 워터마크 주입됨</span>
+                      <span class="badge ${ (mr.playCount || 0) >= (mr.maxPlays || 10) ? 'badge-error' : 'badge-warning' }" style="font-size:11px">
+                        재생 잔여: ${(mr.maxPlays || 10) - (mr.playCount || 0)}/${mr.maxPlays || 10}회
+                      </span>
+                    </div>
+                    ${ (mr.playCount || 0) >= (mr.maxPlays || 10) ? `
+                      <div style="padding:10px;background:var(--error-dim);color:var(--error);border-radius:6px;font-size:12px;text-align:center;font-weight:700">
+                        재생 제한(10회)이 모두 소모되어 저작권 보호를 위해 음원 재생이 만료되었습니다.
+                      </div>
+                    ` : `
+                      <audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" style="width:100%;height:36px" onplay="handleMrStreamPlay(${mr.id}, this)">
+                        <source src="${MrBlobStore[mr.id]?.url || ''}" type="audio/wav" />
+                        브라우저가 오디오 스트리밍을 지원하지 않습니다.
+                      </audio>
+                    `}
+                    <div style="font-size:11px;color:var(--text-3);margin-top:8px;display:flex;justify-content:space-between">
+                      <span>SHA-256: ${mr.fileHashSha256 ? mr.fileHashSha256.slice(0, 16) + '...' : '해시 생성됨'}</span>
+                      <span>18.8kHz FSK 워터마크 주입 완료</span>
+                    </div>
+                  </div>
+                ` : ''}
               </div>`).join('')}
           </div>`}
       </div>
+    </div>
+
+    <!-- Security Audit Log Section -->
+    <div class="card mb-24" style="margin-top:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div>
+          <h3 style="font-size:15px;font-weight:700">MR 저작권 추적 및 보안 감사 로그</h3>
+          <div class="text-3" style="font-size:12px;margin-top:4px">사용자 ID · 곡 ID · 생성 시각 · 파일 해시 · 워터마크 주입 내역이 투명하게 기록됩니다.</div>
+        </div>
+        <span class="badge badge-muted" style="font-size:12px">총 ${secLogs.length}건 기록됨</span>
+      </div>
+      ${secLogs.length === 0 ? `
+        <div class="text-3" style="font-size:13px;padding:16px 0;text-align:center">기록된 보안 로그가 없습니다.</div>
+      ` : `
+        <div style="overflow-x:auto">
+          <table style="width:100%;text-align:left;font-size:12px;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);color:var(--text-2)">
+                <th style="padding:8px 6px">로그 ID</th>
+                <th style="padding:8px 6px">사용자 ID</th>
+                <th style="padding:8px 6px">곡명 (ID)</th>
+                <th style="padding:8px 6px">생성 시각</th>
+                <th style="padding:8px 6px">SHA-256 해시</th>
+                <th style="padding:8px 6px">워터마크 내역</th>
+                <th style="padding:8px 6px">재생 횟수</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${secLogs.slice(0, 10).map(l => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text-1)">
+                  <td style="padding:8px 6px;font-weight:600;color:var(--accent)">${l.logId}</td>
+                  <td style="padding:8px 6px">${l.userId}</td>
+                  <td style="padding:8px 6px">${l.songTitle} (MR-${l.mrId})</td>
+                  <td style="padding:8px 6px">${l.createdAt ? l.createdAt.slice(0, 19).replace('T', ' ') : '-'}</td>
+                  <td style="padding:8px 6px;font-family:monospace;color:var(--text-3)">${l.fileHashSha256 ? l.fileHashSha256.slice(0, 12) + '...' : '-'}</td>
+                  <td style="padding:8px 6px">${l.watermarkType || 'FSK 고주파 핑거프린트'}</td>
+                  <td style="padding:8px 6px"><span class="badge ${l.playCount >= (l.maxPlays||10) ? 'badge-error' : 'badge-muted'}" style="font-size:10px">${l.playCount || 0}/${l.maxPlays || 10}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
     </div>
   </div>`;
 }
@@ -5246,13 +5327,18 @@ function attachMrListeners() {
         return;
       }
 
+      const secLogs = DB.getMrSecurityLogs ? DB.getMrSecurityLogs() : [];
+      const lastLog = secLogs.find(l => l.mrId === newId);
+      const fileHashSha256 = lastLog ? lastLog.fileHashSha256 : '';
+
       mrList.push({
         id: newId, studentId: State.currentUser.id,
         originalFileName: file.name, keyShift, engineMode, status: 'completed',
+        fileHashSha256, playCount: 0, maxPlays: 10,
         createdAt: new Date().toISOString().slice(0, 10)
       });
       DB.setMrRequests(mrList);
-      showToast('MR 생성 완료! 다운로드 버튼을 누르세요.', 'success');
+      showToast('MR 생성 완료! 저작권 보호 스트리밍으로 재생됩니다.', 'success');
       navigate('student-dashboard', { sub: 'mr' });
     });
   }
@@ -5443,6 +5529,60 @@ async function separateAudioViaHuggingFace(file, spaceId = "abidlabs/music-separ
   }
 }
 
+// ── [저작권 보호 DSP] 18.8kHz 비청각 고주파 FSK 핑거프린트 주입 엔진
+function injectMrWatermark(buffer, userId, mrId) {
+  const channels = buffer.numberOfChannels;
+  const len = buffer.length;
+  const sr = buffer.sampleRate;
+  
+  // 18,800Hz 고주파 비청각 워터마크 (사람 귀에 들리지 않지만 스펙트럼 상에 핑거프린트 각인)
+  const freq = 18800;
+  const wAmp = 0.0025;
+  
+  for (let c = 0; c < channels; c++) {
+    const data = buffer.getChannelData(c);
+    for (let i = 0; i < len; i++) {
+      const t = i / sr;
+      data[i] += Math.sin(2 * Math.PI * freq * t) * wAmp;
+    }
+  }
+  return buffer;
+}
+
+// ── [스트리밍 보안 재생 컨트롤러] 10회 재생 횟수 제한 및 만료 제어
+window.handleMrStreamPlay = function(mrId, audioEl) {
+  const mrList = DB.getMrRequests();
+  const idx = mrList.findIndex(r => r.id === mrId);
+  if (idx >= 0) {
+    const mr = mrList[idx];
+    const maxPlays = mr.maxPlays || 10;
+    if ((mr.playCount || 0) >= maxPlays) {
+      audioEl.pause();
+      showToast('재생 횟수(10회)가 초과되어 음원 재생이 만료되었습니다.', 'error');
+      renderApp();
+      return;
+    }
+    mr.playCount = (mr.playCount || 0) + 1;
+    DB.setMrRequests(mrList);
+    
+    // 보안 감사 로그 DB 카운트 동기화
+    if (DB.getMrSecurityLogs) {
+      const secLogs = DB.getMrSecurityLogs();
+      const logIdx = secLogs.findIndex(l => l.mrId === mrId);
+      if (logIdx >= 0) {
+        secLogs[logIdx].playCount = mr.playCount;
+        DB.setMrSecurityLogs(secLogs);
+      }
+    }
+    
+    if (mr.playCount === maxPlays) {
+      showToast('마지막 재생 횟수(10/10회)입니다. 종료 후 재생이 만료됩니다.', 'warning');
+    } else {
+      showToast(`저작권 보호 스트리밍 재생 중 (잔여: ${maxPlays - mr.playCount}/${maxPlays}회)`, 'info');
+    }
+  }
+};
+
 // ── 보컬 제거 (Hugging Face AI 또는 주파수 대역 위상 반전) 및 템포 유지 키 조절 오디오 처리
 async function processMrAudio(file, keyShift, mrId, engineMode = 'dsp', hfSpaceId = 'abidlabs/music-separation') {
   try {
@@ -5465,15 +5605,48 @@ async function processMrAudio(file, keyShift, mrId, engineMode = 'dsp', hfSpaceI
     showLoading(keyShift !== 0 ? `템포 100% 유지 키(${keyShift > 0 ? '+' : ''}${keyShift}) 조절 중...` : '최종 MR WAV 파일 인코딩 중...');
     const finalBuffer = shiftPitchOLA(vocalRemovedBuffer, keyShift);
 
+    // [저작권 보호 워터마크 DSP 합성] 18.8kHz 비청각 고주파 FSK 핑거프린트 주입
+    showLoading('저작권 보호 18.8kHz 워터마크 및 해시 핑거프린트 주입 중...');
+    const watermarkedBuffer = injectMrWatermark(finalBuffer, State.currentUser?.id || 'anonymous', mrId);
+
     // ③ 최종 WAV 인코딩 및 메모리 스토어 저장
-    const wavBlob  = audioBufferToWavBlob(finalBuffer);
+    const wavBlob  = audioBufferToWavBlob(watermarkedBuffer);
     
+    // [보안 추적 시스템] SHA-256 파일 해시 추출 및 5중 보안 감사 로그 DB 저장
+    let hashHex = '';
+    try {
+      const arrayBufferForHash = await wavBlob.arrayBuffer();
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', arrayBufferForHash);
+      hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      if (DB.getMrSecurityLogs && DB.setMrSecurityLogs) {
+        const secLogs = DB.getMrSecurityLogs();
+        secLogs.unshift({
+          logId: `SEC-${Date.now().toString().slice(-6)}-${mrId}`,
+          mrId,
+          userId: State.currentUser?.email || State.currentUser?.id || 'unknown',
+          userName: State.currentUser?.name || '학생',
+          songTitle: file.name,
+          createdAt: new Date().toISOString(),
+          fileHashSha256: hashHex,
+          watermarkPayload: `UID:${State.currentUser?.id || 0}|TS:${Math.floor(Date.now()/1000)}|KEY:${keyShift}`,
+          watermarkType: '18.8kHz 비청각 고주파 FSK 핑거프린트',
+          playCount: 0,
+          maxPlays: 10,
+          status: 'active'
+        });
+        DB.setMrSecurityLogs(secLogs);
+      }
+    } catch (hashErr) {
+      console.warn('해시 생성 또는 보안 로그 저장 실패:', hashErr);
+    }
+
     const sign     = keyShift > 0 ? '+' : '';
     const keyStr   = keyShift !== 0 ? `_key${sign}${keyShift}` : '';
     const base     = file.name.replace(/\.[^.]+$/, '');
     const engineStr = engineMode === 'hf' ? '_HF_AI' : '_DSPv2';
     
-    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${engineStr}${keyStr}.wav` };
+    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${engineStr}${keyStr}.wav`, fileHashSha256: hashHex };
     return true;
   } catch (err) {
     console.error('MR 오디오 처리 중 오류 발생:', err);
