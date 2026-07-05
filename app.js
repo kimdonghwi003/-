@@ -1695,7 +1695,7 @@ function renderSubmit() {
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="badge" style="background:#f59e0b; color:#fff; font-size:12px; font-weight:800;">🔥 대학생 런칭 특가</span>
-                  <strong style="font-size:16px; color:var(--text-1);">👨‍🏫 전문 트레이너 1:1 정밀 피드백 (북마크 구간 + 한 줄 진단)</strong>
+                  <strong style="font-size:16px; color:var(--text-1);">전문 트레이너 1:1 정밀 피드백 (북마크 구간 + 한 줄 진단)</strong>
                 </div>
                 <div>
                   <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
@@ -2147,7 +2147,7 @@ function renderAnalysis(params) {
             return `
             <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06)); border-radius:18px;">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                <span class="badge badge-accent" style="font-size:12px;">👨‍🏫 트레이너 전용 코칭 권한</span>
+                <span class="badge badge-accent" style="font-size:12px;">트레이너 전용 코칭 권한</span>
                 <h3 style="font-size:18px; font-weight:800; color:var(--text); margin:0;">이 학생의 음성 파일에 총괄 피드백 작성 / 수정</h3>
               </div>
               <p class="text-2" style="font-size:13px; margin-bottom:16px;">
@@ -2176,7 +2176,7 @@ function renderAnalysis(params) {
             <div class="card mb-24" style="padding:28px; border:2px solid #10b981; background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.08)); border-radius:18px;">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:13px;">👨‍🏫 담당 트레이너 총괄 피드백</span>
+                  <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:13px;">담당 트레이너 총괄 피드백</span>
                   <span style="font-size:16px; font-weight:800; color:var(--text);">${fb.trainerName} 선생님</span>
                 </div>
                 <span class="text-3" style="font-size:12px; font-weight:600;">작성/수정일: ${fb.updatedAt}</span>
@@ -2215,7 +2215,7 @@ function renderAnalysis(params) {
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="badge" style="background:#f59e0b; color:#fff; font-size:13px; font-weight:800;">🔥 대학생 런칭 프로모션</span>
-                <h3 style="font-size:18px; font-weight:900; color:var(--text-1); margin:0;">👨‍🏫 전문 트레이너 1:1 정밀 피드백 신청</h3>
+                <h3 style="font-size:18px; font-weight:900; color:var(--text-1); margin:0;">전문 트레이너 1:1 정밀 피드백 신청</h3>
               </div>
               <div>
                 <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
@@ -2554,7 +2554,7 @@ function renderStudentHome() {
         <div class="text-2" style="font-size:13px">음성 파일을 업로드해 AI 분석을 시작하세요</div>
       </div>
       <div class="card" style="cursor:pointer;transition:var(--transition-md)" onclick="navigate('student-dashboard',{sub:'trainers'})" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-        <div style="font-size:32px;margin-bottom:12px">👨‍🏫</div>
+        <div style="font-size:32px;margin-bottom:12px">🎓</div>
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">트레이너 찾기</div>
         <div class="text-2" style="font-size:13px">전문 보컬 트레이너와 1:1 레슨을 예약하세요</div>
       </div>
@@ -2586,7 +2586,7 @@ function renderStudentHome() {
             <div style="flex:1">
               <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">
                 ${s.fileName}
-                ${analysis && analysis.trainerFeedback ? `<span class="badge badge-success" style="font-size:11px">👨‍🏫 트레이너 총괄 피드백 도착</span>` : ''}
+                ${analysis && analysis.trainerFeedback ? `<span class="badge badge-success" style="font-size:11px">트레이너 총괄 피드백 도착</span>` : ''}
               </div>
               <div class="text-3" style="font-size:12px">${s.createdAt}</div>
             </div>
@@ -2956,7 +2956,7 @@ function renderStudentFeedbacks() {
         <div class="card" style="padding:28px; border:2px solid #10b981; background:linear-gradient(135deg, rgba(16,185,129,0.06), rgba(59,130,246,0.05)); border-radius:18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:12px;">
             <div>
-              <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:12px; margin-bottom:6px;">👨‍🏫 담당 트레이너 총괄 코칭</span>
+              <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:12px; margin-bottom:6px;">담당 트레이너 총괄 코칭</span>
               <div style="font-size:18px; font-weight:800; color:var(--text);">${fb.trainerName} 선생님</div>
             </div>
             <div style="text-align:right;">
@@ -3322,7 +3322,7 @@ function renderTrainerStudents() {
         <div class="card" style="padding:24px;border:1px solid var(--border);background:var(--bg-1);${stBookings.length > 0 ? 'border-left:4px solid var(--accent);box-shadow:0 8px 24px rgba(99,102,241,0.1)' : ''}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:16px">
             <div style="display:flex;align-items:center;gap:14px">
-              <div class="avatar avatar-lg" style="background:var(--grad-primary);font-size:24px">${st.nickname ? st.nickname[0] : '👤'}</div>
+              <div class="avatar avatar-lg" style="background:var(--grad-primary);font-size:24px">${st.nickname ? st.nickname[0] : '🎵'}</div>
               <div>
                 <div style="font-size:18px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
                   ${st.nickname || '익명 학생'}
@@ -3399,7 +3399,7 @@ function renderTrainerStudents() {
             ${stSubs.length > 0 ? `
             <div style="margin-top:18px;padding-top:16px;border-top:2px dashed var(--border)">
               <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px">
-                <span>👨‍🏫 학생 음성 파일별 담당 트레이너 총괄 피드백 남기기</span>
+                <span>학생 음성 파일별 담당 트레이너 총괄 피드백 남기기</span>
                 ${stBookings.length > 0 ? `<span class="badge badge-success" style="font-size:11px">신청 학생 전용 맞춤 코칭</span>` : ''}
               </div>
               <div style="display:flex;flex-direction:column;gap:14px">
@@ -3643,7 +3643,7 @@ function renderAdminDashboard(params) {
             🎙️ 올라온 음성 파일 청람 (${submissions.length}건)
           </button>
           <button class="tab-btn ${tab === 'trainers' ? 'active' : ''}" style="flex:1; min-width:180px; padding:12px 18px; font-weight:800; font-size:15px;" onclick="navigate('admin-dashboard', {tab:'trainers'})">
-            👨‍🏫 트레이너 심사 및 회원 관리 (${pending.length > 0 ? `⚠️ ${pending.length}건 대기` : '정상'})
+            트레이너 심사 및 회원 관리 (${pending.length > 0 ? `⚠️ ${pending.length}건 대기` : '정상'})
           </button>
         </div>
 
@@ -3679,7 +3679,7 @@ function renderAdminDashboard(params) {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
               <div>
                 <h3 style="font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:8px;">
-                  👨‍🏫 모든 트레이너 계정 만족도 및 활동 체크
+                  모든 트레이너 계정 만족도 및 활동 체크
                 </h3>
                 <p class="text-3" style="font-size:13px; margin:4px 0 0 0;">각 트레이너가 남긴 피드백에 대해 수강생들이 부여한 별점 만족도 평균과 리뷰 지표입니다.</p>
               </div>
@@ -3846,7 +3846,7 @@ function renderAdminDashboard(params) {
               <div class="card" style="padding:24px; border-left:5px solid var(--accent); border-radius:16px; background:var(--bg-card);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:14px;">
                   <div style="display:flex; gap:12px; align-items:center;">
-                    <div class="avatar" style="background:var(--accent); font-size:18px;">👨‍🏫</div>
+                    <div class="avatar" style="background:var(--accent); font-size:18px;">🎓</div>
                     <div>
                       <div style="font-size:16px; font-weight:800; color:var(--text);">${fb.trainerName} 트레이너</div>
                       <div class="text-3" style="font-size:12px;">코칭 작성일: ${fb.updatedAt || submission.createdAt}</div>
@@ -3994,7 +3994,7 @@ function renderAdminDashboard(params) {
 
           <!-- All Trainers -->
           <div class="section-header mb-16" style="margin-bottom:20px">
-            <div class="section-title">👨‍🏫 전체 보컬 트레이너 목록</div>
+            <div class="section-title">전체 보컬 트레이너 목록</div>
           </div>
           <div class="table-wrap mb-24" style="margin-bottom:32px">
             <table class="data-table">
