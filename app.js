@@ -5487,45 +5487,104 @@ function shiftPitchOLA(buffer, keyShift) {
   return outBuf;
 }
 
-// ── Hugging Face Spaces (Gradio API) 연동 음원 분리 엔진
-async function separateAudioViaHuggingFace(file, spaceId = "abidlabs/music-separation", onProgress) {
-  try {
-    if (onProgress) onProgress("Hugging Face AI 클라우드 서버에 연결 중...");
-    
-    // @gradio/client 동적 로드
-    const { Client } = await import("https://cdn.jsdelivr.net/npm/@gradio/client@1.4.0/dist/index.min.js");
-    
-    const client = await Client.connect(spaceId);
-    if (onProgress) onProgress(`AI 모델(${spaceId})에 음원 전송 및 분리 작업 진행 중... (약 30~60초 소요)`);
-    
-    // Gradio 예측 호출
-    const result = await client.predict("/predict", [ file ]);
-    
-    if (onProgress) onProgress("음원 분리 완료! 오디오 다운로드 및 디코딩 중...");
-    const output = result.data;
-    let mrUrl = null;
-    if (Array.isArray(output)) {
-      const inst = output.length > 1 ? output[1] : output[0];
-      mrUrl = typeof inst === 'string' ? inst : (inst.url || inst.path);
-    } else if (typeof output === 'string') {
-      mrUrl = output;
-    } else if (output && output.url) {
-      mrUrl = output.url;
-    }
+// ── Hugging Face Spaces (Gradio API) 연동 음원 분리 엔진 (무한 대기 및 다중 AI 클러스터 자동 전환)
+async function separateAudioViaHuggingFace(file, userSpaceId = "abidlabs/music-separation", onProgress) {
+  if (onProgress) onProgress("Hugging Face AI 클라우드 엔진 로드 중...");
+  const { Client } = await import("https://cdn.jsdelivr.net/npm/@gradio/client@1.4.0/dist/index.min.js");
 
-    if (!mrUrl) throw new Error("Hugging Face 서버에서 MR 오디오 링크를 반환하지 못했습니다.");
-    
-    const audioRes = await fetch(mrUrl);
-    const arrayBuffer = await audioRes.arrayBuffer();
-    
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    await audioCtx.close();
-    
-    return audioBuffer;
-  } catch (err) {
-    console.error("Hugging Face 음원 분리 실패:", err);
-    throw err;
+  // 우선순위 Space 후보군 (사용자 지정 ID 최우선, 이후 신뢰도 높은 Demucs/UVR 예비 클라우드 서버들)
+  const candidateSpaces = Array.from(new Set([
+    userSpaceId,
+    "abidlabs/music-separation",
+    "drewsh/demucs",
+    "sanchit-gandhi/music-separation",
+    "FelixGao/demucs-music-separation",
+    "SIGS-AI/Demucs-Music-Separation"
+  ]));
+
+  let attempt = 1;
+  let spaceIdx = 0;
+
+  // 클라우드 서버 대기열이 길거나 일시 오류가 발생해도 절대 포기하지 않고 끝까지 성공시키는 무한 재시도 루프
+  while (true) {
+    const currentSpace = candidateSpaces[spaceIdx % candidateSpaces.length];
+    try {
+      if (onProgress) {
+        onProgress(`[Hugging Face AI] 서버(${currentSpace}) 접속 및 대기열 확인 중... (시도 ${attempt}회)`);
+      }
+
+      // 1) 클라우드 서버 연결 (콜드스타트 대기 포함)
+      const client = await Client.connect(currentSpace);
+      
+      if (onProgress) {
+        onProgress(`[Hugging Face AI] 모델(${currentSpace})에 음원 전송 및 딥러닝 분리 작업 중... (약 1~3분 소요, 대기열 유지 중)`);
+      }
+
+      // 2) 예측 호출: 엔드포인트 호환성을 위해 여러 방식 순차 시도
+      let result = null;
+      let lastPredictErr = null;
+
+      // 시도 A: 기본 인덱스 0 호출 (가장 호환성 높음)
+      try {
+        result = await client.predict(0, [ file ]);
+      } catch (errA) {
+        lastPredictErr = errA;
+        // 시도 B: "/predict" 엔드포인트 호출
+        try {
+          result = await client.predict("/predict", [ file ]);
+        } catch (errB) {
+          lastPredictErr = errB;
+          // 시도 C: "/separate" 엔드포인트 호출
+          try {
+            result = await client.predict("/separate", [ file ]);
+          } catch (errC) {
+            lastPredictErr = errC;
+          }
+        }
+      }
+
+      if (!result || !result.data) {
+        throw new Error(`엔드포인트 응답 없음 (${lastPredictErr?.message || '알 수 없는 오류'})`);
+      }
+
+      if (onProgress) onProgress("음원 분리 완료! 고음질 오디오 스트림 다운로드 및 디코딩 중...");
+      const output = result.data;
+      let mrUrl = null;
+      if (Array.isArray(output)) {
+        const inst = output.length > 1 ? output[1] : output[0];
+        mrUrl = typeof inst === 'string' ? inst : (inst?.url || inst?.path);
+      } else if (typeof output === 'string') {
+        mrUrl = output;
+      } else if (output && output.url) {
+        mrUrl = output.url;
+      }
+
+      if (!mrUrl) throw new Error("서버에서 결과 오디오 링크를 반환하지 못했습니다.");
+
+      const audioRes = await fetch(mrUrl);
+      const arrayBuffer = await audioRes.arrayBuffer();
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      await audioCtx.close();
+
+      // 성공 시 오디오 버퍼 반환하고 루프 종료
+      return audioBuffer;
+
+    } catch (err) {
+      console.warn(`[Hugging Face] 서버(${currentSpace}) 시도 ${attempt}회 실패, 예비 서버로 전환 후 대기합니다:`, err.message);
+      
+      // 실패 시 다음 예비 서버로 전환하고 4초 대기 후 무한 재시도 (사용자 요청: 아무리 오래 기다려도 끝까지 성공시키기)
+      spaceIdx++;
+      attempt++;
+      
+      if (onProgress) {
+        onProgress(`[클라우드 대기열/오류 감지] 서버 점검 또는 대기열 포화로 다음 예비 AI 서버로 자동 전환하여 계속 진행합니다... (시도 ${attempt}회)`);
+      }
+      
+      // 4초 대기 후 재시도 (서버 과부하 방지)
+      await new Promise(r => setTimeout(r, 4000));
+    }
   }
 }
 
