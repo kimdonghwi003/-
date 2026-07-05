@@ -2737,21 +2737,21 @@ function renderStudentMR() {
         <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">MR 생성</h3>
         <form id="mr-form">
           <div class="form-group mb-16" style="margin-bottom:16px">
-            <label class="form-label">음원 분리 엔진 선택</label>
+            <label class="form-label">음원 분리 AI 클라우드 엔진 (Hugging Face Spaces 전용)</label>
             <div style="display:flex;gap:12px;margin-top:8px">
-              <label class="check-group" style="flex:1;background:var(--bg-2);padding:12px;border-radius:8px;border:1px solid var(--border);cursor:pointer">
-                <input type="radio" name="mr-engine" value="dsp" checked onchange="document.getElementById('hf-space-group').style.display='none'" />
-                <span style="font-size:13px;font-weight:600">내장 DSP v2.0 (초고속 / 무료)</span>
+              <label class="check-group" style="flex:1;background:var(--bg-2);padding:12px;border-radius:8px;border:2px solid #3b82f6;cursor:pointer">
+                <input type="radio" name="mr-engine" value="hf" checked onchange="document.getElementById('hf-space-group').style.display='block'" />
+                <span style="font-size:13px;font-weight:700;color:#3b82f6">[최우선 적용] Hugging Face AI (Demucs / UVR5 클라우드 서버)</span>
               </label>
-              <label class="check-group" style="flex:1;background:var(--bg-2);padding:12px;border-radius:8px;border:1px solid var(--border);cursor:pointer">
-                <input type="radio" name="mr-engine" value="hf" onchange="document.getElementById('hf-space-group').style.display='block'" />
-                <span style="font-size:13px;font-weight:600">Hugging Face AI (Demucs/UVR5)</span>
+              <label class="check-group" style="flex:1;background:var(--bg-2);padding:12px;border-radius:8px;border:1px solid var(--border);cursor:pointer;opacity:0.6">
+                <input type="radio" name="mr-engine" value="dsp" onchange="document.getElementById('hf-space-group').style.display='none'" />
+                <span style="font-size:13px;font-weight:600">내장 DSP 주파수 필터 (오프라인 예비용)</span>
               </label>
             </div>
-            <div id="hf-space-group" style="display:none;margin-top:12px;background:var(--bg-3);padding:14px;border-radius:8px;border:1px solid var(--border)">
-              <label class="form-label" style="font-size:12px;color:var(--accent)">Hugging Face Space ID (기본값 추천)</label>
+            <div id="hf-space-group" style="display:block;margin-top:12px;background:var(--bg-3);padding:14px;border-radius:8px;border:1px solid var(--border)">
+              <label class="form-label" style="font-size:12px;color:var(--accent)">Hugging Face Space ID (공식 Demucs AI 서버 자동 접속 및 무한 재시도 지원)</label>
               <input type="text" id="hf-space-id" class="input" value="abidlabs/music-separation" placeholder="예: abidlabs/music-separation" style="margin-top:6px;font-size:12px" />
-              <div style="font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.5">※ Hugging Face 오픈소스 AI 클라우드 서버에 접속하여 보컬과 반주를 100% 분리합니다. (서버 대기열에 따라 약 30초~1분 소요)</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.5">※ 클라우드 서버 대기열이 길거나 일시적 연결 오류가 발생해도 예비 Hugging Face AI 서버(demucs, uvr 등)로 자동 전환하며 끝까지 보컬 분리를 완료합니다.</div>
             </div>
           </div>
           <div class="form-group mb-16" style="margin-bottom:16px">
@@ -5345,7 +5345,7 @@ function attachMrListeners() {
       if (!file) { showToast('원곡 파일을 선택해주세요', 'error'); return; }
       if (!document.getElementById('copyright-agree')?.checked) { showToast('저작권 가이드라인에 동의해주세요', 'error'); return; }
       const keyShift = parseInt(document.getElementById('key-slider')?.value || '0');
-      const engineMode = document.querySelector('input[name="mr-engine"]:checked')?.value || 'dsp';
+      const engineMode = document.querySelector('input[name="mr-engine"]:checked')?.value || 'hf';
       const hfSpaceId = document.getElementById('hf-space-id')?.value.trim() || 'abidlabs/music-separation';
 
       if (engineMode === 'hf') {
@@ -5708,7 +5708,7 @@ window.deleteMrRequest = function(mrId) {
 };
 
 // ── 보컬 제거 (Hugging Face AI 또는 주파수 대역 위상 반전) 및 템포 유지 키 조절 오디오 처리
-async function processMrAudio(file, keyShift, mrId, engineMode = 'dsp', hfSpaceId = 'abidlabs/music-separation') {
+async function processMrAudio(file, keyShift, mrId, engineMode = 'hf', hfSpaceId = 'abidlabs/music-separation') {
   try {
     let vocalRemovedBuffer = null;
 
