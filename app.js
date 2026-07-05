@@ -2798,46 +2798,57 @@ function renderStudentMR() {
             <div class="empty-title">생성된 MR이 없습니다</div>
             <div class="empty-desc">원곡 파일을 업로드해 연습용 MR을 만들어보세요</div>
           </div>` : `
-          <div style="display:flex;flex-direction:column;gap:12px">
-            ${mrList.map(mr => `
-              <div class="card card-sm flex flex-col gap-12">
-                <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-                  <div style="display:flex;align-items:center;gap:12px">
-                    <span style="font-size:14px;font-weight:800;color:var(--accent)">MR</span>
-                    <div>
-                      <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
-                      <div class="text-3" style="font-size:12px">[${mr.engineMode === 'hf' ? 'Hugging Face AI' : 'DSP v2.0'}] 키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
-                    </div>
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '스트리밍 가능' : mr.status === 'processing' ? '처리중' : '대기'}</div>
-                    <button class="btn btn-secondary btn-sm" onclick="deleteMrRequest(${mr.id})" style="padding:4px 10px;font-size:11px;color:var(--error);border-color:rgba(239,68,68,0.3)">삭제</button>
-                  </div>
-                </div>
-                ${mr.status === 'completed' ? `
-                  <div style="padding-top:12px;border-top:1px solid var(--border);width:100%">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px">
-                      <span class="text-accent" style="font-weight:700">[보안 스트리밍] 다운로드 금지 · 워터마크 주입됨</span>
-                      <span class="badge ${ (mr.playCount || 0) >= (mr.maxPlays || 10) ? 'badge-error' : 'badge-warning' }" style="font-size:11px">
-                        재생 잔여: ${(mr.maxPlays || 10) - (mr.playCount || 0)}/${mr.maxPlays || 10}회
-                      </span>
-                    </div>
-                    ${ (mr.playCount || 0) >= (mr.maxPlays || 10) ? `
-                      <div style="padding:10px;background:var(--error-dim);color:var(--error);border-radius:6px;font-size:12px;text-align:center;font-weight:700">
-                        재생 제한(10회)이 모두 소모되어 저작권 보호를 위해 음원 재생이 만료되었습니다.
+          <div class="card" style="padding:0;overflow:hidden;border:1px solid var(--border)">
+            <div style="display:flex;flex-direction:column">
+              ${mrList.map((mr, index) => `
+                <div style="padding:16px;border-bottom:${index === mrList.length - 1 ? 'none' : '1px solid var(--border)'};background:${index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)'};display:flex;flex-direction:column;gap:12px">
+                  
+                  <!-- 상단 행: 곡 정보(좌측) 및 상태 배지/삭제 버튼(우측 정렬) -->
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+                    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                      <span style="font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-dim);padding:4px 8px;border-radius:4px;flex-shrink:0">MR</span>
+                      <div style="min-width:0;flex:1">
+                        <div style="font-size:14px;font-weight:700;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mr.originalFileName}</div>
+                        <div class="text-3" style="font-size:12px;margin-top:2px">[${mr.engineMode === 'hf' ? 'Hugging Face AI' : 'DSP v2.0'}] 키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
                       </div>
-                    ` : `
-                      <audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" style="width:100%;height:36px" onplay="handleMrStreamPlay(${mr.id}, this)">
-                        <source src="${MrBlobStore[mr.id]?.url || ''}" type="audio/wav" />
-                        브라우저가 오디오 스트리밍을 지원하지 않습니다.
-                      </audio>
-                    `}
-                    <div style="font-size:11px;color:var(--text-3);margin-top:8px;display:flex;justify-content:space-between">
-                      <span>SHA-256: ${mr.fileHashSha256 ? mr.fileHashSha256.slice(0, 16) + '...' : '해시 생성됨'}</span>
-                      <span>18.8kHz FSK 워터마크 주입 완료</span>
+                    </div>
+                    
+                    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                      <span class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}" style="white-space:nowrap;flex-shrink:0;display:inline-block">
+                        ${mr.status === 'completed' ? '스트리밍 가능' : mr.status === 'processing' ? '처리중' : '대기'}
+                      </span>
+                      <button class="btn btn-secondary btn-sm" onclick="deleteMrRequest(${mr.id})" style="padding:4px 10px;font-size:11px;color:var(--error);border-color:rgba(239,68,68,0.3);white-space:nowrap;flex-shrink:0">삭제</button>
                     </div>
                   </div>
-                ` : ''}
-              </div>`).join('')}
+
+                  <!-- 하단 행: 스트리밍 플레이어 및 보안 정보 (완료 상태일 때만) -->
+                  ${mr.status === 'completed' ? `
+                    <div style="background:var(--bg-2);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                        <span class="text-accent" style="font-weight:700;font-size:12px">[보안 스트리밍] 다운로드 금지 · 18.8kHz 워터마크 주입됨</span>
+                        <span class="badge ${ (mr.playCount || 0) >= (mr.maxPlays || 10) ? 'badge-error' : 'badge-warning' }" style="font-size:11px;white-space:nowrap;flex-shrink:0">
+                          재생 잔여: ${(mr.maxPlays || 10) - (mr.playCount || 0)}/${mr.maxPlays || 10}회
+                        </span>
+                      </div>
+                      ${ (mr.playCount || 0) >= (mr.maxPlays || 10) ? `
+                        <div style="padding:10px;background:var(--error-dim);color:var(--error);border-radius:6px;font-size:12px;text-align:center;font-weight:700">
+                          재생 제한(10회)이 모두 소모되어 저작권 보호를 위해 음원 재생이 만료되었습니다.
+                        </div>
+                      ` : `
+                        <audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" style="width:100%;height:36px" onplay="handleMrStreamPlay(${mr.id}, this)">
+                          <source src="${MrBlobStore[mr.id]?.url || ''}" type="audio/wav" />
+                          브라우저가 오디오 스트리밍을 지원하지 않습니다.
+                        </audio>
+                      `}
+                      <div style="font-size:11px;color:var(--text-3);display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-family:monospace">SHA-256: ${mr.fileHashSha256 ? mr.fileHashSha256.slice(0, 20) + '...' : '해시 생성됨'}</span>
+                        <span>개인 연습 전용 음원</span>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
           </div>`}
       </div>
     </div>
