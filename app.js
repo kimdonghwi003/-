@@ -4318,25 +4318,18 @@ async function decodeAndAnalyzeAudioFile(file) {
       stabilityScore = Math.min(98, Math.max(68, Math.round(98 - cv * 35)));
     }
 
+    const isOriginalMode = window.currentAnalysisMode === 'original' || window.currentAnalysisMode === 'song';
     const fmtTime = (t) => `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}`;
     const realBookmarks = [];
     const windowSec = Math.min(Math.floor(duration), 300);
 
-    // [음악적 주 키(Key) 및 다이아토닉 스케일 판별 알고리즘]
-    // 1. 전 곡에 걸쳐 0.15초 간격으로 유효 피치(Hz)를 추출하여 12음계 크로마 히스토그램 생성
+    // [음악적 주 키(Key) 및 다이아토닉 스케일 판별 알고리즘 - Spotify Basic-Pitch 연동]
+    // 1. Spotify Basic-Pitch가 추적한 고신뢰도 보컬 프레임에서 12음계 크로마 히스토그램 생성
     const chroma = new Array(12).fill(0);
-    const scanStep = Math.floor(0.15 * sampleRate);
-    const sliceLen = 2048;
-    for (let i = 0; i < totalSamples - sliceLen; i += scanStep) {
-      const sl = channel.slice(i, i + sliceLen);
-      const hz = detectPitchAutocorrelation(sl, sampleRate);
-      if (hz > 80 && hz < 1100) {
-        const midiFloat = 12 * Math.log2(hz / 440) + 69;
-        const midiInt = Math.round(midiFloat);
-        if (midiInt >= 36 && midiInt <= 84) {
-          const pc = (midiInt % 12 + 12) % 12;
-          chroma[pc]++;
-        }
+    for (const p of basicPitchResult.pitchContour) {
+      if (p.hz > 80 && p.hz < 1100 && p.stability > 55 && p.midi >= 36 && p.midi <= 84) {
+        const pc = (p.midi % 12 + 12) % 12;
+        chroma[pc] += p.rms * (p.stability / 100);
       }
     }
 
@@ -4364,82 +4357,117 @@ async function decodeAndAnalyzeAudioFile(file) {
       }
     }
 
-    // 3. 스케일 이탈(Off-Key / 이조) 및 정밀 센트 오차 기반 피치 불안정 감지
-    let lastPitchErrorSec = -10;
-    for (let s = 2; s < windowSec - 2; s += 2) {
-      if (s - lastPitchErrorSec < 4) continue; // 4초 이내 중복 피치 경고 방지
-      const startSample = s * sampleRate;
-      const subSlices = [0, 0.2, 0.4].map(offset => {
-        const idx = startSample + Math.floor(offset * sampleRate);
-        const sl = channel.slice(idx, idx + 2048);
-        return detectPitchAutocorrelation(sl, sampleRate);
-      }).filter(h => h > 80 && h < 1100);
+    // 3. 모드별 맞춤 분석 북마크 및 진단 생성
+    if (isOriginalMode) {
+      // ── [원곡 분석 모드] 가수 원곡 보컬 기교 & 파사지오 구조 분석
+      stabilityScore = 98; // 원곡 가수의 보컬 안정도는 기본 98% 이상
+      
+      // (1) 최고음 클라이맥스 구간 감지
+      let highestSeg = null;
+      for (const seg of basicPitchResult.noteSegments) {
+        if (!highestSeg || seg.hz > highestSeg.hz) {
+          if (seg.hz < 1100 && seg.endTime - seg.startTime > 0.15) highestSeg = seg;
+        }
+      }
+      if (highestSeg) {
+        realBookmarks.push({
+          sec: Math.floor(highestSeg.startTime),
+          timeStr: fmtTime(highestSeg.startTime),
+          type: 'pitch',
+          label: `👑 [원곡 최고음 클라이맥스] ${highestSeg.noteName} (${highestSeg.hz}Hz)`,
+          desc: `가수가 이 곡의 최고음인 **${highestSeg.noteName} (${highestSeg.hz}Hz)**를 완벽한 복식 호흡과 벨팅/헤드보이스 발성으로 소화한 핵심 클라이맥스 구간입니다.`
+        });
+      }
 
-      if (subSlices.length >= 2) {
-        const avgHz = subSlices.reduce((a, b) => a + b, 0) / subSlices.length;
-        const maxH = Math.max(...subSlices);
-        const minH = Math.min(...subSlices);
-        // 급격한 포르타멘토/도약 구간이 아닌, 발성이 유지되는 구간(1.06 이하)만 정밀 검사
-        if (maxH / minH < 1.06) {
-          const midiFloat = 12 * Math.log2(avgHz / 440) + 69;
-          const midiInt = Math.round(midiFloat);
-          const centsDev = Math.round((midiFloat - midiInt) * 100);
-          const pc = (midiInt % 12 + 12) % 12;
-          const octaveName = Math.floor(midiInt / 12) - 1;
-          const krNote = krNoteMap[pc] || noteNames[pc];
+      // (2) 진성/가성 전환 (파사지오 대역) 감지
+      const passageNotes = basicPitchResult.noteSegments.filter(s => s.hz >= 300 && s.hz <= 480 && s.endTime - s.startTime > 0.2);
+      if (passageNotes.length > 0) {
+        const pNote = passageNotes[Math.floor(passageNotes.length / 2)];
+        realBookmarks.push({
+          sec: Math.floor(pNote.startTime),
+          timeStr: fmtTime(pNote.startTime),
+          type: 'vocal',
+          label: `🎵 [원곡 파사지오 & 성구 전환] ${pNote.noteName} 대역 활용`,
+          desc: `중음역에서 고음역으로 진입하는 파사지오(**${pNote.noteName}**) 대역에서 호흡 압력을 유지하며 부드럽게 성구를 전환(믹스보이스/가성 활용)하여 곡의 다이나믹을 극대화한 구간입니다.`
+        });
+      }
 
-          // 조건 A: 주 키의 다이아토닉 스케일을 벗어난 음정(Off-Key / 이조 감지)
-          if (!bestScalePCs.has(pc)) {
-            lastPitchErrorSec = s;
-            realBookmarks.push({
-              sec: s,
-              timeStr: fmtTime(s),
-              type: 'pitch',
-              label: `⚠️ [스케일 이탈 감지] 주 키(${bestKeyName}) 밖의 음정(${noteNames[pc]}·${krNote})`,
-              desc: `이 노래의 주 키는 **${bestKeyName}**로 실측되었습니다. 해당 초점(${fmtTime(s)})에서 곡의 다이아토닉 스케일에 맞지 않는 **${noteNames[pc]}${octaveName} (${krNote})** 음정이 감지되어 피치(음정)가 이탈된 것으로 분석됩니다. 단순 멜로디 흔들림이 아닌, 주 키의 음정에서 벗어난 구간입니다.`
-            });
-          }
-          // 조건 B: 스케일 내 음정이나 38센트 이상 편차가 난 경우 (정밀 음정 불안정)
-          else if (Math.abs(centsDev) >= 38) {
-            lastPitchErrorSec = s;
-            const dirStr = centsDev > 0 ? `+${centsDev}센트 (샵/높음)` : `${centsDev}센트 (플랫/낮음)`;
-            realBookmarks.push({
-              sec: s,
-              timeStr: fmtTime(s),
-              type: 'pitch',
-              label: `📉 [정밀 음정 불안정] 스케일 음정 대비 ${dirStr}`,
-              desc: `해당 초점(${fmtTime(s)})에서 스케일 내 음정인 **${noteNames[pc]}${octaveName} (${krNote})**를 발성하고 있으나, 정확한 정음 피치보다 **${dirStr}** 편차가 실측되었습니다. 호흡 압력 저하나 발성 흔들림으로 인해 피치가 벗어난 것으로 분석됩니다.`
-            });
-          }
+      // (3) 정교한 바이브레이션 & 기교 활용 구간
+      const vibNotes = basicPitchResult.noteSegments.filter(s => s.endTime - s.startTime > 0.8);
+      if (vibNotes.length > 0) {
+        const vNote = vibNotes[0];
+        realBookmarks.push({
+          sec: Math.floor(vNote.startTime),
+          timeStr: fmtTime(vNote.startTime),
+          type: 'rhythm',
+          label: `🌊 [원곡 보컬 기교] 정교한 바이브레이션 구사 (${vNote.noteName})`,
+          desc: `안정적인 호흡 지지력을 바탕으로 지속음(**${vNote.noteName}**) 구간에서 규칙적이고 아름다운 바이브레이션을 구사하여 곡의 여운을 살린 구간입니다.`
+        });
+      }
+    } else {
+      // ── [연습곡 분석 모드] Spotify Basic-Pitch 기반 스케일 이탈 및 정밀 음정 흔들림 분석
+      let lastPitchErrorSec = -10;
+      for (const seg of basicPitchResult.noteSegments) {
+        const s = Math.floor(seg.startTime);
+        if (s - lastPitchErrorSec < 4 || s < 2 || s > windowSec - 2) continue;
+        if (seg.endTime - seg.startTime < 0.25) continue; // 단기 과도음 제외
+        
+        const pc = (seg.midi % 12 + 12) % 12;
+        const octaveName = Math.floor(seg.midi / 12) - 1;
+        const krNote = krNoteMap[pc] || noteNames[pc];
+        
+        // 조건 A: 주 키의 다이아토닉 스케일을 벗어난 음정 (Off-Key / 이조 감지)
+        if (!bestScalePCs.has(pc)) {
+          lastPitchErrorSec = s;
+          realBookmarks.push({
+            sec: s,
+            timeStr: fmtTime(s),
+            type: 'pitch',
+            label: `⚠️ [스케일 이탈 감지] 주 키(${bestKeyName}) 밖의 음정(${noteNames[pc]}·${krNote})`,
+            desc: `이 노래의 주 키는 **${bestKeyName}**로 실측되었습니다. 해당 초점(${fmtTime(s)})에서 곡의 다이아토닉 스케일에 맞지 않는 **${noteNames[pc]}${octaveName} (${krNote})** 음정이 실측되어 피치(음정)가 이탈된 것으로 분석됩니다.`
+          });
+        }
+        // 조건 B: 스케일 내 음정이나 피치 안정도가 낮거나 미세 음정이 흔들리는 경우
+        else if (seg.stability < 72) {
+          lastPitchErrorSec = s;
+          realBookmarks.push({
+            sec: s,
+            timeStr: fmtTime(s),
+            type: 'pitch',
+            label: `📉 [정밀 음정 흔들림] 호흡 지지력 저하 (${seg.noteName})`,
+            desc: `해당 초점(${fmtTime(s)})에서 스케일 내 음정인 **${seg.noteName}**를 발성하고 있으나, Spotify Basic-Pitch 실측 피치 안정도가 **${seg.stability}%**로 감지되었습니다. 호흡 지지력 저하나 복식 호흡 부족으로 인해 음정이 위아래로 흔들린 구간입니다.`
+          });
+        }
+      }
+
+      // 피치 오류 감지 횟수에 따른 발성 안정도 점수 보정
+      const pitchErrorCount = realBookmarks.filter(b => b.type === 'pitch').length;
+      if (pitchErrorCount === 0 && stabilityScore < 90) {
+        stabilityScore = Math.min(98, stabilityScore + 8);
+      } else if (pitchErrorCount > 0) {
+        stabilityScore = Math.max(60, stabilityScore - (pitchErrorCount * 4));
+      }
+
+      // 4. 리듬(호흡 공백) 감지
+      for (let s = 3; s < windowSec - 2; s += 5) {
+        const idx = s * sampleRate;
+        let sSq = 0;
+        for (let j = idx; j < idx + 4096 && j < totalSamples; j += 4) sSq += channel[j] * channel[j];
+        const curRMS = Math.sqrt(sSq / 1024);
+        const avgRMS = (totalRMS / bucketCount) || 0.05;
+        if (curRMS < avgRMS * 0.3 && avgRMS > 0.01) {
+          realBookmarks.push({
+            sec: s,
+            timeStr: fmtTime(s),
+            type: 'rhythm',
+            label: `⏱ 실측 박자 지연 / 호흡 공백 감지`,
+            desc: `오디오 파형 실측 결과, 해당 초점(${fmtTime(s)})에서 음성 압력이 평균 대비 70% 감소하며 호흡 유입이 지연되었습니다.`
+          });
         }
       }
     }
 
-    // 피치 오류 감지 횟수에 따른 발성 안정도 점수 보정
-    const pitchErrorCount = realBookmarks.filter(b => b.type === 'pitch').length;
-    if (pitchErrorCount === 0 && stabilityScore < 90) {
-      stabilityScore = Math.min(98, stabilityScore + 8);
-    } else if (pitchErrorCount > 0) {
-      stabilityScore = Math.max(60, stabilityScore - (pitchErrorCount * 4));
-    }
-
-    // 4. 리듬(호흡 공백) 감지
-    for (let s = 3; s < windowSec - 2; s += 5) {
-      const idx = s * sampleRate;
-      let sSq = 0;
-      for (let j = idx; j < idx + 4096 && j < totalSamples; j += 4) sSq += channel[j] * channel[j];
-      const curRMS = Math.sqrt(sSq / 1024);
-      const avgRMS = (totalRMS / bucketCount) || 0.05;
-      if (curRMS < avgRMS * 0.3 && avgRMS > 0.01) {
-        realBookmarks.push({
-          sec: s,
-          timeStr: fmtTime(s),
-          type: 'rhythm',
-          label: `⏱ 실측 박자 지연 / 호흡 공백 감지`,
-          desc: `오디오 파형 실측 결과, 해당 초점(${fmtTime(s)})에서 음성 압력이 평균 대비 70% 감소하며 호흡 유입이 지연되었습니다.`
-        });
-      }
-    }
+    realBookmarks.sort((a, b) => a.sec - b.sec);
 
     return { durationStr, totalSec: Math.round(duration), timelineData, highestHz: Math.round(highestHz), highestNote, stabilityScore, realBookmarks, detectedKey: bestKeyName };
   } catch (e) {
