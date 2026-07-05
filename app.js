@@ -4466,25 +4466,28 @@ async function decodeAndAnalyzeAudioFile(file) {
       // ── [원곡 분석 모드] 가수 원곡 보컬 기교 & 파사지오 구조 분석
       stabilityScore = 98; // 원곡 가수의 보컬 안정도는 기본 98% 이상
       
-      // (1) 최고음 클라이맥스 구간 감지
+      // (1) 최고음 클라이맥스 구간 감지 (악기/심벌즈/일렉기타 고주파 제외: 인간 가창 최고음 범위 220Hz~780Hz 한정)
       let highestSeg = null;
       for (const seg of basicPitchResult.noteSegments) {
-        if (!highestSeg || seg.hz > highestSeg.hz) {
-          if (seg.hz < 1100 && seg.endTime - seg.startTime > 0.15) highestSeg = seg;
+        if (seg.hz >= 220 && seg.hz <= 780 && seg.endTime - seg.startTime >= 0.25 && seg.stability > 60) {
+          if (!highestSeg || seg.hz > highestSeg.hz) {
+            highestSeg = seg;
+          }
         }
       }
       if (highestSeg) {
+        const roundedHz = Math.round(highestSeg.hz);
         realBookmarks.push({
           sec: Math.floor(highestSeg.startTime),
           timeStr: fmtTime(highestSeg.startTime),
           type: 'pitch',
-          label: `[원곡 최고음 클라이맥스] ${highestSeg.noteName} (${highestSeg.hz}Hz)`,
-          desc: `가수가 이 곡의 최고음인 **${highestSeg.noteName} (${highestSeg.hz}Hz)**를 완벽한 복식 호흡과 벨팅/헤드보이스 발성으로 소화한 핵심 클라이맥스 구간입니다.`
+          label: `[원곡 최고음 클라이맥스] ${highestSeg.noteName} (${roundedHz}Hz)`,
+          desc: `가수가 이 곡의 최고음인 **${highestSeg.noteName} (${roundedHz}Hz)**를 복식 호흡 지지와 파워풀한 진성/믹스보이스로 완벽히 소화한 핵심 클라이맥스 구간입니다.`
         });
       }
 
-      // (2) 진성/가성 전환 (파사지오 대역) 감지
-      const passageNotes = basicPitchResult.noteSegments.filter(s => s.hz >= 300 && s.hz <= 480 && s.endTime - s.startTime > 0.2);
+      // (2) 진성/가성 전환 (파사지오 대역) 감지 (중음역대 전환점 280Hz~480Hz)
+      const passageNotes = basicPitchResult.noteSegments.filter(s => s.hz >= 280 && s.hz <= 480 && s.endTime - s.startTime >= 0.25 && s.startTime >= windowSec * 0.15 && s.startTime <= windowSec * 0.85);
       if (passageNotes.length > 0) {
         const pNote = passageNotes[Math.floor(passageNotes.length / 2)];
         realBookmarks.push({
@@ -4496,8 +4499,10 @@ async function decodeAndAnalyzeAudioFile(file) {
         });
       }
 
-      // (3) 정교한 바이브레이션 & 기교 활용 구간
-      const vibNotes = basicPitchResult.noteSegments.filter(s => s.endTime - s.startTime > 0.8);
+      // (3) 정교한 바이브레이션 & 기교 활용 구간 (인트로/아웃트로 저음 악기음 제외, 실제 사람 목소리 음역대 180Hz~650Hz 한정)
+      const vibNotes = basicPitchResult.noteSegments
+        .filter(s => s.hz >= 180 && s.hz <= 650 && s.endTime - s.startTime >= 0.7 && s.startTime >= windowSec * 0.15 && s.startTime <= windowSec * 0.85)
+        .sort((a, b) => (b.endTime - b.startTime) - (a.endTime - a.startTime));
       if (vibNotes.length > 0) {
         const vNote = vibNotes[0];
         realBookmarks.push({
@@ -4505,27 +4510,30 @@ async function decodeAndAnalyzeAudioFile(file) {
           timeStr: fmtTime(vNote.startTime),
           type: 'rhythm',
           label: `[원곡 보컬 기교] 정교한 바이브레이션 구사 (${vNote.noteName})`,
-          desc: `안정적인 호흡 지지력을 바탕으로 지속음(**${vNote.noteName}**) 구간에서 규칙적이고 아름다운 바이브레이션을 구사하여 곡의 여운을 살린 구간입니다.`
+          desc: `안정적인 호흡 지지력을 바탕으로 지속음(**${vNote.noteName}**) 구간에서 규칙적이고 아름다운 바이브레이션을 구사하여 곡의 여운과 감정을 깊게 살린 보컬 구간입니다.`
         });
       }
     } else {
       // ── [연습곡 분석 모드] Spotify Basic-Pitch 기반 100% 실측 정밀 피드백 생성
       const allNotes = basicPitchResult.noteSegments.filter(s => s.endTime - s.startTime >= 0.2 && s.startTime >= 1 && s.startTime <= windowSec - 1);
       
-      // (1) 실측 최고음 도약 구간 (Climax Note)
+      // (1) 실측 최고음 도약 구간 (Climax Note, 마이크 고주파 노이즈 제외: 150Hz~780Hz 한정)
       let highestSeg = null;
       for (const seg of allNotes) {
-        if (!highestSeg || seg.hz > highestSeg.hz) {
-          if (seg.hz < 1100) highestSeg = seg;
+        if (seg.hz >= 150 && seg.hz <= 780 && seg.stability > 50) {
+          if (!highestSeg || seg.hz > highestSeg.hz) {
+            highestSeg = seg;
+          }
         }
       }
       if (highestSeg) {
+        const roundedHz = Math.round(highestSeg.hz);
         realBookmarks.push({
           sec: Math.floor(highestSeg.startTime),
           timeStr: fmtTime(highestSeg.startTime),
           type: 'pitch',
-          label: `[실측 최고음 도약 구간] ${highestSeg.noteName} (${Math.round(highestSeg.hz)}Hz) 달성`,
-          desc: `본 연습곡 녹음에서 가장 높은 음정인 **${highestSeg.noteName} (${Math.round(highestSeg.hz)}Hz)**를 발성한 초점(${fmtTime(highestSeg.startTime)})입니다. 실측 피치 안정도는 **${highestSeg.stability}%**로 분석되었습니다.`
+          label: `[실측 최고음 도약 구간] ${highestSeg.noteName} (${roundedHz}Hz) 달성`,
+          desc: `본 연습곡 녹음에서 가장 높은 음정인 **${highestSeg.noteName} (${roundedHz}Hz)**를 발성한 초점(${fmtTime(highestSeg.startTime)})입니다. 실측 피치 안정도는 **${highestSeg.stability}%**로 분석되었습니다.`
         });
       }
 
