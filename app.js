@@ -5238,7 +5238,13 @@ function attachMrListeners() {
       const mrList = DB.getMrRequests();
       const newId = DB.nextId(mrList);
 
-      await processMrAudio(file, keyShift, newId, engineMode, hfSpaceId);
+      const success = await processMrAudio(file, keyShift, newId, engineMode, hfSpaceId);
+      hideLoading();
+
+      if (!success) {
+        showToast('MR 생성에 실패했습니다. 다시 시도해주세요.', 'error');
+        return;
+      }
 
       mrList.push({
         id: newId, studentId: State.currentUser.id,
@@ -5246,7 +5252,6 @@ function attachMrListeners() {
         createdAt: new Date().toISOString().slice(0, 10)
       });
       DB.setMrRequests(mrList);
-      hideLoading();
       showToast('MR 생성 완료! 다운로드 버튼을 누르세요.', 'success');
       navigate('student-dashboard', { sub: 'mr' });
     });
@@ -5433,7 +5438,7 @@ async function separateAudioViaHuggingFace(file, spaceId = "abidlabs/music-separ
     
     return audioBuffer;
   } catch (err) {
-    console.warn("Hugging Face 음원 분리 실패, 내장 DSP로 폴백합니다:", err);
+    console.error("Hugging Face 음원 분리 실패:", err);
     throw err;
   }
 }
@@ -5444,18 +5449,10 @@ async function processMrAudio(file, keyShift, mrId, engineMode = 'dsp', hfSpaceI
     let vocalRemovedBuffer = null;
 
     if (engineMode === 'hf') {
-      try {
-        vocalRemovedBuffer = await separateAudioViaHuggingFace(file, hfSpaceId, (msg) => {
-          showLoading(msg);
-        });
-      } catch (hfErr) {
-        showToast('Hugging Face 서버 대기/오류로 인해 내장 DSP 엔진으로 자동 전환합니다.', 'warning');
-        const arrayBuf = await file.arrayBuffer();
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const decoded  = await audioCtx.decodeAudioData(arrayBuf);
-        await audioCtx.close();
-        vocalRemovedBuffer = await applyMultibandVocalRemoval(decoded);
-      }
+      // 클라우드 서버 대기열이 길더라도 폴백 없이 Hugging Face만을 사용
+      vocalRemovedBuffer = await separateAudioViaHuggingFace(file, hfSpaceId, (msg) => {
+        showLoading(msg);
+      });
     } else {
       const arrayBuf = await file.arrayBuffer();
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -5477,10 +5474,15 @@ async function processMrAudio(file, keyShift, mrId, engineMode = 'dsp', hfSpaceI
     const engineStr = engineMode === 'hf' ? '_HF_AI' : '_DSPv2';
     
     MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${engineStr}${keyStr}.wav` };
+    return true;
   } catch (err) {
     console.error('MR 오디오 처리 중 오류 발생:', err);
-    alert('오디오 처리 중 오류가 발생했습니다: ' + err.message + '\n(원본 파일이 다운로드됩니다)');
-    MrBlobStore[mrId] = { url: URL.createObjectURL(file), name: file.name };
+    if (engineMode === 'hf') {
+      alert('Hugging Face AI 클라우드 서버 처리 중 오류가 발생했습니다.\n서버 대기열이 밀렸거나 모델 응답이 지연되었습니다.\n잠시 후 다시 시도해주세요.\n(에러: ' + err.message + ')');
+    } else {
+      alert('오디오 처리 중 오류가 발생했습니다: ' + err.message);
+    }
+    return false;
   }
 }
 
