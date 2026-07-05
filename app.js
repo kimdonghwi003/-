@@ -2734,6 +2734,24 @@ function renderStudentMR() {
         <h3 style="font-size:16px;font-weight:700;margin-bottom:20px">MR 생성</h3>
         <form id="mr-form">
           <div class="form-group mb-16" style="margin-bottom:16px">
+            <label class="form-label">음원 분리 엔진 선택</label>
+            <div style="display:flex;gap:12px;margin-top:8px">
+              <label class="check-group" style="flex:1;background:var(--bg-2);padding:12px;border-radius:8px;border:1px solid var(--border);cursor:pointer">
+                <input type="radio" name="mr-engine" value="dsp" checked onchange="document.getElementById('hf-space-group').style.display='none'" />
+                <span style="font-size:13px;font-weight:600">내장 DSP v2.0 (초고속 / 무료)</span>
+              </label>
+              <label class="check-group" style="flex:1;background:var(--bg-2);padding:12px;border-radius:8px;border:1px solid var(--border);cursor:pointer">
+                <input type="radio" name="mr-engine" value="hf" onchange="document.getElementById('hf-space-group').style.display='block'" />
+                <span style="font-size:13px;font-weight:600">Hugging Face AI (Demucs/UVR5)</span>
+              </label>
+            </div>
+            <div id="hf-space-group" style="display:none;margin-top:12px;background:var(--bg-3);padding:14px;border-radius:8px;border:1px solid var(--border)">
+              <label class="form-label" style="font-size:12px;color:var(--accent)">Hugging Face Space ID (기본값 추천)</label>
+              <input type="text" id="hf-space-id" class="input" value="abidlabs/music-separation" placeholder="예: abidlabs/music-separation" style="margin-top:6px;font-size:12px" />
+              <div style="font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.5">※ Hugging Face 오픈소스 AI 클라우드 서버에 접속하여 보컬과 반주를 100% 분리합니다. (서버 대기열에 따라 약 30초~1분 소요)</div>
+            </div>
+          </div>
+          <div class="form-group mb-16" style="margin-bottom:16px">
             <label class="form-label">원곡 파일</label>
             <div class="drop-zone" id="mr-drop" style="padding:32px">
               <input type="file" id="mr-file" accept=".mp3,.wav,.m4a" />
@@ -2775,7 +2793,7 @@ function renderStudentMR() {
                 <span style="font-size:14px;font-weight:800;color:var(--accent)">MR</span>
                 <div style="flex:1">
                   <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
-                  <div class="text-3" style="font-size:12px">키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 (템포 100% 유지) · ${mr.createdAt}</div>
+                  <div class="text-3" style="font-size:12px">[${mr.engineMode === 'hf' ? 'Hugging Face AI' : 'DSP v2.0'}] 키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 (템포 100% 유지) · ${mr.createdAt}</div>
                 </div>
                 <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '완료' : mr.status === 'processing' ? '처리중' : '대기'}</div>
                 ${mr.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="downloadMrFile(${mr.id})">다운로드</button>` : ''}
@@ -5207,18 +5225,24 @@ function attachMrListeners() {
       if (!file) { showToast('원곡 파일을 선택해주세요', 'error'); return; }
       if (!document.getElementById('copyright-agree')?.checked) { showToast('저작권 가이드라인에 동의해주세요', 'error'); return; }
       const keyShift = parseInt(document.getElementById('key-slider')?.value || '0');
+      const engineMode = document.querySelector('input[name="mr-engine"]:checked')?.value || 'dsp';
+      const hfSpaceId = document.getElementById('hf-space-id')?.value.trim() || 'abidlabs/music-separation';
 
-      showLoading(keyShift !== 0 ? `DSP 주파수 분리 및 템포 유지 키(${keyShift > 0 ? '+' : ''}${keyShift}) 조절 중...` : 'DSP 주파수 대역 분리 보컬 제거 중...');
+      if (engineMode === 'hf') {
+        showLoading(`Hugging Face AI (${hfSpaceId}) 클라우드에 연결하여 음원 분리 중...`);
+      } else {
+        showLoading(keyShift !== 0 ? `DSP 주파수 분리 및 템포 유지 키(${keyShift > 0 ? '+' : ''}${keyShift}) 조절 중...` : 'DSP 주파수 대역 분리 보컬 제거 중...');
+      }
       await new Promise(r => setTimeout(r, 50));
 
       const mrList = DB.getMrRequests();
       const newId = DB.nextId(mrList);
 
-      await processMrAudio(file, keyShift, newId);
+      await processMrAudio(file, keyShift, newId, engineMode, hfSpaceId);
 
       mrList.push({
         id: newId, studentId: State.currentUser.id,
-        originalFileName: file.name, keyShift, status: 'completed',
+        originalFileName: file.name, keyShift, engineMode, status: 'completed',
         createdAt: new Date().toISOString().slice(0, 10)
       });
       DB.setMrRequests(mrList);
@@ -5372,18 +5396,76 @@ function shiftPitchOLA(buffer, keyShift) {
   return outBuf;
 }
 
-// ── 보컬 제거 (주파수 대역 분리 위상 반전) 및 템포 유지 키 조절 오디오 처리
-async function processMrAudio(file, keyShift, mrId) {
+// ── Hugging Face Spaces (Gradio API) 연동 음원 분리 엔진
+async function separateAudioViaHuggingFace(file, spaceId = "abidlabs/music-separation", onProgress) {
   try {
-    const arrayBuf = await file.arrayBuffer();
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const decoded  = await audioCtx.decodeAudioData(arrayBuf);
-    await audioCtx.close();
+    if (onProgress) onProgress("Hugging Face AI 클라우드 서버에 연결 중...");
+    
+    // @gradio/client 동적 로드
+    const { Client } = await import("https://cdn.jsdelivr.net/npm/@gradio/client@1.4.0/dist/index.min.js");
+    
+    const client = await Client.connect(spaceId);
+    if (onProgress) onProgress(`AI 모델(${spaceId})에 음원 전송 및 분리 작업 진행 중... (약 30~60초 소요)`);
+    
+    // Gradio 예측 호출
+    const result = await client.predict("/predict", [ file ]);
+    
+    if (onProgress) onProgress("음원 분리 완료! 오디오 다운로드 및 디코딩 중...");
+    const output = result.data;
+    let mrUrl = null;
+    if (Array.isArray(output)) {
+      const inst = output.length > 1 ? output[1] : output[0];
+      mrUrl = typeof inst === 'string' ? inst : (inst.url || inst.path);
+    } else if (typeof output === 'string') {
+      mrUrl = output;
+    } else if (output && output.url) {
+      mrUrl = output.url;
+    }
 
-    // ① 1단계: 주파수 대역 분리 보컬 제거 (저음 베이스 및 고음 심벌즈 원본 보존)
-    const vocalRemovedBuffer = await applyMultibandVocalRemoval(decoded);
+    if (!mrUrl) throw new Error("Hugging Face 서버에서 MR 오디오 링크를 반환하지 못했습니다.");
+    
+    const audioRes = await fetch(mrUrl);
+    const arrayBuffer = await audioRes.arrayBuffer();
+    
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    await audioCtx.close();
+    
+    return audioBuffer;
+  } catch (err) {
+    console.warn("Hugging Face 음원 분리 실패, 내장 DSP로 폴백합니다:", err);
+    throw err;
+  }
+}
+
+// ── 보컬 제거 (Hugging Face AI 또는 주파수 대역 위상 반전) 및 템포 유지 키 조절 오디오 처리
+async function processMrAudio(file, keyShift, mrId, engineMode = 'dsp', hfSpaceId = 'abidlabs/music-separation') {
+  try {
+    let vocalRemovedBuffer = null;
+
+    if (engineMode === 'hf') {
+      try {
+        vocalRemovedBuffer = await separateAudioViaHuggingFace(file, hfSpaceId, (msg) => {
+          showLoading(msg);
+        });
+      } catch (hfErr) {
+        showToast('Hugging Face 서버 대기/오류로 인해 내장 DSP 엔진으로 자동 전환합니다.', 'warning');
+        const arrayBuf = await file.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const decoded  = await audioCtx.decodeAudioData(arrayBuf);
+        await audioCtx.close();
+        vocalRemovedBuffer = await applyMultibandVocalRemoval(decoded);
+      }
+    } else {
+      const arrayBuf = await file.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const decoded  = await audioCtx.decodeAudioData(arrayBuf);
+      await audioCtx.close();
+      vocalRemovedBuffer = await applyMultibandVocalRemoval(decoded);
+    }
 
     // ② 2단계: 템포 변화 없는 시간 영역 정밀 피치 시프팅 (원곡 속도 100% 유지)
+    showLoading(keyShift !== 0 ? `템포 100% 유지 키(${keyShift > 0 ? '+' : ''}${keyShift}) 조절 중...` : '최종 MR WAV 파일 인코딩 중...');
     const finalBuffer = shiftPitchOLA(vocalRemovedBuffer, keyShift);
 
     // ③ 최종 WAV 인코딩 및 메모리 스토어 저장
@@ -5392,8 +5474,9 @@ async function processMrAudio(file, keyShift, mrId) {
     const sign     = keyShift > 0 ? '+' : '';
     const keyStr   = keyShift !== 0 ? `_key${sign}${keyShift}` : '';
     const base     = file.name.replace(/\.[^.]+$/, '');
+    const engineStr = engineMode === 'hf' ? '_HF_AI' : '_DSPv2';
     
-    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR_v2${keyStr}.wav` };
+    MrBlobStore[mrId] = { url: URL.createObjectURL(wavBlob), name: `${base}_MR${engineStr}${keyStr}.wav` };
   } catch (err) {
     console.error('MR 오디오 처리 중 오류 발생:', err);
     alert('오디오 처리 중 오류가 발생했습니다: ' + err.message + '\n(원본 파일이 다운로드됩니다)');
