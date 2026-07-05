@@ -1862,15 +1862,14 @@ function renderAnalysis(params) {
         <div class="card mb-24" style="padding:28px; background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,150,105,0.08)); border:2px solid #10b981; margin-bottom:24px; border-radius:16px; box-shadow:0 8px 24px rgba(16,185,129,0.12)">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px">
             <div style="display:flex; align-items:center; gap:8px">
-              <span style="font-size:22px">🌐</span>
               <span style="font-size:17px; font-weight:800; color:#059669">글로벌 집단 지성 정밀 보정 (Global Acoustic Calibration)</span>
             </div>
             <span class="badge" style="background:#10b981; color:#fff; font-weight:700">빅데이터 누적 ${a.calibrated.globalCount || 142}건 적용</span>
           </div>
           <div style="font-size:13px; color:var(--text-2); margin-bottom:20px; line-height:1.6">
-            전체 유저들의 음성 누적 분석 통계 및 마이크 노이즈 플로어 필터 최적화를 반영하여, 단순 산술 점수 대신 <strong>Z-Score 표준 편차 및 대중 실측 백분위</strong>로 보정된 최종 정밀 진단 결과입니다.
+            전체 유저들의 음성 누적 분석 통계 및 마이크 노이즈 플로어 필터 최적화를 반영하여, 단순 산술 점수 대신 <strong>대중 실측 백분위</strong>로 보정된 최종 정밀 진단 결과입니다.
           </div>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px">
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px">
             <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
               <div class="text-3" style="font-size:12px; margin-bottom:4px">보정 후 최종 점수</div>
               <div style="font-size:26px; font-weight:900; color:#059669">${a.calibrated.finalScore}점 <span style="font-size:13px; font-weight:600; color:var(--text-3)">(기존 산술 ${a.rawOverall || a.overall}점)</span></div>
@@ -1878,14 +1877,6 @@ function renderAnalysis(params) {
             <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
               <div class="text-3" style="font-size:12px; margin-bottom:4px">글로벌 실측 백분위</div>
               <div style="font-size:26px; font-weight:900; color:#3b82f6">상위 ${a.calibrated.topPercentile}%</div>
-            </div>
-            <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
-              <div class="text-3" style="font-size:12px; margin-bottom:4px">통계적 표준점수 (Z-Score)</div>
-              <div style="font-size:26px; font-weight:900; color:var(--accent)">${a.calibrated.zScore >= 0 ? '+' : ''}${a.calibrated.zScore}σ</div>
-            </div>
-            <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
-              <div class="text-3" style="font-size:12px; margin-bottom:4px">필터 정밀도 가중치</div>
-              <div style="font-size:26px; font-weight:900; color:#8b5cf6">${a.calibrated.precisionFactor}%</div>
             </div>
           </div>
         </div>
@@ -1897,7 +1888,7 @@ function renderAnalysis(params) {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed rgba(99,102,241,0.3);">
             <div>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-                <span class="badge badge-accent" style="background:#6366f1; color:#fff;">🎯 원곡 대비 보컬 완성도 정밀 비교 평가</span>
+                <span class="badge badge-accent" style="background:#6366f1; color:#fff;">원곡 대비 보컬 완성도 정밀 비교 평가</span>
                 <span class="badge ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">분석 대상 성별: ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? '여성 보컬' : '남성 보컬'}</span>
               </div>
               <h2 style="font-size:24px; font-weight:900; margin:0; color:var(--text-1);">
@@ -1910,6 +1901,7 @@ function renderAnalysis(params) {
             </div>
           </div>
 
+          ${!songInfo.comparativeEval.origHighestNote.includes('확인 불가') ? `
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
             <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid var(--border); text-align:center;">
               <div style="font-size:13px; font-weight:700; color:var(--text-3); margin-bottom:6px;">원곡 공식 최고음</div>
@@ -1924,9 +1916,10 @@ function renderAnalysis(params) {
               <div style="font-size:22px; font-weight:900; color:#6366f1;">${songInfo.comparativeEval.pitchReachRate}%</div>
             </div>
           </div>
+          ` : ''}
 
           <div style="padding:18px; background:rgba(255,255,255,0.05); border-radius:14px; border:1px solid rgba(99,102,241,0.2); font-size:15px; line-height:1.6; color:var(--text-1); font-weight:600;">
-            💡 <b>원곡 완성도 비교 총평:</b> ${songInfo.comparativeEval.evalComment}
+            [원곡 완성도 비교 총평] ${songInfo.comparativeEval.evalComment}
           </div>
         </div>
         ` : ''}
@@ -1956,7 +1949,7 @@ function renderAnalysis(params) {
           <!-- STT Lyrics Box -->
           <div style="margin-bottom:24px; padding:14px 18px; background:var(--bg-3); border-radius:10px; border-left:4px solid var(--accent); font-size:13px; line-height:1.6;">
             <div style="font-weight:800; color:var(--accent); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-              <span>🎙️ AI STT 감지 가사 (음성 파형 패턴 인식)</span>
+              <span>AI STT 감지 가사 (음성 파형 패턴 인식)</span>
             </div>
             <div style="color:var(--text-1); font-weight:600; font-style:italic;">
               ${songInfo.sttLyrics || '"늘 바라만 보네요 하루가 지나가고... 또 하루가 지나도 그대 눈길은 딴 곳만 보네요" (AI STT 가사 인식률 98.8%)'}
@@ -5171,24 +5164,24 @@ function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyri
   if (realAudio && realAudio.realBookmarks && realAudio.realBookmarks.length > 0) {
     bookmarks = [...realAudio.realBookmarks];
     // 원곡 최고음 대조 북마크 추가
-    if (comparativeEval && comparativeEval.pitchReachRate < 95 && realAudio.totalSec > 15) {
+    if (comparativeEval && !comparativeEval.origHighestNote.includes('확인 불가') && comparativeEval.pitchReachRate < 95 && realAudio.totalSec > 15) {
       const climSec = Math.floor(realAudio.totalSec * 0.65);
       const fmtT = (t) => `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}`;
       bookmarks.push({
         sec: climSec,
         timeStr: fmtT(climSec),
         type: 'pitch',
-        label: `🚨 원곡 최고음 대조 미달 / 음역대 한계`,
+        label: `[원곡 최고음 대조 미달 / 음역대 한계]`,
         desc: `원곡 '${matchedSong.title}' 공식 최고음(${comparativeEval.origHighestNote}) 대비 실측 최고음(${realAudio.highestNote})이 다소 낮습니다. 파사지오 헤드보이스 훈련을 권장합니다.`
       });
       bookmarks.sort((a, b) => a.sec - b.sec);
     }
   } else {
     bookmarks = [
-      { sec: 14, timeStr: '00:14', type: 'rhythm', label: '⚠️ 박자 지연 (오프비트)', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
-      { sec: 32, timeStr: '00:32', type: 'pitch', label: '📉 음정 불안정 / 피치 흔들림', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
-      { sec: 75, timeStr: '01:15', type: 'rhythm', label: '⚠️ 박자 빨라짐 (러싱)', desc: '감정 고조로 인해 템포가 빨라져 반주와 0.2초 불일치합니다. 템포를 차분히 유지하세요.' },
-      { sec: 145, timeStr: '02:25', type: 'pitch', label: '🚨 클라이맥스 음이탈 & 고음 흔들림', desc: `최고음 도약 시 후두가 급격히 상승하여 음정이 흔들리고 이탈이 감지되었습니다. 턱에 힘을 빼고 복압을 지지하세요.` }
+      { sec: 14, timeStr: '00:14', type: 'rhythm', label: '[박자 지연 (오프비트)]', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
+      { sec: 32, timeStr: '00:32', type: 'pitch', label: '[음정 불안정 / 피치 흔들림]', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
+      { sec: 75, timeStr: '01:15', type: 'rhythm', label: '[박자 빨라짐 (러싱)]', desc: '감정 고조로 인해 템포가 빨라져 반주와 0.2초 불일치합니다. 템포를 차분히 유지하세요.' },
+      { sec: 145, timeStr: '02:25', type: 'pitch', label: '[클라이맥스 음이탈 & 고음 흔들림]', desc: `최고음 도약 시 후두가 급격히 상승하여 음정이 흔들리고 이탈이 감지되었습니다. 턱에 힘을 빼고 복압을 지지하세요.` }
     ];
   }
 
