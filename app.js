@@ -2808,8 +2808,10 @@ function renderStudentMR() {
                       <div style="font-size:14px;font-weight:600">${mr.originalFileName}</div>
                       <div class="text-3" style="font-size:12px">[${mr.engineMode === 'hf' ? 'Hugging Face AI' : 'DSP v2.0'}] 키: ${mr.keyShift > 0 ? '+' : ''}${mr.keyShift} 반음 · ${mr.createdAt}</div>
                     </div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '스트리밍 가능' : mr.status === 'processing' ? '처리중' : '대기'}</div>
+                    <button class="btn btn-secondary btn-sm" onclick="deleteMrRequest(${mr.id})" style="padding:4px 10px;font-size:11px;color:var(--error);border-color:rgba(239,68,68,0.3)">삭제</button>
                   </div>
-                  <div class="badge ${mr.status === 'completed' ? 'badge-success' : mr.status === 'processing' ? 'badge-warning' : 'badge-muted'}">${mr.status === 'completed' ? '스트리밍 가능' : mr.status === 'processing' ? '처리중' : '대기'}</div>
                 </div>
                 ${mr.status === 'completed' ? `
                   <div style="padding-top:12px;border-top:1px solid var(--border);width:100%">
@@ -5640,6 +5642,32 @@ window.handleMrStreamPlay = function(mrId, audioEl) {
       showToast(`저작권 보호 스트리밍 재생 중 (잔여: ${maxPlays - mr.playCount}/${maxPlays}회)`, 'info');
     }
   }
+};
+
+// ── [MR 음원 삭제 컨트롤러] 생성된 MR 삭제 및 메모리/로그 정리
+window.deleteMrRequest = function(mrId) {
+  if (!confirm('생성된 MR을 삭제하시겠습니까?\n삭제 후에는 복구할 수 없으며 스트리밍 및 보안 로그 권한이 종료됩니다.')) return;
+  
+  // 1) 메모리 스토어 (MrBlobStore) 정리
+  if (MrBlobStore[mrId] && MrBlobStore[mrId].url) {
+    try { URL.revokeObjectURL(MrBlobStore[mrId].url); } catch (e) {}
+    delete MrBlobStore[mrId];
+  }
+  
+  // 2) 로컬 DB (mr_requests) 삭제
+  let mrList = DB.getMrRequests();
+  mrList = mrList.filter(r => r.id !== mrId);
+  DB.setMrRequests(mrList);
+  
+  // 3) 보안 로그 DB 삭제
+  if (DB.getMrSecurityLogs && DB.setMrSecurityLogs) {
+    let secLogs = DB.getMrSecurityLogs();
+    secLogs = secLogs.filter(l => l.mrId !== mrId);
+    DB.setMrSecurityLogs(secLogs);
+  }
+  
+  showToast('MR 음원이 안전하게 삭제되었습니다.', 'success');
+  renderApp();
 };
 
 // ── 보컬 제거 (Hugging Face AI 또는 주파수 대역 위상 반전) 및 템포 유지 키 조절 오디오 처리
