@@ -1792,7 +1792,7 @@ function renderSubmit() {
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="badge" style="background:var(--accent); color:#fff; font-size:12px; font-weight:800;">[런칭 특가]</span>
-                  <strong style="font-size:16px; color:var(--text-1);">전문 트레이너 1:1 정밀 피드백 (구간 피드백 + 총괄 피드백 제공)</strong>
+                  <strong style="font-size:16px; color:var(--text-1);">전문 트레이너 1:1 정밀 피드백<br><span style="font-size:14px; font-weight:700; color:var(--accent-light);">(구간 피드백 + 총괄 피드백 제공)</span></strong>
                 </div>
                 <div>
                   <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
