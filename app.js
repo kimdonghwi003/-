@@ -1594,10 +1594,10 @@ function renderHome() {
       <div class="hero-cta">
         ${State.currentUser ? `
           <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('${State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard'}')">
-            👉 내 대시보드로 이동
+            내 대시보드로 이동
           </button>
           <button class="btn btn-secondary btn-xl" onclick="navigate('submit')">
-            🎙 보컬 녹음 분석
+            보컬 녹음 분석 시작
           </button>
         ` : `
           <button class="btn btn-primary btn-xl animate-glow" onclick="navigate('submit')">
@@ -1689,8 +1689,8 @@ function renderHome() {
         <p class="text-2 mb-24">로그인 없이도 음성 정밀 분석이 가능합니다</p>
         <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
           ${State.currentUser ? `
-            <button class="btn btn-primary btn-lg" onclick="navigate('${State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard'}')">👉 내 대시보드로 이동</button>
-            <button class="btn btn-secondary btn-lg" onclick="navigate('submit')">🎙 보컬 녹음 분석</button>
+            <button class="btn btn-primary btn-lg" onclick="navigate('${State.userType === 'trainer' ? 'trainer-dashboard' : State.userType === 'admin' ? 'admin-dashboard' : 'student-dashboard'}')">내 대시보드로 이동</button>
+            <button class="btn btn-secondary btn-lg" onclick="navigate('submit')">보컬 녹음 분석 시작</button>
           ` : `
             <button class="btn btn-primary btn-lg" onclick="navigate('submit')">무료 분석 시작</button>
             <button class="btn btn-secondary btn-lg" onclick="navigate('student-auth',{tab:'login'})">로그인</button>
@@ -1774,38 +1774,39 @@ function renderSubmit() {
             </div>
 
             <!-- Email -->
-            <div class="form-group" style="margin-bottom:20px">
+            <div class="form-group" style="margin-bottom:20px; display:none;">
               <label class="form-label">이메일 <span class="text-3">(선택 – 결과 수령용)</span></label>
               <input type="text" class="form-input" id="guest-email" placeholder="result@example.com" />
               <div class="form-hint">입력 시 이메일로도 결과를 받을 수 있습니다</div>
             </div>
 
             <!-- Whisper API Key -->
-            <div class="form-group" style="margin-bottom:32px">
+            <div class="form-group" style="margin-bottom:32px; display:none;">
               <label class="form-label" style="color:var(--accent);">실제 가사 인식용 OpenAI API Key <span class="text-3">(선택)</span></label>
               <input type="password" class="form-input" id="whisper-api-key" placeholder="sk-... (입력 시 실제 음성 파일의 가사를 100% 추출합니다)" />
               <div class="form-hint">※ 입력한 키는 브라우저 외부로 저장되지 않고 오직 가사 인식 요청에만 사용됩니다.</div>
             </div>
 
             <!-- Professional Trainer Feedback Option (4,900 -> 2,900) -->
-            <div style="margin-bottom:28px; padding:20px; background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.08)); border:2px solid #f59e0b; border-radius:16px;">
+            <div style="margin-bottom:28px; padding:20px; background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(25,20,43,0.9)); border:2px solid var(--accent); border-radius:16px; box-shadow:0 8px 24px rgba(139,92,246,0.15);">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="badge" style="background:#f59e0b; color:#fff; font-size:12px; font-weight:800;">[대학생 런칭 특가]</span>
+                  <span class="badge" style="background:var(--accent); color:#fff; font-size:12px; font-weight:800;">[대학생 런칭 특가]</span>
                   <strong style="font-size:16px; color:var(--text-1);">전문 트레이너 1:1 정밀 피드백 (구간 피드백 + 총괄 피드백 제공)</strong>
                 </div>
                 <div>
                   <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
-                  <span style="font-size:20px; font-weight:900; color:#ef4444;">할인가 2,900원</span>
+                  <span style="font-size:20px; font-weight:900; color:var(--accent-light);">할인가 2,900원</span>
                 </div>
               </div>
               <p style="font-size:13px; line-height:1.6; color:var(--text-2); margin-bottom:14px;">
                 2,900원 결제 시 전문 보컬 트레이너가 내 녹음 파일을 직접 듣고 <b>구간 피드백(타임스탬프별 취약점 진단) + 총괄 피드백(맞춤 발성 솔루션 종합 평가)</b>을 작성해 드립니다.
               </p>
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:15px; font-weight:800; color:var(--text-1); background:rgba(255,255,255,0.05); padding:12px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.4);">
-                <input type="checkbox" id="request-trainer-fb" value="yes" checked style="width:20px; height:20px; accent-color:#f59e0b; cursor:pointer;" />
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:15px; font-weight:800; color:var(--text-1); background:rgba(139,92,246,0.08); padding:12px 16px; border-radius:10px; border:1px solid rgba(139,92,246,0.4);">
+                <input type="checkbox" id="request-trainer-fb" value="yes" style="width:20px; height:20px; accent-color:var(--accent); cursor:pointer;" />
                 <span>네! 2,900원(할인가)으로 구간 피드백 + 총괄 피드백 함께 신청할게요!</span>
               </label>
+              <script>setTimeout(() => { const fb = document.getElementById('request-trainer-fb'); if (fb) fb.checked = false; }, 0);</script>
             </div>
 
             <button type="submit" class="btn btn-primary btn-full btn-lg">
@@ -1853,11 +1854,11 @@ function renderAnalysis(params) {
   ];
 
   const bookmarks = a.bookmarks || [
-    { sec: 14, timeStr: '00:14', type: 'rhythm', label: '⚠️ 박자 지연 (오프비트)', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
-    { sec: 32, timeStr: '00:32', type: 'pitch', label: '📉 음정 불안정 / 피치 흔들림', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
-    { sec: 75, timeStr: '01:15', type: 'rhythm', label: '⚠️ 박자 빨라짐 (러싱)', desc: '감정 고조로 인해 템포가 빨라져 반주와 0.2초 불일치합니다. 템포를 차분히 유지하세요.' },
-    { sec: 145, timeStr: '02:25', type: 'pitch', label: '🚨 클라이맥스 음이탈 & 고음 흔들림', desc: `최고음 도약 시 후두가 급격히 상승하여 음정이 흔들리고 이탈이 감지되었습니다. 턱에 힘을 빼고 복압을 지지하세요.` },
-    { sec: 218, timeStr: '03:38', type: 'pitch', label: '📉 후반부 끝음 피치 저하', desc: '고음 유지 구간 후반에 성대 피로도가 누적되어 끝음 피치가 다소 떨어졌습니다.' }
+    { sec: 14, timeStr: '00:14', type: 'rhythm', label: '[박자] 지연 (오프비트)', desc: '반주 대비 호흡 유입이 약 0.3초 늦어 정박에서 밀렸습니다. 자음을 강하게 타격하여 리듬을 맞추세요.' },
+    { sec: 32, timeStr: '00:32', type: 'pitch', label: '[음정] 불안정 / 피치 흔들림', desc: '중음역대 전환 순간 성대 접촉이 흔들려 피치가 -15센트 떨어졌습니다. 파사지오 호흡 지지를 유지하세요.' },
+    { sec: 75, timeStr: '01:15', type: 'rhythm', label: '[박자] 빨라짐 (러싱)', desc: '감정 고조로 인해 템포가 빨라져 반주와 0.2초 불일치합니다. 템포를 차분히 유지하세요.' },
+    { sec: 145, timeStr: '02:25', type: 'pitch', label: '[주의] 클라이맥스 음이탈 & 고음 흔들림', desc: `최고음 도약 시 후두가 급격히 상승하여 음정이 흔들리고 이탈이 감지되었습니다. 턱에 힘을 빼고 복압을 지지하세요.` },
+    { sec: 218, timeStr: '03:38', type: 'pitch', label: '[음정] 후반부 끝음 피치 저하', desc: '고음 유지 구간 후반에 성대 피로도가 누적되어 끝음 피치가 다소 떨어졌습니다.' }
   ];
   window.currentAnalysisBookmarks = bookmarks;
   window.currentBmFilter = 'all';
@@ -1884,8 +1885,8 @@ function renderAnalysis(params) {
       <div class="animate-up">
         <!-- Header -->
         <div class="text-center mb-24" style="margin-bottom:40px">
-          <div class="badge ${a.mode === 'original' ? 'badge-accent' : 'badge-success'}" style="margin-bottom:16px">${a.mode === 'original' ? '🎧 원곡 음원 분석 완료' : '🎤 연습곡 보컬 분석 완료'}</div>
-          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">${a.mode === 'original' ? '🎧 가수 원곡 음원 분석 리포트' : '🎤 내 연습곡 보컬 정밀 분석 리포트'}</h1>
+          <div class="badge ${a.mode === 'original' ? 'badge-accent' : 'badge-success'}" style="margin-bottom:16px">${a.mode === 'original' ? '원곡 음원 분석 완료' : '연습곡 보컬 분석 완료'}</div>
+          <h1 style="font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">${a.mode === 'original' ? '가수 원곡 음원 분석 리포트' : '내 연습곡 보컬 정밀 분석 리포트'}</h1>
           <p class="text-2">파일: <strong>${a.fileName}</strong> · 분석 시간: ${a.processTime}초</p>
         </div>
 
@@ -1893,14 +1894,14 @@ function renderAnalysis(params) {
         <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(236,72,153,0.08)); margin-bottom:24px; border-radius:18px; box-shadow:0 10px 28px rgba(99,102,241,0.15)">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border)">
             <div>
-              <div class="badge badge-accent mb-6" style="background:#ec4899; color:#fff; font-size:12px">🎧 학생 & 트레이너 공동 피드백 플레이어</div>
+              <div class="badge badge-accent mb-6" style="background:#ec4899; color:#fff; font-size:12px">학생 & 트레이너 공동 피드백 플레이어</div>
               <h2 style="font-size:22px; font-weight:900; margin:0; color:var(--text-1); display:flex; align-items:center; gap:8px">
-                🎵 실측 음성 북마크 & 특정 구간 탐색 재생기
+                실측 음성 북마크 & 특정 구간 탐색 재생기
               </h2>
             </div>
             <div style="display:flex; gap:8px">
               <label class="btn btn-secondary btn-sm" style="cursor:pointer; font-weight:700">
-                📂 음성 파일 로드/다시 연결
+                음성 파일 로드/다시 연결
                 <input type="file" accept="audio/*" style="display:none" onchange="window.relinkAnalysisAudio(this)" />
               </label>
             </div>
@@ -1910,28 +1911,28 @@ function renderAnalysis(params) {
           <div style="background:var(--bg-card); padding:16px; border-radius:14px; border:1px solid var(--border); margin-bottom:20px">
             <audio id="vocal-analysis-audio" controls style="width:100%; height:48px; border-radius:8px" src="${window.lastUploadedAudioBlobUrl || ''}"></audio>
             <div id="audio-status-msg" style="font-size:13px; font-weight:600; color:var(--text-3); margin-top:8px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px">
-              <span>💡 박자 이탈이나 음 불안 북마크를 클릭하면 해당 초(초점)로 즉시 이동해 재생됩니다.</span>
+              <span>박자 이탈이나 음 불안 북마크를 클릭하면 해당 초(초점)로 즉시 이동해 재생됩니다.</span>
               ${!window.lastUploadedAudioBlobUrl ? `<span style="color:#f59e0b; font-weight:700">※ 데모 모드 (상단 버튼으로 실제 녹음 파일 첨부 가능)</span>` : `<span style="color:#10b981; font-weight:700">✔ 원본 음성 연결됨</span>`}
             </div>
           </div>
 
           <!-- Bookmark Tabs / Filter -->
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center">
-            <button class="btn btn-xs btn-primary" onclick="window.filterBookmarks('all')" id="bm-filter-all">📌 전체 북마크 (${bookmarks.length})</button>
-            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('rhythm')" id="bm-filter-rhythm" style="color:#f59e0b">⏱ 박자 나간 부분 (${bookmarks.filter(b=>b.type==='rhythm').length})</button>
-            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('pitch')" id="bm-filter-pitch" style="color:#ef4444">📉 키/음정 이탈 부분 (${bookmarks.filter(b=>b.type==='pitch').length})</button>
-            <button class="btn btn-xs btn-ghost" onclick="window.toggleAddBookmarkForm()" style="margin-left:auto; color:var(--accent); font-weight:800">➕ 북마크 직접 추가 (트레이너/학생)</button>
+            <button class="btn btn-xs btn-primary" onclick="window.filterBookmarks('all')" id="bm-filter-all">전체 북마크 (${bookmarks.length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('rhythm')" id="bm-filter-rhythm" style="color:#f59e0b">[박자] 지연/불일치 (${bookmarks.filter(b=>b.type==='rhythm').length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.filterBookmarks('pitch')" id="bm-filter-pitch" style="color:#ef4444">[음정] 키/음정 이탈 (${bookmarks.filter(b=>b.type==='pitch').length})</button>
+            <button class="btn btn-xs btn-ghost" onclick="window.toggleAddBookmarkForm()" style="margin-left:auto; color:var(--accent); font-weight:800">+ 북마크 직접 추가 (트레이너/학생)</button>
           </div>
 
           <!-- Add Bookmark Form (Hidden by default) -->
           <div id="bm-add-form" style="display:none; background:var(--bg-1); padding:16px; border-radius:12px; border:1px dashed var(--accent); margin-bottom:16px">
-            <div style="font-size:14px; font-weight:800; color:var(--text-1); margin-bottom:10px">➕ 새로운 피드백 북마크 등록 (학생 및 트레이너 공유)</div>
+            <div style="font-size:14px; font-weight:800; color:var(--text-1); margin-bottom:10px">+ 새로운 피드백 북마크 등록 (학생 및 트레이너 공유)</div>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px; align-items:center">
               <input type="text" id="new-bm-time" class="form-input" placeholder="시간 (예: 00:15 또는 15)" style="padding:10px; font-size:13px" />
               <select id="new-bm-type" class="form-input" style="padding:10px; font-size:13px">
-                <option value="rhythm">⏱ 박자 나간 부분</option>
-                <option value="pitch">📉 키/음정 이탈 부분</option>
-                <option value="good">💡 우수 발성 구간</option>
+                <option value="rhythm">[박자] 지연/불일치</option>
+                <option value="pitch">[음정] 키/음정 이탈</option>
+                <option value="good">[우수] 발성 구간</option>
               </select>
               <input type="text" id="new-bm-desc" class="form-input" placeholder="피드백 및 훈련 코멘트 입력" style="padding:10px; font-size:13px; grid-column: span 2" />
               <button class="btn btn-primary btn-sm" onclick="window.submitNewBookmark(${a.id || 0})">북마크 저장</button>
@@ -1979,20 +1980,20 @@ function renderAnalysis(params) {
 
         ${songInfo.comparativeEval ? `
         <!-- Comparative Evaluation Card (User Voice vs Original Song) -->
-        <div class="card mb-24" style="padding:32px; border:3px solid #6366f1; background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08)); margin-bottom:24px; box-shadow:0 12px 32px rgba(99,102,241,0.15);">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed rgba(99,102,241,0.3);">
+        <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(25,20,43,0.9)); border-radius:18px; box-shadow:0 8px 24px rgba(139,92,246,0.15);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px dashed rgba(139,92,246,0.3);">
             <div>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-                <span class="badge badge-accent" style="background:#6366f1; color:#fff;">원곡 대비 보컬 완성도 정밀 비교 평가</span>
+                <span class="badge badge-accent" style="background:var(--accent); color:#fff;">원곡 대비 보컬 완성도 정밀 비교 평가</span>
                 <span class="badge ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? 'badge-danger' : 'badge-info'}" style="font-weight:700">분석 대상 성별: ${((State.currentUser && State.currentUser.gender) || 'M') === 'F' ? '여성 보컬' : '남성 보컬'}</span>
               </div>
               <h2 style="font-size:24px; font-weight:900; margin:0; color:var(--text-1);">
-                선택하신 기준 원곡: <span style="color:#6366f1;">${songInfo.comparativeEval.origTitle}</span> (${songInfo.comparativeEval.origArtist})
+                선택하신 기준 원곡: <span style="color:var(--accent-light);">${songInfo.comparativeEval.origTitle}</span> (${songInfo.comparativeEval.origArtist})
               </h2>
             </div>
             <div style="text-align:right;">
               <div style="font-size:13px; font-weight:700; color:var(--text-2);">원곡 소화 완곡 등급</div>
-              <div style="font-size:28px; font-weight:900; color:#6366f1;">${songInfo.comparativeEval.completionGrade}</div>
+              <div style="font-size:28px; font-weight:900; color:var(--accent-light);">${songInfo.comparativeEval.completionGrade}</div>
             </div>
           </div>
 
@@ -2008,7 +2009,7 @@ function renderAnalysis(params) {
             </div>
             <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid var(--border); text-align:center;">
               <div style="font-size:13px; font-weight:700; color:var(--text-3); margin-bottom:6px;">원곡 고음 도달율</div>
-              <div style="font-size:22px; font-weight:900; color:#6366f1;">${songInfo.comparativeEval.pitchReachRate}%</div>
+              <div style="font-size:22px; font-weight:900; color:var(--accent-light);">${songInfo.comparativeEval.pitchReachRate}%</div>
             </div>
           </div>
           ` : ''}
@@ -2200,7 +2201,7 @@ function renderAnalysis(params) {
               <!-- 1순위 취약 항목 -->
               <div style="background:var(--bg-card); padding:24px; border-radius:16px; border:2px solid #ef4444; position:relative; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
-                  <div style="display:inline-block; background:#ef4444; color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:12px; margin-bottom:12px;">🚨 1순위 가장 부족한 평가 항목</div>
+                  <div style="display:inline-block; background:var(--danger); color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:12px; margin-bottom:12px;">1순위 집중 보완 항목</div>
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                     <span style="font-size:18px; font-weight:900; color:var(--text-1);">${rank1.name}</span>
                     <span style="font-size:20px; font-weight:900; color:#ef4444;">${rank1.score}점</span>
@@ -2212,15 +2213,15 @@ function renderAnalysis(params) {
                       <div style="font-size:13px; color:var(--text-2); margin-top:2px;">전문 분야: ${tr1.specialties.join(', ')}</div>
                     </div>
                   </div>
-                  <p style="font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:16px;">💡 <b>AI 보완 가이드:</b> 6대 항목 중 점수가 가장 낮은 영역입니다. <b>${tr1.name} 트레이너</b>의 전문 커리큘럼으로 최우선 약점을 집중 교정할 수 있습니다.</p>
+                  <p style="font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:16px;"><b>보완 가이드:</b> 6대 항목 중 점수가 가장 낮은 영역입니다. <b>${tr1.name} 트레이너</b>의 전문 커리큘럼으로 최우선 약점을 집중 교정할 수 있습니다.</p>
                 </div>
-                <button class="btn btn-sm btn-primary w-full" style="width:100%; font-weight:800;" onclick="navigate('student-dashboard',{sub:'trainers',search:'${tr1.name}'})">👉 1순위 맞춤 트레이너(${tr1.name}) 프로필 및 예약</button>
+                <button class="btn btn-sm btn-primary w-full" style="width:100%; font-weight:800;" onclick="navigate('student-dashboard',{sub:'trainers',search:'${tr1.name}'})">1순위 맞춤 트레이너(${tr1.name}) 프로필 및 예약</button>
               </div>
 
               <!-- 2순위 취약 항목 -->
               <div style="background:var(--bg-card); padding:24px; border-radius:16px; border:2px solid #f59e0b; position:relative; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
-                  <div style="display:inline-block; background:#f59e0b; color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:12px; margin-bottom:12px;">⚠️ 2순위 차순위 부족 항목</div>
+                  <div style="display:inline-block; background:#f59e0b; color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:12px; margin-bottom:12px;">2순위 차순위 보완 항목</div>
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                     <span style="font-size:18px; font-weight:900; color:var(--text-1);">${rank2.name}</span>
                     <span style="font-size:20px; font-weight:900; color:#f59e0b;">${rank2.score}점</span>
@@ -2232,9 +2233,9 @@ function renderAnalysis(params) {
                       <div style="font-size:13px; color:var(--text-2); margin-top:2px;">전문 분야: ${tr2.specialties.join(', ')}</div>
                     </div>
                   </div>
-                  <p style="font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:16px;">💡 <b>AI 보완 가이드:</b> 다음으로 보완이 필요한 ${rank2.name} 영역은 <b>${tr2.name} 트레이너</b>의 맞춤 발성 및 스케일 레슨을 통해 마스터할 수 있습니다.</p>
+                  <p style="font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:16px;"><b>보완 가이드:</b> 다음으로 보완이 필요한 ${rank2.name} 영역은 <b>${tr2.name} 트레이너</b>의 맞춤 발성 및 스케일 레슨을 통해 마스터할 수 있습니다.</p>
                 </div>
-                <button class="btn btn-sm btn-secondary w-full" style="width:100%; font-weight:800;" onclick="navigate('student-dashboard',{sub:'trainers',search:'${tr2.name}'})">👉 2순위 맞춤 트레이너(${tr2.name}) 프로필 및 예약</button>
+                <button class="btn btn-sm btn-secondary w-full" style="width:100%; font-weight:800;" onclick="navigate('student-dashboard',{sub:'trainers',search:'${tr2.name}'})">2순위 맞춤 트레이너(${tr2.name}) 프로필 및 예약</button>
               </div>
             </div>
           </div>`;
@@ -2258,14 +2259,14 @@ function renderAnalysis(params) {
               </p>
               ${fb ? `
                 <div style="background:var(--bg-card); border-left:4px solid var(--success); padding:12px 16px; border-radius:8px; margin-bottom:14px;">
-                  <div style="font-size:12px; font-weight:700; color:var(--success); margin-bottom:4px;">💡 현재 등록된 피드백 (${fb.trainerName} · ${fb.updatedAt})</div>
+                  <div style="font-size:12px; font-weight:700; color:var(--success); margin-bottom:4px;">현재 등록된 피드백 (${fb.trainerName} · ${fb.updatedAt})</div>
                   <div style="font-size:14px; color:var(--text); white-space:pre-wrap; line-height:1.5; margin-bottom:8px;">"${fb.text}"</div>
                   ${fb.satisfactionRating ? `
                     <div style="padding:6px 10px; background:rgba(245,158,11,0.1); border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:800; color:#f59e0b;">
-                      ⭐️ 수강생 만족도 평가: ★ ${fb.satisfactionRating}점 / 5점 (${fb.satisfactionRatedAt || ''})
+                      수강생 만족도 평가: ★ ${fb.satisfactionRating}점 / 5점 (${fb.satisfactionRatedAt || ''})
                     </div>
                   ` : `
-                    <div style="font-size:12px; color:var(--text-3);">⏳ 수강생이 아직 만족도(별점)를 체크하지 않았습니다.</div>
+                    <div style="font-size:12px; color:var(--text-3);">수강생이 아직 만족도(별점)를 체크하지 않았습니다.</div>
                   `}
                 </div>
               ` : ''}
@@ -2290,13 +2291,12 @@ function renderAnalysis(params) {
               <div style="padding:16px 20px; background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(16,185,129,0.06)); border-radius:14px; border:1px dashed #f59e0b; display:flex; flex-direction:column; gap:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                   <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:16px;">⭐️</span>
-                    <strong style="font-size:14px; color:var(--text);">받은 피드백 만족도를 별 다섯 개 중 몇 개로 체크해주세요!</strong>
+                    <strong style="font-size:14px; color:var(--text);">받은 피드백 만족도를 별 다섯 개 중 몇 개로 체크해주세요.</strong>
                   </div>
                   ${fb.satisfactionRating ? `
-                    <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:12px; font-weight:800;">✔ 평가 완료 (${fb.satisfactionRatedAt || ''})</span>
+                    <span class="badge badge-success" style="background:#10b981; color:#fff; font-size:12px; font-weight:800;">평가 완료 (${fb.satisfactionRatedAt || ''})</span>
                   ` : `
-                    <span class="badge badge-warning" style="font-size:11px;">💡 피드백이 도움이 되셨다면 별점을 클릭하세요</span>
+                    <span class="badge badge-warning" style="font-size:11px;">피드백이 도움이 되셨다면 별점을 클릭하세요</span>
                   `}
                 </div>
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -2307,28 +2307,28 @@ function renderAnalysis(params) {
                     }).join('')}
                   </div>
                   <span id="star-label-${subId}" style="font-size:15px; font-weight:800; color:#f59e0b; background:rgba(245,158,11,0.12); padding:4px 12px; border-radius:20px;">
-                    ${fb.satisfactionRating ? `⭐ ${fb.satisfactionRating}점 / 5점 (체크됨)` : '별점을 클릭해 만족도를 체크하세요'}
+                    ${fb.satisfactionRating ? `★ ${fb.satisfactionRating}점 / 5점 (체크됨)` : '별점을 클릭해 만족도를 체크하세요'}
                   </span>
                 </div>
               </div>
             </div>`;
           }
           return `
-          <div class="card mb-24" style="padding:28px; border:2px solid #f59e0b; background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(239,68,68,0.06)); border-radius:18px;">
+          <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(25,20,43,0.9)); border-radius:18px; box-shadow:0 8px 24px rgba(139,92,246,0.15);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span class="badge" style="background:#f59e0b; color:#fff; font-size:13px; font-weight:800;">[대학생 런칭 프로모션]</span>
+                <span class="badge" style="background:var(--accent); color:#fff; font-size:13px; font-weight:800;">[대학생 런칭 프로모션]</span>
                 <h3 style="font-size:18px; font-weight:900; color:var(--text-1); margin:0;">전문 트레이너 1:1 정밀 피드백 신청</h3>
               </div>
               <div>
                 <span style="text-decoration:line-through; color:var(--text-3); font-size:14px; margin-right:6px;">4,900원</span>
-                <span style="font-size:22px; font-weight:900; color:#ef4444;">할인가 2,900원</span>
+                <span style="font-size:22px; font-weight:900; color:var(--accent-light);">할인가 2,900원</span>
               </div>
             </div>
             <p style="font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:18px;">
                 2,900원 결제 시 전문 보컬 트레이너가 내 녹음 파일을 직접 듣고 <b>구간 피드백(타임스탬프별 취약점 진단) + 총괄 피드백(맞춤 발성 솔루션 종합 평가)</b>을 24시간 이내에 작성해 드립니다.
             </p>
-            <button class="btn btn-primary w-full" style="background:linear-gradient(135deg, #f59e0b, #ef4444); border:none; padding:16px; font-size:16px; font-weight:900; box-shadow:0 8px 20px rgba(245,158,11,0.3);" onclick="alert('[안내] 2,900원(할인가) 트레이너 피드백 신청이 접수되었습니다! 24시간 이내에 담당 트레이너 배정 후 구간 피드백 및 총괄 피드백 리포트가 업데이트됩니다.');">
+            <button class="btn btn-primary w-full" style="background:var(--accent-gradient); border:none; padding:16px; font-size:16px; font-weight:900; box-shadow:0 8px 20px rgba(139,92,246,0.3);" onclick="alert('[안내] 2,900원(할인가) 트레이너 피드백 신청이 접수되었습니다! 24시간 이내에 담당 트레이너 배정 후 구간 피드백 및 총괄 피드백 리포트가 업데이트됩니다.');">
               2,900원에 구간 피드백 + 총괄 피드백 신청하기 (정상가 4,900원)
             </button>
           </div>`;
@@ -2661,12 +2661,12 @@ function renderStudentHome() {
     </div>
     <div class="grid-3 mb-24" style="margin-bottom:32px">
       <div class="card" style="cursor:pointer;transition:var(--transition-md)" onclick="navigate('submit')" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-        <div style="font-size:32px;margin-bottom:12px">🎙</div>
+        <div style="font-size:12px;font-weight:800;color:var(--accent-light);background:var(--accent-dim);padding:6px 10px;border-radius:6px;display:inline-block;margin-bottom:12px">AI 보컬 분석</div>
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">새 보컬 분석</div>
-        <div class="text-2" style="font-size:13px">음성 파일을 업로드해 AI 분석을 시작하세요</div>
+        <div class="text-2" style="font-size:13px">음성 파일을 업로드해 정밀 분석을 시작하세요</div>
       </div>
       <div class="card" style="cursor:pointer;transition:var(--transition-md)" onclick="navigate('student-dashboard',{sub:'trainers'})" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-        <div style="font-size:32px;margin-bottom:12px">🎓</div>
+        <div style="font-size:12px;font-weight:800;color:#38bdf8;background:rgba(56,189,248,0.12);padding:6px 10px;border-radius:6px;display:inline-block;margin-bottom:12px">1:1 레슨</div>
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">트레이너 찾기</div>
         <div class="text-2" style="font-size:13px">전문 보컬 트레이너와 1:1 레슨을 예약하세요</div>
       </div>
@@ -2686,9 +2686,9 @@ function renderStudentHome() {
     </div>
     ${submissions.length === 0 ? `
       <div class="empty-state">
-        <div class="empty-icon">🎙</div>
+        <div style="width:48px;height:48px;border-radius:12px;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;margin:0 auto 12px">V</div>
         <div class="empty-title">아직 분석 내역이 없습니다</div>
-        <div class="empty-desc">첫 번째 보컬 분석을 시작해 AI 리포트를 받아보세요</div>
+        <div class="empty-desc">첫 번째 보컬 분석을 시작해 진단 리포트를 받아보세요</div>
         <button class="btn btn-primary" onclick="navigate('submit')">분석 시작하기</button>
       </div>` : `
       <div style="display:flex;flex-direction:column;gap:12px">
@@ -2696,7 +2696,7 @@ function renderStudentHome() {
           const analysis = DB.getAnalyses().find(a => a.submissionId === s.id);
           return `
           <div class="card card-sm flex gap-16 items-center" style="cursor:pointer" onclick="${analysis ? `showStoredAnalysis(${s.id})` : ''}">
-            <div style="font-size:28px">🎵</div>
+            <div style="width:38px;height:38px;border-radius:10px;background:var(--bg-2);border:1px solid var(--border);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">AUDIO</div>
             <div style="flex:1">
               <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">
                 ${s.fileName}
@@ -2732,36 +2732,36 @@ function renderStudentSongs() {
     <div class="card mb-24" style="margin-bottom:28px; border:1px solid var(--border); padding:20px; border-radius:16px; background:var(--bg-2)">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
         <div style="font-size:16px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px">
-          <span>📋 저장된 맞춤 곡 추천 이력 보관함</span>
+          <span>저장된 맞춤 곡 추천 이력 보관함</span>
           <span class="badge badge-accent" style="font-size:12px; padding:2px 8px">${recHistories.length}건</span>
         </div>
       </div>
       ${recHistories.length === 0 ? `
       <div style="text-align:center; padding:24px 12px; color:var(--text-3); font-size:13px; background:var(--bg); border-radius:12px; border:1px dashed var(--border)">
         아직 저장된 맞춤 곡 추천 이력이 없습니다.<br/>
-        <span style="font-size:12px; color:var(--text-2); display:inline-block; margin-top:4px">아래에서 사용자 맞춤 알고리즘을 실행한 뒤 <strong>[💾 현 추천 결과 이력에 저장하기]</strong> 버튼을 눌러 보관해보세요!</span>
+        <span style="font-size:12px; color:var(--text-2); display:inline-block; margin-top:4px">아래에서 사용자 맞춤 알고리즘을 실행한 뒤 <strong>[현재 추천 결과 보관함에 저장]</strong> 버튼을 눌러 보관해보세요!</span>
       </div>` : `
       <div style="display:flex; flex-direction:column; gap:12px; max-height:420px; overflow-y:auto; padding-right:4px">
         ${recHistories.map(rec => `
           <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; transition:all 0.2s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px">
               <div style="display:flex; align-items:center; gap:8px">
-                <span style="font-size:13px; font-weight:800; color:var(--accent); background:rgba(99,102,241,0.1); padding:4px 10px; border-radius:6px">#${rec.id} 진단</span>
-                <span style="font-size:13px; font-weight:600; color:var(--text-2)">📅 ${rec.createdAt}</span>
+                <span style="font-size:13px; font-weight:800; color:var(--accent); background:rgba(139,92,246,0.12); padding:4px 10px; border-radius:6px">#${rec.id} 진단</span>
+                <span style="font-size:13px; font-weight:600; color:var(--text-2)">${rec.createdAt}</span>
               </div>
               <div style="display:flex; gap:6px">
-                <button class="btn btn-primary btn-sm" onclick="showSavedSongRecModal(${rec.id})" style="padding:4px 12px; font-size:12px; font-weight:700">🔍 추천 결과 보기</button>
-                <button class="btn btn-secondary btn-sm" onclick="deleteSavedSongRec(${rec.id})" style="padding:4px 10px; font-size:12px; color:var(--error); border-color:rgba(239,68,68,0.3)">삭제</button>
+                <button class="btn btn-primary btn-sm" onclick="showSavedSongRecModal(${rec.id})" style="padding:4px 12px; font-size:12px; font-weight:700">추천 결과 보기</button>
+                <button class="btn btn-secondary btn-sm" onclick="deleteSavedSongRec(${rec.id})" style="padding:4px 10px; font-size:12px; color:var(--danger); border-color:rgba(244,63,94,0.3)">삭제</button>
               </div>
             </div>
             <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:12px; background:var(--bg-2); padding:10px 14px; border-radius:8px; margin-bottom:10px">
-              <div>🎵 선호 장르: <strong style="color:var(--text)">${rec.primaryGenre || '발라드'}</strong></div>
-              <div>📈 안정 음역대: <strong style="color:#10b981">${rec.maxNoteStr || '-'}</strong></div>
-              <div>⭐️ 실력 난이도: <strong style="color:#f59e0b">★ ${rec.avgDiff || '-'}/10</strong></div>
+              <div>선호 장르: <strong style="color:var(--text)">${rec.primaryGenre || '발라드'}</strong></div>
+              <div>안정 음역대: <strong style="color:#10b981">${rec.maxNoteStr || '-'}</strong></div>
+              <div>실력 평가: <strong style="color:#f59e0b">★ ${rec.avgDiff || '-'}/10</strong></div>
             </div>
             <div style="font-size:12px; color:var(--text-2); display:flex; flex-direction:column; gap:4px">
-              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">❤️ <strong>선택 취향곡:</strong> ${(rec.tasteSongNames || []).join(', ') || '없음'}</div>
-              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">🎤 <strong>선택 애창곡:</strong> ${(rec.masteredSongNames || []).join(', ') || '없음'}</div>
+              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis"><strong>선택 취향곡:</strong> ${(rec.tasteSongNames || []).join(', ') || '없음'}</div>
+              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis"><strong>선택 애창곡:</strong> ${(rec.masteredSongNames || []).join(', ') || '없음'}</div>
             </div>
           </div>
         `).join('')}
@@ -2769,10 +2769,10 @@ function renderStudentSongs() {
     </div>
 
     <!-- 10곡 기반 AI 취향·실력 파악 맞춤 추천 UI -->
-    <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:22px;border-radius:16px;background:linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.05) 100%)">
+    <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:22px;border-radius:16px;background:linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(109,40,217,0.04) 100%)">
       <div style="margin-bottom:18px">
         <div style="font-size:17px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
-          <span>🎯 취향 · 실력 종합 사용자 맞춤 알고리즘</span>
+          <span>취향 및 실력 종합 사용자 맞춤 알고리즘</span>
         </div>
         <div class="text-2" style="font-size:13px;margin-top:4px">
           평소 좋아하는 취향의 곡 5개와 현재 자신 있게 완곡 가능한 노래 5개를 선택해 주세요. 사용자 맞춤 알고리즘이 음역대 한계와 선호 스타일을 종합 분석합니다.
@@ -2782,7 +2782,7 @@ function renderStudentSongs() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;margin-bottom:20px">
         <!-- STEP 1: 취향인 곡 5개 선택 -->
         <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)">
-          <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#ec4899">❤️ 평소 좋아하는 취향 노래 (최대 5곡)</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--accent-light)">평소 좋아하는 취향 노래 (최대 5곡)</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
             <button class="chip taste-gender active" onclick="setSelectGender('taste','ALL',this)" style="font-size:11px;padding:4px 8px">전체</button>
             <button class="chip taste-gender" onclick="setSelectGender('taste','M',this)" style="font-size:11px;padding:4px 8px">남성곡</button>
@@ -2802,7 +2802,7 @@ function renderStudentSongs() {
 
         <!-- STEP 2: 완창 가능한 곡 5개 선택 -->
         <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border)">
-          <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#3b82f6">🎤 현재 완창 가능한 애창곡 (최대 5곡)</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#38bdf8">현재 완창 가능한 애창곡 (최대 5곡)</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
             <button class="chip mastered-gender active" onclick="setSelectGender('mastered','ALL',this)" style="font-size:11px;padding:4px 8px">전체</button>
             <button class="chip mastered-gender" onclick="setSelectGender('mastered','M',this)" style="font-size:11px;padding:4px 8px">남성곡</button>
@@ -2822,8 +2822,8 @@ function renderStudentSongs() {
       </div>
 
       <div style="text-align:center">
-        <button class="btn btn-primary" onclick="runComprehensiveSongAI()" style="font-size:15px;font-weight:700;padding:12px 32px;border-radius:30px;box-shadow:0 4px 15px rgba(99,102,241,0.4)">
-          🤖 사용자 맞춤 알고리즘 실행
+        <button class="btn btn-primary" onclick="runComprehensiveSongAI()" style="font-size:15px;font-weight:700;padding:12px 32px;border-radius:30px;box-shadow:0 4px 15px rgba(139,92,246,0.35)">
+          사용자 맞춤 알고리즘 실행
         </button>
       </div>
 
@@ -2834,8 +2834,8 @@ function renderStudentSongs() {
     <div class="card mb-20" style="padding:16px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:20px;border-radius:12px">
       <div style="margin-bottom:12px">
         <div style="position:relative;display:flex;align-items:center">
-          <span style="position:absolute;left:14px;font-size:16px;color:var(--text-3)">🔍</span>
-          <input type="text" id="song-search-input" class="form-input" placeholder="곡 이름이나 가수 이름을 직접 검색해 보세요 (예: 아이유, 밤편지, 박효신, 고백...)" oninput="filterSongs(null)" style="padding-left:42px;height:46px;font-size:14px;border-radius:10px;width:100%" />
+          <span style="position:absolute;left:14px;font-size:13px;font-weight:700;color:var(--text-3)">검색</span>
+          <input type="text" id="song-search-input" class="form-input" placeholder="곡 이름이나 가수 이름을 직접 검색해 보세요 (예: 아이유, 밤편지, 박효신, 고백...)" oninput="filterSongs(null)" style="padding-left:48px;height:46px;font-size:14px;border-radius:10px;width:100%" />
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
@@ -2851,7 +2851,6 @@ function renderStudentSongs() {
     <!-- Song List -->
     <div id="song-list" style="display:flex;flex-direction:column;gap:10px">
       <div id="song-list-empty" style="display:none;padding:40px;text-align:center;color:var(--text-3);background:var(--bg-2);border-radius:12px;border:1px dashed var(--border)">
-        <div style="font-size:32px;margin-bottom:8px">😢</div>
         <div style="font-size:15px;font-weight:600;margin-bottom:4px">검색 결과가 없습니다.</div>
         <div style="font-size:13px">다른 검색어나 장르/성별 필터를 선택해 보세요.</div>
       </div>
@@ -3743,7 +3742,7 @@ function saveTrainerFeedback(submissionId) {
     DB.setSubmissions(submissions);
   }
 
-  showToast('🎉 학생 음성 파일에 총괄 피드백이 성공적으로 저장되었습니다!', 'success');
+  showToast('학생 음성 파일에 총괄 피드백이 성공적으로 저장되었습니다.', 'success');
   if (State.currentPage === 'trainer-dashboard') {
     navigate('trainer-dashboard', { sub: 'students' });
   } else if (State.currentPage === 'analysis') {
@@ -3826,7 +3825,7 @@ function rateFeedbackSatisfaction(submissionId, rating) {
     }
   }
   
-  showToast(`🎉 담당 트레이너 피드백에 대한 만족도(⭐ ${rating}점)가 성공적으로 체크되었습니다!`, 'success');
+  showToast(`담당 트레이너 피드백에 대한 만족도(${rating}점)가 성공적으로 체크되었습니다.`, 'success');
   
   if (State.currentPage === 'student-dashboard') {
     renderApp();
@@ -4315,19 +4314,19 @@ CREATE POLICY "enable_all_for_anon" ON songs FOR ALL TO anon USING (true) WITH C
                     const allWeak = [];
                     myAnas.forEach(a => { if (a.weakAreas) allWeak.push(...a.weakAreas); });
                     const uniqueWeak = [...new Set(allWeak)];
-                    const weakSummary = uniqueWeak.length > 0 ? uniqueWeak.slice(0, 2).join(', ') : (avgScore >= 88 ? '✨ 전반적 밸런스 우수' : '호흡 지지 / 고음 안정성');
+                    const weakSummary = uniqueWeak.length > 0 ? uniqueWeak.slice(0, 2).join(', ') : (avgScore >= 88 ? '[우수] 전반적 밸런스 우수' : '호흡 지지 / 고음 안정성');
 
                     return `
                     <tr>
                       <td style="padding:16px;">
                         <div style="display:flex; gap:12px; align-items:center;">
-                          <div class="avatar" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:20px; width:44px; height:44px;">
-                            ${(st.gender||'M') === 'F' ? '👩' : '👨'}
+                          <div class="avatar" style="background:var(--bg-2); color:var(--accent); font-size:14px; font-weight:800; width:44px; height:44px; border:1px solid var(--border);">
+                            ${(st.gender||'M') === 'F' ? 'F' : 'M'}
                           </div>
                           <div>
-                            <strong style="font-size:16px; color:var(--text);">🔒 비식별 유저 #${100 + Number(st.id)}</strong>
-                            <div style="font-size:13px; color:#38bdf8; font-weight:800; margin-top:2px;">
-                              ${(st.gender||'M') === 'F' ? '👩 여성' : '👨 남성'} · ${st.age || 24}세
+                            <strong style="font-size:16px; color:var(--text);">[비식별] 유저 #${100 + Number(st.id)}</strong>
+                            <div style="font-size:13px; color:var(--info); font-weight:800; margin-top:2px;">
+                              ${(st.gender||'M') === 'F' ? '여성' : '남성'} · ${st.age || 24}세
                             </div>
                             <div class="text-3" style="font-size:11px;">개인정보 100% 비식별화</div>
                           </div>
@@ -4735,6 +4734,9 @@ function attachSubmitListeners() {
       }
     });
   }
+
+  const fbCb = document.getElementById('request-trainer-fb');
+  if (fbCb) fbCb.checked = false;
 
   const form = document.getElementById('submit-form');
   if (form) {
@@ -5435,7 +5437,7 @@ async function startAnalysis(file, requirements, guestEmail, userTargetSong) {
 
   hideLoading();
   navigate('analysis', { analysis: { ...analysis, fileName, mode, processTime: aiData ? '15.4' : (Math.random() * 1.5 + 1.5).toFixed(1) } });
-  showToast(whisperLyrics ? '🎉 음성 가사 100% 실제 인식 및 음향 분석 완료!' : '🎉 실제 음성 파형 정밀 분석 완료!', 'success');
+  showToast(whisperLyrics ? '음성 가사 인식 및 음향 분석이 완료되었습니다.' : '실제 음성 파형 정밀 분석이 완료되었습니다.', 'success');
 }
 
 function generateAnalysis(fileName, requirements, aiData, realAudio, whisperLyrics, mode, gptSongMeta, webSongMeta, userTargetSong) {
@@ -5735,7 +5737,7 @@ function attachStudentAuthListeners() {
       const genres = [...document.querySelectorAll('input[name="genre"]:checked')].map(el => el.value);
       const result = Auth.register('student', { nickname: nick, email, password: pw, gender, age, genres });
       if (result.ok) {
-        showToast('회원가입 완료! 환영합니다 🎉', 'success');
+        showToast('회원가입 완료! 환영합니다.', 'success');
         navigate('student-dashboard', { sub: 'home' });
       } else {
         const el = document.getElementById('signup-error');
@@ -6616,7 +6618,7 @@ function submitBooking(trainerId, price) {
     DB.setPayments(payments);
 
     hideLoading();
-    showToast('레슨 예약이 완료되었습니다! 🎉', 'success');
+    showToast('레슨 예약이 완료되었습니다.', 'success');
     navigate('student-dashboard', { sub: 'lessons' });
   }, 2000);
 }
@@ -6704,11 +6706,11 @@ function showSongDetail(songId) {
   const sGender = song.gender || 'M';
   let genderAdvice = '';
   if (uGender === 'M' && sGender === 'F') {
-    genderAdvice = `💡 <b>남녀 성별 맞춤 분석</b>: 회원님(남성)께서 이 여성 곡을 부르실 때, 원키는 고음 파사지오(Passaggio) 구간을 크게 초과합니다. <b>추천 키 조절: -4키 또는 -5키 (1옥타브 낮춤)</b>로 설정하시면 남성 발성 대역에서 가장 돋보이게 가창할 수 있습니다!`;
+    genderAdvice = `<b>남녀 성별 맞춤 분석</b>: 회원님(남성)께서 이 여성 곡을 부르실 때, 원키는 고음 파사지오(Passaggio) 구간을 크게 초과합니다. <b>추천 키 조절: -4키 또는 -5키 (1옥타브 낮춤)</b>로 설정하시면 남성 발성 대역에서 가장 돋보이게 가창할 수 있습니다.`;
   } else if (uGender === 'F' && sGender === 'M') {
-    genderAdvice = `💡 <b>남녀 성별 맞춤 분석</b>: 회원님(여성)께서 이 남성 곡을 부르실 때, 저음 파트가 너무 낮아 소리가 묻힐 수 있습니다. <b>추천 키 조절: +4키 또는 +5키</b>로 설정하시면 여성 보컬 음역대에 최적화된 호흡 지지가 가능합니다!`;
+    genderAdvice = `<b>남녀 성별 맞춤 분석</b>: 회원님(여성)께서 이 남성 곡을 부르실 때, 저음 파트가 너무 낮아 소리가 묻힐 수 있습니다. <b>추천 키 조절: +4키 또는 +5키</b>로 설정하시면 여성 보컬 음역대에 최적화된 호흡 지지가 가능합니다.`;
   } else {
-    genderAdvice = `🎯 <b>남녀 성별 맞춤 분석</b>: 회원님의 성별과 곡의 성별이 일치합니다. <b>원키(0키)</b>로 연습하시는 것을 권장드리며, 최고음 도달 시 복식 호흡과 성대 접촉 안정성에 집중해 보세요!`;
+    genderAdvice = `<b>남녀 성별 맞춤 분석</b>: 회원님의 성별과 곡의 성별이 일치합니다. <b>원키(0키)</b>로 연습하시는 것을 권장드리며, 최고음 도달 시 복식 호흡과 성대 접촉 안정성에 집중해 보세요.`;
   }
 
   showModal(`${song.artist} - ${song.title}`, `
@@ -6888,59 +6890,109 @@ function runComprehensiveSongAI() {
     });
   } catch(e) { console.warn('User selection map aggregation error:', e); }
 
-  // (1) 취향 저격 & 안정 완곡 (더 촘촘하게 유저 취향/음역대/가수 매칭)
+  // (1) 취향 저격 & 안정 완곡 (촘촘한 장르 가중치 / 음역대 안정권 / 난이도 적합성 분석)
   const safePicks = songs.filter(s => {
     if (selectedAll.has(s.id)) return false;
-    return (s.highestMidi || 70) <= maxMidi + 1;
+    const midi = s.highestMidi || 70;
+    return midi <= maxMidi + 1;
   }).map(s => {
     let score = 0;
-    if (prefArtists.has((s.artist || '').trim())) score += 35;
-    if ((s.genre || '').includes(primaryGenre.split('/')[0])) score += 25;
-    else if (topGenres.some(g => (s.genre || '').includes(g.split('/')[0]))) score += 15;
-    if ((s.gender || 'M') === algoGender) score += 10;
+    // 아티스트 매칭 가중치
+    if (prefArtists.has((s.artist || '').trim())) score += 40;
+    
+    // 장르 비중 매칭 (선호 장르 다중 선택 빈도 반영)
+    const songGenre = s.genre || '';
+    if (songGenre.includes(primaryGenre.split('/')[0])) {
+      score += 30;
+    } else {
+      topGenres.forEach((g, idx) => {
+        if (songGenre.includes(g.split('/')[0])) {
+          score += Math.max(5, 20 - idx * 5);
+        }
+      });
+    }
+
+    // 성별 및 음색 호환성
+    if ((s.gender || 'M') === algoGender) score += 15;
+
+    // 음역대 안정권 정밀 점수 (최고음이 proven maxMidi 이내에서 안정적으로 소화 가능한 곡)
     const midi = s.highestMidi || 70;
-    if (midi >= maxMidi - 3 && midi <= maxMidi) score += 20;
-    else if (midi >= maxMidi - 5 && midi <= maxMidi + 1) score += 10;
-    if (Math.abs((s.difficultyScore || 5) - avgDiff) <= 1.0) score += 15;
+    if (midi <= maxMidi && midi >= maxMidi - 2) score += 35;
+    else if (midi < maxMidi - 2 && midi >= maxMidi - 5) score += 20;
+    else if (midi === maxMidi + 1) {
+      // 1반음 높은 곡은 난이도가 낮을 때만 허용
+      if ((s.difficultyScore || 5) <= avgDiff) score += 10;
+      else score -= 15;
+    }
+
+    // 완창 난이도 호환성 (평균 난이도와 유사하거나 약간 쉬운 곡에 가점)
+    const diffDelta = (s.difficultyScore || 5) - avgDiff;
+    if (Math.abs(diffDelta) <= 0.8) score += 25;
+    else if (diffDelta < 0 && diffDelta >= -2.0) score += 18;
+    else if (diffDelta > 1.5) score -= 20;
+
     return { song: s, score };
   }).sort((a, b) => b.score - a.score).map(item => item.song).slice(0, 5);
 
-  // (2) 실력 한계 돌파 도전 곡 (너무 어려운 것 배제, +1~+2 반음 또는 미세 난이도 상승 곡 추천)
+  // (2) 실력 한계 돌파 도전 곡 (음정 +1~+2 반음 상승 또는 난이도 +0.5~+2.0 상승 정밀 매칭)
   let challengeCandidates = songs.filter(s => {
     if (selectedAll.has(s.id)) return false;
     const midi = s.highestMidi || 70;
-    const isMicroPitchStep = midi >= maxMidi && midi <= maxMidi + 2;
-    const isMicroDiffStep = (s.difficultyScore || 5) >= avgDiff && (s.difficultyScore || 5) <= avgDiff + 2.0;
-    return isMicroPitchStep && isMicroDiffStep;
+    const isPitchStep = (midi >= maxMidi && midi <= maxMidi + 2);
+    const isDiffStep = ((s.difficultyScore || 5) >= avgDiff - 0.5 && (s.difficultyScore || 5) <= avgDiff + 2.5);
+    return isPitchStep && isDiffStep;
   });
   if (challengeCandidates.length < 5) {
-    challengeCandidates = songs.filter(s => !selectedAll.has(s.id) && (s.highestMidi || 70) >= maxMidi && (s.highestMidi || 70) <= maxMidi + 3);
+    challengeCandidates = songs.filter(s => !selectedAll.has(s.id) && (s.highestMidi || 70) >= maxMidi - 1 && (s.highestMidi || 70) <= maxMidi + 3);
   }
   const challengePicks = challengeCandidates.map(s => {
     let score = 0;
     const midi = s.highestMidi || 70;
-    if (midi === maxMidi + 1) score += 35;
-    else if (midi === maxMidi + 2) score += 25;
-    else if (midi === maxMidi) score += 15;
+    // 피치 도전 가중치
+    if (midi === maxMidi + 1) score += 40;
+    else if (midi === maxMidi + 2) score += 32;
+    else if (midi === maxMidi) score += 20;
+    else if (midi === maxMidi + 3) score += 10;
+
+    // 기교 및 표현력 난이도 도전 가중치
     const diffDelta = (s.difficultyScore || 5) - avgDiff;
-    if (diffDelta >= 0.3 && diffDelta <= 1.5) score += 25;
-    else if (diffDelta > 0 && diffDelta <= 2.0) score += 15;
-    if (prefArtists.has((s.artist || '').trim())) score += 20;
-    if ((s.genre || '').includes(primaryGenre.split('/')[0])) score += 20;
+    if (diffDelta >= 0.5 && diffDelta <= 1.8) score += 35;
+    else if (diffDelta >= 0.1 && diffDelta < 0.5) score += 22;
+    else if (diffDelta > 1.8 && diffDelta <= 2.5) score += 15;
+    else if (diffDelta > 2.5 && midi > maxMidi + 1) score -= 30; // 무리한 과도 도약 배제
+
+    // 연습 동기 유지를 위한 취향/장르 호환성 부여
+    if (prefArtists.has((s.artist || '').trim())) score += 25;
+    if ((s.genre || '').includes(primaryGenre.split('/')[0])) score += 25;
+    if ((s.gender || 'M') === algoGender) score += 10;
+
     return { song: s, score };
   }).sort((a, b) => b.score - a.score).map(item => item.song).slice(0, 5);
 
-  // (3) 숨은 명곡 큐레이션 (유저들이 많이 선택/연습한 것에 최우선 가중치 부여)
-  const masterArtists = ['김윤아', '이선희', '박효신', '성시경', '아이유', '자우림', '태연', '나얼', '윤종신', '김범수', '이수', '성시경', '권진아'];
+  // (3) 숨은 명곡 큐레이션 (음악성 높은 명품 아티스트 + 발성 훈련 적합도 + 유저 큐레이션 가중치)
+  const masterArtists = ['김윤아', '이선희', '박효신', '성시경', '아이유', '자우림', '태연', '나얼', '윤종신', '김범수', '이수', '권진아', '김연우', '이적', '정승환', '멜로망스', '잔나비', '선우정아', '백예린', '폴킴', '10CM', '이홍기', '최유리', '하동균'];
   const hiddenGems = songs.filter(s => {
     if (selectedAll.has(s.id)) return false;
-    return (s.difficultyScore || 5) >= 4 && (s.difficultyScore || 5) <= 8.5;
+    // 발성 연습에 적합한 탄탄한 곡 구조 (난이도 4.0 ~ 8.5)
+    return (s.difficultyScore || 5) >= 4.0 && (s.difficultyScore || 5) <= 8.5;
   }).map(s => {
     let score = 0;
+    // 유저/실력자 집단 선택 빈도 가중치
     const selectCount = userSelectMap[s.id] || 0;
-    score += selectCount * 15;
-    if (topGenres.some(g => (s.genre || '').includes(g.split('/')[0]))) score += 15;
-    if (masterArtists.some(ma => (s.artist || '').includes(ma))) score += 15;
+    if (selectCount >= 1 && selectCount <= 12) score += 30; // 뻔하지 않으면서도 인정받는 숨은 명곡 가중치
+    else score += selectCount * 12;
+
+    // 보컬 발성/감정선 훈련 가치가 높은 마스터 아티스트 가점
+    if (masterArtists.some(ma => (s.artist || '').includes(ma))) score += 30;
+
+    // 유저 선호 장르 호환성 가점
+    if (topGenres.some(g => (s.genre || '').includes(g.split('/')[0]))) score += 20;
+
+    // 소화 가능한 음역대 내인지 검증 (최고음이 본인 한계 ±2 반음 이내)
+    const midiDelta = Math.abs((s.highestMidi || 70) - maxMidi);
+    if (midiDelta <= 2) score += 25;
+    else if (midiDelta > 4) score -= 25;
+
     return { song: s, score };
   }).sort((a, b) => b.score - a.score).map(item => item.song).slice(0, 5);
 
@@ -6953,17 +7005,20 @@ function runComprehensiveSongAI() {
     const sGender = s.gender || 'M';
     let keyTip = '';
     if (userGender === 'M' && sGender === 'F') {
-      keyTip = `<span style="color:#ec4899;font-weight:700">💡 남성 추천키: -4키 (-1옥타브 조절)</span>`;
+      keyTip = `<span style="color:var(--text-accent);font-weight:700">[키 조절 안내] 남성 추천키: -4키 또는 -5키 (-1옥타브 조절)</span>`;
     } else if (userGender === 'F' && sGender === 'M') {
-      keyTip = `<span style="color:#3b82f6;font-weight:700">💡 여성 추천키: +4키 (+1옥타브 조절)</span>`;
+      keyTip = `<span style="color:var(--info);font-weight:700">[키 조절 안내] 여성 추천키: +4키 또는 +5키 (+1옥타브 조절)</span>`;
     } else {
-      keyTip = `<span style="color:#10b981;font-weight:700">🎯 성별 일치: 원키(0키) 최적 소화</span>`;
+      keyTip = `<span style="color:var(--success);font-weight:700">[음역 일치] 원키(0키) 최적 소화 가능</span>`;
     }
 
+    const genreLabel = (s.genre || 'MUSIC').split('/')[0].trim();
+    const genreSub = genreLabel.length > 3 ? genreLabel.slice(0, 3) : genreLabel;
+
     return `
-    <div class="card" style="padding:14px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:10px;border-radius:12px" onclick="showSongDetail(${s.id})">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:24px">${s.emoji || '♪'}</span>
+    <div class="card" style="padding:16px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:10px;border-radius:12px;transition:var(--transition-md)" onclick="showSongDetail(${s.id})" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--bg-2);border:1px solid var(--border);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0">${genreSub}</div>
         <div>
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:15px;font-weight:700;color:var(--text)">${s.title}</span>
@@ -6996,42 +7051,42 @@ function runComprehensiveSongAI() {
   resDiv.style.display = 'block';
   resDiv.innerHTML = `
     <!-- 현 진단 결과 저장 안내 배너 및 CTA 버튼 -->
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1)); padding:16px 20px; border-radius:12px; border:1px solid #10b981">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; background:linear-gradient(135deg, rgba(139,92,246,0.1), rgba(109,40,217,0.1)); padding:16px 20px; border-radius:12px; border:1px solid var(--accent)">
       <div>
-        <div style="font-size:14px; font-weight:800; color:#10b981; display:flex; align-items:center; gap:6px">💡 분석된 맞춤 곡 추천 결과를 이력 보관함에 저장하세요!</div>
-        <div style="font-size:12px; color:var(--text-2); margin-top:2px">언제든 상단 [저장된 맞춤 곡 추천 이력 보관함]에서 당시 진단 기록과 Top 5 큐레이션을 다시 확인할 수 있습니다.</div>
+        <div style="font-size:14px; font-weight:800; color:var(--text-1); display:flex; align-items:center; gap:6px">분석된 맞춤 곡 추천 결과를 보관함에 저장하세요</div>
+        <div style="font-size:12px; color:var(--text-2); margin-top:2px">언제든 상단 [저장된 맞춤 곡 추천 이력 보관함]에서 당시 진단 기록과 추천 리스트를 다시 확인할 수 있습니다.</div>
       </div>
-      <button class="btn btn-primary" onclick="saveCurrentSongRecommendation()" style="font-size:13px; font-weight:800; padding:10px 22px; border-radius:8px; background:linear-gradient(135deg,#10b981,#059669); box-shadow:0 4px 12px rgba(16,185,129,0.3); white-space:nowrap; flex-shrink:0">
-        💾 현 추천 결과 이력에 저장하기
+      <button class="btn btn-primary" onclick="saveCurrentSongRecommendation()" style="font-size:13px; font-weight:800; padding:10px 22px; border-radius:8px; box-shadow:0 4px 12px rgba(139,92,246,0.3); white-space:nowrap; flex-shrink:0">
+        현재 추천 결과 보관함에 저장
       </button>
     </div>
 
     <!-- AI 분석 진단서 -->
-    <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--accent);margin-bottom:24px">
-      <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:8px">📊 AI 취향 & 실력 종합 프로파일링 진단서 (분석 기준: ${userGender === 'F' ? '여성 보컬' : '남성 보컬'})</div>
+    <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--border);margin-bottom:24px">
+      <div style="font-size:15px;font-weight:800;color:var(--accent-light);margin-bottom:8px">보컬 종합 프로파일링 진단 리포트 (분석 기준: ${userGender === 'F' ? '여성 보컬' : '남성 보컬'})</div>
       <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px">
-        <div>🎵 선호 1순위 장르: <strong style="color:var(--text)">${primaryGenre}</strong></div>
-        <div>📈 안정 완곡 한계 음역대: <strong style="color:#10b981">${maxNoteStr}</strong></div>
-        <div>⭐️ 보컬 실력 레벨: <strong style="color:#f59e0b">평균 완곡 난이도 ★ ${avgDiff} / 10</strong></div>
+        <div>선호 1순위 장르: <strong style="color:var(--text-1)">${primaryGenre}</strong></div>
+        <div>안정 소화 한계 음역대: <strong style="color:#10b981">${maxNoteStr}</strong></div>
+        <div>보컬 실력 평가 레벨: <strong style="color:#f59e0b">평균 완곡 난이도 ★ ${avgDiff} / 10</strong></div>
       </div>
     </div>
 
     <div style="margin-bottom:24px">
-      <div style="font-size:15px;font-weight:700;color:#10b981;margin-bottom:12px">🎯 100% 취향 저격 & 안정 소화 추천 곡 Top 5</div>
+      <div style="font-size:15px;font-weight:700;color:#10b981;margin-bottom:12px">취향 맞춤 및 안정 소화 추천 곡 Top 5</div>
       ${safePicks.length > 0 ? safePicks.map(renderCard).join('') : '<div class="text-2" style="font-size:13px">해당 조건에 맞는 곡이 없습니다.</div>'}
     </div>
 
     <div style="margin-bottom:24px">
-      <div style="font-size:15px;font-weight:700;color:#ec4899;margin-bottom:12px">🔥 실력 한계 돌파 레벨업 도전 곡 Top 5</div>
+      <div style="font-size:15px;font-weight:700;color:#f43f5e;margin-bottom:12px">실력 향상 및 한계 돌파 도전 곡 Top 5</div>
       ${challengePicks.length > 0 ? challengePicks.map(renderCard).join('') : '<div class="text-2" style="font-size:13px">도전 곡이 없습니다. 이미 최상급 난이도를 마스터하셨습니다!</div>'}
     </div>
 
     <div>
-      <div style="font-size:15px;font-weight:700;color:#3b82f6;margin-bottom:12px">✨ 놓치면 아쉬운 숨은 명곡 큐레이션 Top 5</div>
+      <div style="font-size:15px;font-weight:700;color:#38bdf8">전담 큐레이션 숨은 명곡 추천 Top 5</div>
       ${hiddenGems.map(renderCard).join('')}
     </div>
   `;
-  showToast('AI 남/녀 성별 및 실력 맞춤 알고리즘 분석 완료!');
+  showToast('사용자 맞춤 추천 알고리즘 분석이 완료되었습니다.');
 }
 
 function recommendByMasteredSong() { runComprehensiveSongAI(); }
@@ -7053,7 +7108,7 @@ function saveCurrentSongRecommendation() {
   };
   recs.push(newRec);
   if (DB.setSongRecommendations) DB.setSongRecommendations(recs);
-  showToast('맞춤 곡 추천 결과가 이력 보관함에 저장되었습니다! 💾', 'success');
+  showToast('맞춤 곡 추천 결과가 보관함에 저장되었습니다.', 'success');
   navigate('student-dashboard', { sub: 'songs' });
 }
 
@@ -7089,34 +7144,34 @@ function showSavedSongRecModal(id) {
   const content = `
     <div style="max-height:65vh; overflow-y:auto; padding-right:6px">
       <!-- 진단 요약 정보 -->
-      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.1) 100%); padding:16px; border-radius:12px; border:1px solid var(--accent); margin-bottom:20px">
-        <div style="font-size:14px; font-weight:800; color:var(--accent); margin-bottom:10px">📊 분석 당시 종합 프로파일링 (#${rec.id} 진단)</div>
+      <div style="background:linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(109,40,217,0.1) 100%); padding:16px; border-radius:12px; border:1px solid var(--accent); margin-bottom:20px">
+        <div style="font-size:14px; font-weight:800; color:var(--accent-light); margin-bottom:10px">분석 당시 종합 프로파일링 (#${rec.id} 진단)</div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; font-size:13px">
-          <div>🎵 선호 1순위 장르: <strong style="color:var(--text)">${rec.primaryGenre || '발라드'}</strong></div>
-          <div>📈 안정 음역대 한계: <strong style="color:#10b981">${rec.maxNoteStr || '-'}</strong></div>
-          <div>⭐️ 보컬 실력 레벨: <strong style="color:#f59e0b">평균 완곡 ★ ${rec.avgDiff || '-'}/10</strong></div>
+          <div>선호 1순위 장르: <strong style="color:var(--text-1)">${rec.primaryGenre || '발라드'}</strong></div>
+          <div>안정 음역대 한계: <strong style="color:#10b981">${rec.maxNoteStr || '-'}</strong></div>
+          <div>보컬 실력 평가 레벨: <strong style="color:#f59e0b">평균 완곡 ★ ${rec.avgDiff || '-'}/10</strong></div>
         </div>
       </div>
 
       <!-- 선택한 취향곡 및 애창곡 -->
       <div style="background:var(--bg-2); padding:14px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px; font-size:13px">
-        <div style="margin-bottom:8px"><strong style="color:#ec4899">❤️ 분석 요청 취향곡:</strong> ${(rec.tasteSongNames || []).join(', ') || '없음'}</div>
-        <div><strong style="color:#3b82f6">🎤 분석 요청 완곡 가능곡:</strong> ${(rec.masteredSongNames || []).join(', ') || '없음'}</div>
+        <div style="margin-bottom:8px"><strong style="color:var(--accent-light)">분석 요청 취향곡:</strong> ${(rec.tasteSongNames || []).join(', ') || '없음'}</div>
+        <div><strong style="color:#38bdf8">분석 요청 완곡 가능곡:</strong> ${(rec.masteredSongNames || []).join(', ') || '없음'}</div>
       </div>
 
       <!-- 추천 곡 3대 영역 -->
       <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:800; color:#10b981; margin-bottom:10px">🎯 100% 취향 저격 & 안정 소화 추천 곡 Top 5</div>
+        <div style="font-size:14px; font-weight:800; color:#10b981; margin-bottom:10px">취향 맞춤 및 안정 소화 추천 곡 Top 5</div>
         ${(rec.safePicks && rec.safePicks.length > 0) ? rec.safePicks.map(renderMiniCard).join('') : '<div style="font-size:13px; color:var(--text-3)">기록된 추천 곡이 없습니다.</div>'}
       </div>
 
       <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:800; color:#ec4899; margin-bottom:10px">🔥 실력 한계 돌파 레벨업 도전 곡 Top 5</div>
+        <div style="font-size:14px; font-weight:800; color:#f43f5e; margin-bottom:10px">실력 향상 및 한계 돌파 도전 곡 Top 5</div>
         ${(rec.challengePicks && rec.challengePicks.length > 0) ? rec.challengePicks.map(renderMiniCard).join('') : '<div style="font-size:13px; color:var(--text-3)">기록된 도전 곡이 없습니다.</div>'}
       </div>
 
       <div>
-        <div style="font-size:14px; font-weight:800; color:#3b82f6; margin-bottom:10px">✨ 놓치면 아쉬운 숨은 명곡 큐레이션 Top 5</div>
+        <div style="font-size:14px; font-weight:800; color:#38bdf8; margin-bottom:10px">전담 큐레이션 숨은 명곡 추천 Top 5</div>
         ${(rec.hiddenGems && rec.hiddenGems.length > 0) ? rec.hiddenGems.map(renderMiniCard).join('') : '<div style="font-size:13px; color:var(--text-3)">기록된 숨은 명곡이 없습니다.</div>'}
       </div>
     </div>
@@ -8061,7 +8116,7 @@ window.submitNewBookmark = function(analysisId) {
     sec = Number(timeVal) || 10;
   }
   const timeStr = formatSecToStr(sec);
-  const label = typeVal === 'rhythm' ? '⚠️ 박자 지연/불일치 (직접 등록)' : typeVal === 'pitch' ? '📉 키/음정 이탈 (직접 등록)' : '💡 우수 발성 구간';
+  const label = typeVal === 'rhythm' ? '[박자] 지연/불일치 (직접 등록)' : typeVal === 'pitch' ? '[음정] 키/음정 이탈 (직접 등록)' : '[우수] 발성 구간';
   
   const newBm = { sec, timeStr, type: typeVal, label, desc: descVal };
   window.currentAnalysisBookmarks.push(newBm);
@@ -8080,7 +8135,7 @@ window.submitNewBookmark = function(analysisId) {
   document.getElementById('new-bm-desc').value = '';
   window.toggleAddBookmarkForm();
   window.renderBookmarkListUI();
-  showToast('북마크가 등록되어 학생과 트레이너에게 공유됩니다!', 'success');
+  showToast('북마크가 등록되어 학생과 트레이너에게 공유됩니다.', 'success');
 };
 
 window.renderBookmarkListUI = function() {
@@ -8112,7 +8167,7 @@ window.renderBookmarkListUI = function() {
       </div>
       <div style="display:flex; gap:6px; flex-shrink:0;">
         <button class="btn btn-ghost btn-xs" onclick="window.loopVocalAudioSection(${b.sec}, ${b.sec + 5})" style="font-weight:700; color:var(--text-2); white-space:nowrap;">
-          🔁 5초 반복
+          5초 반복
         </button>
       </div>
     </div>
