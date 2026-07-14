@@ -1486,7 +1486,8 @@ const Auth = {
 // ══════════════════════════════════════════════
 function navigate(page, params = {}) {
   State.currentPage = page;
-  if (params && params.sub === 'mr') params.sub = 'home';
+  if (params && (params.sub === 'mr' || params.sub === 'song-analysis')) params.sub = 'home';
+  if (page === 'student-dashboard' && (State.dashPage === 'mr' || State.dashPage === 'song-analysis')) State.dashPage = 'home';
   State.lastParams = params || {};
   if (params.tab) State.dashTab = params.tab;
   if (params.sub) State.dashPage = params.sub;
@@ -1548,7 +1549,7 @@ function renderNav() {
     */
     links = `
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'songs'})">맞춤 곡 추천</button>
-      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'song-analysis'})">원곡 분석</button>
+      <!-- <button class="nav-link" onclick="navigate('student-dashboard',{sub:'song-analysis'})">원곡 분석</button> -->
       <!-- <button class="nav-link" onclick="navigate('student-dashboard',{sub:'mr'})">MR 스튜디오</button> -->
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'trainers'})">트레이너</button>
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'lessons'})">내 레슨</button>`;
@@ -2557,7 +2558,7 @@ function renderStudentApp(params) {
     navigate('student-auth', { tab: 'login' }); return '';
   }
   let sub = (params && params.sub) || 'home';
-  if (sub === 'mr') {
+  if (sub === 'mr' || sub === 'song-analysis') {
     sub = 'home';
     State.dashPage = 'home';
   }
@@ -2567,7 +2568,7 @@ function renderStudentApp(params) {
     // mr: renderStudentMR, // [탭/화면 노출 임시 비활성화 per user request (기능 함수 보존)]
     trainers: renderStudentTrainers,
     lessons: renderStudentLessons,
-    'song-analysis': renderStudentSongAnalysis,
+    // 'song-analysis': renderStudentSongAnalysis, // [일단 비공개 요청 per user request (기능 코드 유지)]
     feedbacks: renderStudentFeedbacks,
   };
   const renderer = subContents[sub] || renderStudentHome;
@@ -2576,7 +2577,7 @@ function renderStudentApp(params) {
     { key: 'home', label: '내 프로필' },
     { key: 'feedbacks', label: '내 피드백' },
     { key: 'songs', label: '맞춤 곡 추천' },
-    { key: 'song-analysis', label: '원곡 분석' },
+    // { key: 'song-analysis', label: '원곡 분석' }, // [일단 비공개 요청 per user request (기능 코드 유지)]
     // { key: 'mr', label: 'MR 스튜디오' }, // [일단 시각적 탭에서 삭제 (기능 코드 유지)]
     { key: 'trainers', label: '트레이너' },
     { key: 'lessons', label: '내 레슨' },
@@ -4632,7 +4633,7 @@ function attachPageListeners(page, params) {
   if (page === 'student-dashboard') {
     const sub = (params && params.sub) || 'home';
     // if (sub === 'mr') attachMrListeners();
-    if (sub === 'song-analysis') attachSongAnalysisListeners();
+    // if (sub === 'song-analysis') attachSongAnalysisListeners();
     if (sub === 'profile' || sub === 'trainer-profile') {}
   }
   if (page === 'trainer-dashboard') {
@@ -7431,7 +7432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderNav();
         const app = document.getElementById('app');
         let sub = State.dashPage || 'home';
-        if (sub === 'mr' || (State.lastParams && State.lastParams.sub === 'mr')) {
+        if (sub === 'mr' || sub === 'song-analysis' || (State.lastParams && (State.lastParams.sub === 'mr' || State.lastParams.sub === 'song-analysis'))) {
           sub = 'home';
           State.dashPage = 'home';
           if (State.lastParams) State.lastParams.sub = 'home';
@@ -7846,6 +7847,8 @@ async function runSongAnalysis(files) {
 
 // ── 곡 분석 페이지 렌더러
 function renderStudentSongAnalysis() {
+  // [사용자 요청: 원곡 분석 탭 시각적/화면 노출 비공개. 기능 함수 내부 코드는 유지하되 호출 시 Home 화면으로 즉시 폴백]
+  return renderStudentHome();
   return `
   <div class="animate-up">
     <div class="page-title">원곡 분석</div>
