@@ -2561,7 +2561,7 @@ function renderStudentApp(params) {
 
   const navItems = [
     { key: 'home', label: '내 프로필' },
-    { key: 'feedbacks', label: '💬 받은 코칭 피드백' },
+    { key: 'feedbacks', label: '내 피드백' },
     { key: 'songs', label: '맞춤 곡 추천' },
     { key: 'song-analysis', label: '원곡 분석' },
     // { key: 'mr', label: 'MR 스튜디오' }, // [일단 시각적 탭에서 삭제 (기능 코드 유지)]
@@ -3148,7 +3148,7 @@ function renderStudentFeedbacks() {
 
   return `
   <div class="animate-up">
-    <div class="page-title">💬 받은 코칭 피드백</div>
+    <div class="page-title">내 피드백</div>
     <div class="page-sub">담당 트레이너가 남긴 종합 보컬 진단 및 맞춤 레슨 피드백을 확인하고 만족도를 평가하세요</div>
 
     ${feedbackItems.length === 0 ? `
