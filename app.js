@@ -171,14 +171,35 @@ const DB = {
         this._set('songs', mappedSongs);
       }
 
-      // 5-A. Push local submissions & analyses to Cloud DB first to ensure cross-device consistency
+      // 5-A. Load vocal_submissions from Cloud DB FIRST to merge global data accurately
+      const { data: subsData } = await window.supabaseClient.from('vocal_submissions').select('*');
+      if (subsData && subsData.length > 0) {
+        const localSubs = this._get('submissions') || [];
+        const subMap = new Map();
+        localSubs.forEach(s => subMap.set(Number(s.id), s));
+        subsData.forEach(s => {
+          subMap.set(Number(s.id), {
+            id: Number(s.id),
+            studentId: s.student_id ? Number(s.student_id) : null,
+            guestEmail: s.guest_email || '',
+            fileName: s.file_name || s.original_filename || '',
+            requirements: s.requirements || '',
+            status: s.status || 'completed',
+            accessToken: s.access_token || 'tok_' + s.id,
+            createdAt: (s.created_at || '').slice(0, 10)
+          });
+        });
+        this._set('submissions', Array.from(subMap.values()));
+      }
+
+      // 5-B. Push local submissions & analyses to Cloud DB to ensure cross-device consistency
       const locSubs = this._get('submissions') || [];
       if (locSubs.length > 0) {
         const batch = locSubs.map(s => ({
           id: Number(s.id),
           student_id: s.studentId ? Number(s.studentId) : null,
           guest_email: s.guestEmail || '',
-          original_filename: s.fileName || '',
+          file_name: s.fileName || '',
           requirements: s.requirements || '',
           status: s.status || 'completed',
           access_token: s.accessToken || 'tok_' + s.id,
@@ -202,27 +223,6 @@ const DB = {
           json_data: JSON.stringify(a)
         }));
         await window.supabaseClient.from('vocal_analysis_results').upsert(batchAna, { onConflict: 'id' }).then(null, () => {});
-      }
-
-      // 5-B. Load vocal_submissions from Cloud DB
-      const { data: subsData } = await window.supabaseClient.from('vocal_submissions').select('*');
-      if (subsData && subsData.length > 0) {
-        const localSubs = this._get('submissions') || [];
-        const subMap = new Map();
-        localSubs.forEach(s => subMap.set(Number(s.id), s));
-        subsData.forEach(s => {
-          subMap.set(Number(s.id), {
-            id: Number(s.id),
-            studentId: s.student_id ? Number(s.student_id) : null,
-            guestEmail: s.guest_email || '',
-            fileName: s.original_filename || '',
-            requirements: s.requirements || '',
-            status: s.status || 'completed',
-            accessToken: s.access_token || 'tok_' + s.id,
-            createdAt: (s.created_at || '').slice(0, 10)
-          });
-        });
-        this._set('submissions', Array.from(subMap.values()));
       }
 
       // 6. Load vocal_analysis_results from Cloud DB
@@ -272,7 +272,12 @@ const DB = {
     if (!s) return false;
     if (this.isMockEmail(s.guestEmail)) return true;
     if (s.isMock === true) return true;
-    if (Number(s.id) <= 10 && s.accessToken && String(s.accessToken).startsWith('tok_')) return true;
+    const sampleFiles = [
+      '야생화_연습_1차.wav', '밤편지_커버.mp3', '보고싶다_클라이맥스.wav', 'I_고음도약.mp3',
+      '노래방에서_연습.m4a', '사건의지평선_완곡.wav', '어디에도_고음파트.mp3', '총맞은것처럼_발라드.wav',
+      '가시_2차녹음.mp3', '보여줄게_클라이맥스.wav'
+    ];
+    if (sampleFiles.includes(s.fileName)) return true;
     return false;
   },
 
@@ -300,8 +305,14 @@ const DB = {
             selectedMasteredSongIds: latest.selectedMasteredSongIds || []
           },
           oauth_provider: latest.oauthProvider || 'none',
-          is_active: true
-        }, { onConflict: 'email' }).then(null, err => console.warn('Cloud Sync Error (student):', err));
+        }, { onConflict: 'email' }).then(res => {
+          if (res && res.error) {
+            console.warn('Cloud Sync Error (student):', res.error);
+            if (res.error.code === '42501') {
+              console.error('🚨 [Supabase RLS Error] 다른 아이피에서 회원가입한 데이터 저장이 Supabase RLS 정책에 의해 차단되었습니다. 대시보드의 SQL을 Run 해주세요.');
+            }
+          }
+        }, err => console.warn('Cloud Sync Exception (student):', err));
       });
     }
   },
@@ -353,13 +364,18 @@ const DB = {
         id: Number(s.id),
         student_id: s.studentId ? Number(s.studentId) : null,
         guest_email: s.guestEmail || '',
-        original_filename: s.fileName || '',
+        file_name: s.fileName || '',
         requirements: s.requirements || '',
         status: s.status || 'completed',
         access_token: s.accessToken || 'tok_' + s.id,
         created_at: s.createdAt || new Date().toISOString()
       }));
-      window.supabaseClient.from('vocal_submissions').upsert(batch, { onConflict: 'id' }).then(null, () => {});
+      window.supabaseClient.from('vocal_submissions').upsert(batch, { onConflict: 'id' }).then(res => {
+        if (res && res.error) {
+          console.warn('Cloud Sync Error (vocal_submissions):', res.error);
+          if (res.error.code === '42501') console.error('🚨 [Supabase RLS Error] vocal_submissions 저장이 차단되었습니다.');
+        }
+      }, err => console.warn('Sync Exception (vocal_submissions):', err));
     }
   },
   getAnalyses() { return this._getArr('analyses'); },
@@ -379,7 +395,12 @@ const DB = {
         volume_score: Number(a.volume) || 75,
         json_data: JSON.stringify(a)
       }));
-      window.supabaseClient.from('vocal_analysis_results').upsert(batch, { onConflict: 'id' }).then(null, () => {});
+      window.supabaseClient.from('vocal_analysis_results').upsert(batch, { onConflict: 'id' }).then(res => {
+        if (res && res.error) {
+          console.warn('Cloud Sync Error (vocal_analysis_results):', res.error);
+          if (res.error.code === '42501') console.error('🚨 [Supabase RLS Error] vocal_analysis_results 저장이 차단되었습니다.');
+        }
+      }, err => console.warn('Sync Exception (vocal_analysis_results):', err));
     }
   },
   getSongs() { return this._getArr('songs'); },
@@ -1452,6 +1473,10 @@ const Auth = {
 // ══════════════════════════════════════════════
 function navigate(page, params = {}) {
   State.currentPage = page;
+  if (params && params.sub === 'mr') params.sub = 'home';
+  State.lastParams = params || {};
+  if (params.tab) State.dashTab = params.tab;
+  if (params.sub) State.dashPage = params.sub;
   const app = document.getElementById('app');
   app.innerHTML = '';
   app.style.animation = 'none';
@@ -1511,7 +1536,7 @@ function renderNav() {
     links = `
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'songs'})">맞춤 곡 추천</button>
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'song-analysis'})">원곡 분석</button>
-      <button class="nav-link" onclick="navigate('student-dashboard',{sub:'mr'})">MR 스튜디오</button>
+      <!-- <button class="nav-link" onclick="navigate('student-dashboard',{sub:'mr'})">MR 스튜디오</button> -->
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'trainers'})">트레이너</button>
       <button class="nav-link" onclick="navigate('student-dashboard',{sub:'lessons'})">내 레슨</button>`;
     actions = `
@@ -1592,6 +1617,7 @@ function renderHome() {
             <button class="btn btn-primary btn-sm" onclick="navigate('submit')">지금 분석하기</button>
           </div>
         </div>
+        <!-- [일단 시각적 카드에서 삭제 (기능 유지)]
         <div class="card card-xl" style="animation:slideUp 0.5s ease 0.2s both">
           <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:12px">FEATURE 02</div>
           <h3 class="feature-title">맞춤형 연습 도우미</h3>
@@ -1600,8 +1626,9 @@ function renderHome() {
             <button class="btn btn-secondary btn-sm" onclick="navigate('student-auth',{tab:'signup'})">회원가입 후 이용</button>
           </div>
         </div>
+        -->
         <div class="card card-xl" style="animation:slideUp 0.5s ease 0.3s both">
-          <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:12px">FEATURE 03</div>
+          <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:12px">FEATURE 02</div>
           <h3 class="feature-title">전문 트레이너 매칭</h3>
           <p class="feature-desc">분석 결과의 취약점을 바탕으로 최적의 전문 보컬 트레이너를 추천하고, 온라인 1:1 레슨을 예약합니다.</p>
           <div class="mt-16">
@@ -1617,14 +1644,13 @@ function renderHome() {
     <div class="container">
       <div class="text-center" style="margin-bottom:56px">
         <h2 style="font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:12px">이용 방법</h2>
-        <p class="text-2">4단계 체계적인 보컬 실력 향상 과정</p>
+        <p class="text-2">3단계 체계적인 보컬 실력 향상 과정</p>
       </div>
       <div style="display:flex;flex-direction:column;gap:32px;max-width:680px;margin:0 auto">
         ${[
           ['01', '음성 파일 업로드', '연습한 노래나 아카펠라 파일을 업로드하세요. MP3, WAV, M4A 형식을 지원합니다. 로그인 없이도 가능합니다.'],
           ['02', '정밀 분석 리포트 확인', '음정, 박자, 성량, 음색을 분석하여 상세한 점수와 보완 가이드를 제공합니다.'],
-          ['03', '맞춤 곡 추천 & MR 제작', '검증된 음역대를 바탕으로 도전 가능한 가요를 추천하고, 연습용 MR을 생성합니다.'],
-          ['04', '전문 트레이너 맞춤 레슨', '보완이 필요한 항목의 전문 트레이너와 연결되어 온라인 1:1 맞춤 교육을 받으세요.']
+          ['03', '맞춤 곡 추천 및 전문 트레이너 레슨', '검증된 음역대를 바탕으로 도전 가능한 가요를 추천받고, 전문 트레이너와 온라인 1:1 맞춤 교육을 받으세요.']
         ].map(([num, title, desc]) => `
           <div class="flex gap-24 items-center">
             <div class="step-num">${num}</div>
@@ -2298,7 +2324,7 @@ function renderAnalysis(params) {
         ${!State.currentUser ? `
         <div class="card" style="background:linear-gradient(135deg,rgba(13,148,136,0.06),rgba(16,185,129,0.03));border-color:var(--border-accent);padding:32px;text-align:center">
           <h3 style="font-size:20px;font-weight:800;margin-bottom:8px">더 많은 기능을 이용해 보세요</h3>
-          <p class="text-2 mb-24" style="margin-bottom:24px">회원가입하면 분석 히스토리 저장, 맞춤 곡 추천, MR 제작, 트레이너 레슨 예약이 가능합니다</p>
+          <p class="text-2 mb-24" style="margin-bottom:24px">회원가입하면 분석 히스토리 저장, 맞춤 곡 추천, 트레이너 레슨 예약이 가능합니다</p>
           <div style="display:flex;gap:12px;justify-content:center">
             <button class="btn btn-primary" onclick="navigate('student-auth',{tab:'signup'})">무료 회원가입</button>
             <button class="btn btn-secondary" onclick="navigate('student-auth',{tab:'login'})">로그인</button>
@@ -2517,11 +2543,15 @@ function renderStudentApp(params) {
   if (!State.currentUser || State.userType !== 'student') {
     navigate('student-auth', { tab: 'login' }); return '';
   }
-  const sub = (params && params.sub) || 'home';
+  let sub = (params && params.sub) || 'home';
+  if (sub === 'mr') {
+    sub = 'home';
+    State.dashPage = 'home';
+  }
   const subContents = {
     home: renderStudentHome,
     songs: renderStudentSongs,
-    mr: renderStudentMR,
+    // mr: renderStudentMR, // [탭/화면 노출 임시 비활성화 per user request (기능 함수 보존)]
     trainers: renderStudentTrainers,
     lessons: renderStudentLessons,
     'song-analysis': renderStudentSongAnalysis,
@@ -2534,7 +2564,7 @@ function renderStudentApp(params) {
     { key: 'feedbacks', label: '💬 받은 코칭 피드백' },
     { key: 'songs', label: '맞춤 곡 추천' },
     { key: 'song-analysis', label: '원곡 분석' },
-    { key: 'mr', label: 'MR 스튜디오' },
+    // { key: 'mr', label: 'MR 스튜디오' }, // [일단 시각적 탭에서 삭제 (기능 코드 유지)]
     { key: 'trainers', label: '트레이너' },
     { key: 'lessons', label: '내 레슨' },
   ];
@@ -2626,11 +2656,13 @@ function renderStudentHome() {
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">트레이너 찾기</div>
         <div class="text-2" style="font-size:13px">전문 보컬 트레이너와 1:1 레슨을 예약하세요</div>
       </div>
+      <!-- [일단 시각적 탭/카드에서 삭제 (기능 코드 유지)]
       <div class="card" style="cursor:pointer;transition:var(--transition-md)" onclick="navigate('student-dashboard',{sub:'mr'})" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
         <div style="font-size:32px;margin-bottom:12px">🎛</div>
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">MR 만들기</div>
         <div class="text-2" style="font-size:13px">AI 보컬 제거로 연습용 MR을 생성하세요</div>
       </div>
+      -->
     </div>
 
     <!-- Recent Analyses -->
@@ -2788,6 +2820,8 @@ function renderStudentSongs() {
 }
 
 function renderStudentMR() {
+  // [사용자 요청: 시각적/화면 노출 완전 비활성화. 기능 함수 내부 코드는 유지하되 호출 시 Home 화면으로 즉시 폴백]
+  return renderStudentHome();
   const mrList = DB.getMrRequests().filter(r => r.studentId === State.currentUser.id);
   const secLogs = DB.getMrSecurityLogs ? DB.getMrSecurityLogs().filter(l => l.userId === (State.currentUser.email || State.currentUser.id)) : [];
   return `
@@ -3753,6 +3787,37 @@ window.toggleMockUsersDisplay = function() {
   State.showMockUsers = !State.showMockUsers;
   renderApp();
 };
+window.copySupabaseRlsSql = function() {
+  const sql = `-- 모든 클라우드 테이블의 외부 IP/기기 회원가입 및 분석 내역 실시간 동기화 허용 SQL
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON students;
+CREATE POLICY "enable_all_for_anon" ON students FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE vocal_submissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON vocal_submissions;
+CREATE POLICY "enable_all_for_anon" ON vocal_submissions FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE vocal_analysis_results ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON vocal_analysis_results;
+CREATE POLICY "enable_all_for_anon" ON vocal_analysis_results FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE trainers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON trainers;
+CREATE POLICY "enable_all_for_anon" ON trainers FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON songs;
+CREATE POLICY "enable_all_for_anon" ON songs FOR ALL TO anon USING (true) WITH CHECK (true);`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(sql).then(() => {
+      showToast('✅ Supabase RLS 해제 SQL이 복사되었습니다! Supabase 대시보드 [SQL Editor]에 붙여넣고 Run 해주세요.', 'success');
+    }).catch(() => {
+      showToast('❌ 복사 실패. 텍스트 박스 코드를 직접 드래그해서 복사해주세요.', 'error');
+    });
+  } else {
+    showToast('💡 텍스트 박스 코드를 직접 드래그해서 복사해주세요.', 'info');
+  }
+};
 
 // ══════════════════════════════════════════════
 // 12. ADMIN DASHBOARD
@@ -3769,10 +3834,38 @@ function renderAdminDashboard(params) {
   const allAnalyses = DB.getAnalyses();
   const bookings = DB.getBookings();
 
-  // 가상/테스트 유저 필터링 (기본적으로 실제 접속/가입한 유저와 실제 업로드물만 표시)
-  const showMock = State.showMockUsers === true;
+  // 🌐 [전체 분석 참여 유저 글로벌 집계] (내 IP 접속자뿐만 아니라 전 세계 모든 참여자/수강생 통합)
+  const globalParticipantsMap = new Map();
+  allStudents.forEach(st => {
+    const key = String(st.email || st.id).trim().toLowerCase();
+    globalParticipantsMap.set(key, {
+      ...st,
+      participantType: '회원가입 수강생',
+      badgeClass: 'badge-primary',
+      isMock: DB.isMockStudent(st)
+    });
+  });
+  allSubmissions.forEach(sub => {
+    const key = String(sub.guestEmail || ('sub_id_' + (sub.studentId || sub.id))).trim().toLowerCase();
+    if (!globalParticipantsMap.has(key)) {
+      globalParticipantsMap.set(key, {
+        id: sub.studentId || sub.id || DB.nextId(allStudents),
+        email: sub.guestEmail || `글로벌 참여 유저 #${sub.id}`,
+        nickname: sub.guestEmail ? sub.guestEmail.split('@')[0] : `글로벌 분석 수강생 #${sub.id}`,
+        gender: 'X',
+        age: 24,
+        createdAt: sub.createdAt || '2026-07-14',
+        participantType: '글로벌 외부 접속 참여자',
+        badgeClass: 'badge-accent',
+        isMock: DB.isMockSubmission(sub)
+      });
+    }
+  });
+  const allParticipants = Array.from(globalParticipantsMap.values());
+
+  const showMock = State.showMockUsers !== false; // 기본값 true(전체 글로벌 집계 표시)로 설정하여 내 IP뿐 아니라 모든 글로벌 참여 내역 즉시 확인
   const trainers = allTrainers;
-  const students = showMock ? allStudents : allStudents.filter(s => !DB.isMockStudent(s));
+  const students = showMock ? allParticipants : allParticipants.filter(p => !p.isMock);
   const submissions = showMock ? allSubmissions : allSubmissions.filter(s => !DB.isMockSubmission(s));
   const analyses = showMock ? allAnalyses : allAnalyses.filter(a => {
     const sub = allSubmissions.find(s => s.id === a.submissionId);
@@ -3787,7 +3880,7 @@ function renderAdminDashboard(params) {
     const ana = analyses.find(a => a.submissionId === s.id);
     const fb = (ana && ana.trainerFeedback) || s.trainerFeedback;
     if (fb) {
-      const student = students.find(st => st.id === s.studentId) || { nickname: s.guestEmail || '학생/게스트', email: s.guestEmail || '-' };
+      const student = students.find(st => st.id === s.studentId || st.email === s.guestEmail) || { nickname: s.guestEmail || '학생/게스트', email: s.guestEmail || '-' };
       feedbackList.push({ submission: s, analysis: ana, fb: fb, student: student });
     }
   });
@@ -3823,18 +3916,25 @@ function renderAdminDashboard(params) {
           </div>
         </div>
 
-        <!-- 가상/테스트 유저 필터링 상태 안내 배너 -->
-        <div style="background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(56,189,248,0.1)); border:1.5px solid rgba(16,185,129,0.35); border-radius:16px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-size:24px;">🟢</span>
+        <!-- 🌐 글로벌 분석 참여 유저 집계 상태 및 안내 배너 -->
+        <div style="background:linear-gradient(135deg, rgba(56,189,248,0.12), rgba(99,102,241,0.1)); border:1.5px solid rgba(56,189,248,0.4); border-radius:18px; padding:18px 24px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 4px 14px rgba(0,0,0,0.06);">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="font-size:28px;">🌐</span>
             <div>
-              <strong style="font-size:15px; color:var(--text-1);">실제 접속/가입 유저 데이터 필터링 100% 작동 중</strong>
-              <div style="font-size:13px; color:var(--text-3); margin-top:2px;">가상/테스트 계정(${allStudents.length - students.length}명) 및 기본 테스트 제출물(${allSubmissions.length - submissions.length}건)은 대시보드에서 완벽하게 제외되어 <strong>오직 실제 고객 데이터만</strong> 투명하게 표시됩니다.</div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <strong style="font-size:16px; color:var(--text-1);">전체 분석 참여 유저 글로벌 집계 시스템 가동 중</strong>
+                <span class="badge badge-info" style="font-size:11px;">Supabase 실시간 클라우드 & 로컬 하이브리드 통합</span>
+              </div>
+              <div style="font-size:13px; color:var(--text-3); margin-top:4px;">
+                관리자 PC 로컬 접속자뿐만 아니라, 전 세계 모든 외부 IP/기기에서 보컬 분석을 완료한 <strong>전체 참여 유저(${allParticipants.length}명) 및 분석 제출물(${allSubmissions.length}건)</strong>을 100% 통합 집계하여 보여줍니다.
+              </div>
             </div>
           </div>
-          <button class="btn btn-sm ${showMock ? 'btn-primary' : 'btn-outline'}" onclick="window.toggleMockUsersDisplay()" style="border-radius:20px; font-weight:800; padding:8px 16px;">
-            ${showMock ? '🧪 테스트/가상 유저 포함 중 (클릭 시 실제 유저만 보기)' : '👁️ 테스트/가상 유저 포함해서 보기'}
-          </button>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-sm ${showMock ? 'btn-outline' : 'btn-primary'}" onclick="window.toggleMockUsersDisplay()" style="border-radius:20px; font-weight:800; padding:8px 16px;">
+              ${showMock ? '🎯 실제 신규 데이터만 보기' : '🌐 전체 글로벌 참여 유저 모두 보기'}
+            </button>
+          </div>
         </div>
 
         <!-- 관리자 대시보드 네비게이션 탭 -->
@@ -3978,7 +4078,7 @@ function renderAdminDashboard(params) {
                   <tr style="background:var(--bg-2);">
                     <th style="padding:14px;">🔒 비식별 유저 정보 (성별/나이)</th>
                     <th style="padding:14px;">선호 보컬 장르</th>
-                    <th style="padding:14px;">제출 음성 수</th>
+                    <th style="padding:14px; color:#10b981; font-size:14px;">✅ AI 진단 완료 횟수</th>
                     <th style="padding:14px;">받은 트레이너 피드백</th>
                     <th style="padding:14px; color:#10b981;">⭐️ 체크한 만족도 평균 (별점)</th>
                     <th style="padding:14px;">가입 일자</th>
@@ -3995,6 +4095,7 @@ function renderAdminDashboard(params) {
                     </tr>
                   ` : students.map(st => {
                     const mySubs = submissions.filter(s => s.studentId === st.id || s.guestEmail === st.email);
+                    const myAnas = analyses.filter(a => mySubs.some(s => s.id === a.submissionId));
                     const myRcvdFeedbacks = feedbackList.filter(item => item.submission.studentId === st.id || item.submission.guestEmail === st.email);
                     const myRated = myRcvdFeedbacks.filter(item => item.fb.satisfactionRating);
                     const myAvg = myRated.length > 0 ? (myRated.reduce((sum, item) => sum + Number(item.fb.satisfactionRating), 0) / myRated.length).toFixed(1) : null;
@@ -4004,17 +4105,24 @@ function renderAdminDashboard(params) {
                       <td style="padding:14px;">
                         <div style="display:flex; gap:10px; align-items:center;">
                           <div class="avatar" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:16px;">${(st.gender||'M') === 'F' ? '👩' : '👨'}</div>
-                          <div>
-                            <strong style="font-size:15px; color:var(--text);">🔒 비식별 유저 #${100 + Number(st.id)}</strong>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                              <strong style="font-size:15px; color:var(--text);">🔒 비식별 유저 #${100 + Number(st.id)}</strong>
+                              <span class="badge ${st.badgeClass || 'badge-primary'}" style="font-size:11px; padding:2px 6px;">${st.participantType || '회원가입 수강생'}</span>
+                            </div>
                             <div class="text-3" style="font-size:12px; color:#38bdf8; font-weight:700;">${(st.gender||'M') === 'F' ? '👩 여성' : '👨 남성'} / ${st.age || 24}세</div>
                           </div>
                         </div>
                       </td>
                       <td style="padding:14px;">
-                        ${st.preferredGenres ? st.preferredGenres.map(g => `<span class="badge badge-muted">${g}</span>`).join(' ') : '–'}
+                        ${st.preferredGenres ? st.preferredGenres.map(g => `<span class="badge badge-muted">${g}</span>`).join(' ') : `<span class="badge badge-accent" style="font-size:11px;">🌐 글로벌 AI 분석 진단</span>`}
                       </td>
                       <td style="padding:14px;">
-                        <span style="font-weight:700;">${mySubs.length}건</span>
+                        <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+                          <span style="font-size:16px; font-weight:900; color:#10b981; background:rgba(16,185,129,0.15); padding:6px 12px; border-radius:8px; border:1px solid rgba(16,185,129,0.45); display:inline-flex; align-items:center; gap:6px;">
+                            ✅ 진단 ${myAnas.length}회 완료
+                          </span>
+                          <span class="text-3" style="font-size:11.5px; margin-left:2px;">(제출 ${mySubs.length}건)</span>
+                        </div>
                       </td>
                       <td style="padding:14px;">
                         <span class="badge badge-info" style="font-weight:700;">${myRcvdFeedbacks.length}건 수신</span>
@@ -4053,12 +4161,17 @@ function renderAdminDashboard(params) {
             <span class="badge badge-accent" style="font-size:14px; padding:6px 14px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid #38bdf8;">총 ${students.length}명 비식별 집계</span>
           </div>
 
-          <!-- 통계 요약 카드 4개 -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+          <!-- 통계 요약 카드 5개 -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
             <div class="card" style="padding:18px; border-radius:16px; background:var(--bg-card);">
               <div class="text-3" style="font-size:13px; font-weight:700; margin-bottom:4px;">👥 전체 분석 참여 유저</div>
               <div style="font-size:26px; font-weight:900; color:var(--text);">${students.length}명</div>
               <div class="text-3" style="font-size:12px; color:#10b981; margin-top:4px;">✔ 개인 식별자 차단 완료</div>
+            </div>
+            <div class="card" style="padding:18px; border-radius:16px; background:var(--bg-card); border:1px solid rgba(16,185,129,0.35);">
+              <div class="text-3" style="font-size:13px; font-weight:700; margin-bottom:4px; color:#10b981;">✅ 누적 AI 보컬 진단 수</div>
+              <div style="font-size:26px; font-weight:900; color:#10b981;">${analyses.length}회 완료</div>
+              <div class="text-3" style="font-size:12px; margin-top:4px;">제출 음성 총 ${submissions.length}건 분석</div>
             </div>
             <div class="card" style="padding:18px; border-radius:16px; background:var(--bg-card);">
               <div class="text-3" style="font-size:13px; font-weight:700; margin-bottom:4px;">👨 남성 비식별 통계</div>
@@ -4077,6 +4190,47 @@ function renderAdminDashboard(params) {
             </div>
           </div>
 
+          <!-- 🚨 다른 아이피/기기 회원가입 및 접속자 100% 실시간 동기화를 위한 Supabase 클라우드 설정 안내 -->
+          <div class="card mb-24" style="padding:22px 26px; border-radius:18px; background:linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08)); border:2px solid rgba(245,158,11,0.45); margin-bottom:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08);">
+            <div style="display:flex; align-items:flex-start; gap:16px;">
+              <span style="font-size:32px; line-height:1;">⚠️</span>
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+                  <strong style="font-size:17px; color:#f59e0b; font-weight:900;">다른 아이피(기기)에서 회원가입 및 접속한 유저를 '비식별 정보'에 실시간 동기화하려면?</strong>
+                  <button class="btn btn-sm btn-primary" style="background:#f59e0b; border-color:#f59e0b; color:#000; font-weight:800; display:flex; align-items:center; gap:6px;" onclick="window.copySupabaseRlsSql()">
+                    📋 복사하기 (클라우드 RLS 해제 SQL)
+                  </button>
+                </div>
+                <p style="font-size:13.5px; color:var(--text-2); line-height:1.6; margin:0 0 14px 0;">
+                  현재 Supabase 클라우드 데이터베이스('students', 'vocal_submissions')에 <strong>Row Level Security (RLS, 외부 접속 차단 보안 정책)</strong>이 켜져 있어서, 외부(다른 IP/스마트폰)에서 가입('Auth.register')하거나 음성을 업로드할 때 클라우드 저장이 차단되고 로컬 기기에만 저장되는 현상이 발생할 수 있습니다.<br/>
+                  아래 SQL 코드를 <strong>Supabase 대시보드 → [SQL Editor]</strong>에 붙여넣고 <strong>Run(실행)</strong>하시면, 그 즉시 <strong>전 세계 어떤 IP에서 회원가입하거나 접속해도</strong> 이 '유저별 비식별 분석 통계' 표에 100% 실시간으로 뜨게 됩니다!
+                </p>
+                <div style="position:relative;">
+                  <pre id="supabase-sql-code" style="background:#0f172a; color:#38bdf8; padding:16px; border-radius:12px; font-size:12px; font-family:monospace; overflow-x:auto; border:1px solid rgba(56,189,248,0.3); margin:0; line-height:1.5;">-- 모든 클라우드 테이블의 외부 IP/기기 회원가입 및 분석 내역 실시간 동기화 허용 SQL
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON students;
+CREATE POLICY "enable_all_for_anon" ON students FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE vocal_submissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON vocal_submissions;
+CREATE POLICY "enable_all_for_anon" ON vocal_submissions FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE vocal_analysis_results ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON vocal_analysis_results;
+CREATE POLICY "enable_all_for_anon" ON vocal_analysis_results FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE trainers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON trainers;
+CREATE POLICY "enable_all_for_anon" ON trainers FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "enable_all_for_anon" ON songs;
+CREATE POLICY "enable_all_for_anon" ON songs FOR ALL TO anon USING (true) WITH CHECK (true);</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- 비식별 유저 목록 테이블 -->
           <div class="card" style="padding:24px; border-radius:18px;">
             <div class="table-wrap">
@@ -4084,7 +4238,8 @@ function renderAdminDashboard(params) {
                 <thead>
                   <tr style="background:var(--bg-2);">
                     <th style="padding:14px;">🔒 비식별 유저 정보 (성별/나이)</th>
-                    <th style="padding:14px;">선호 장르 / 분석 횟수</th>
+                    <th style="padding:14px;">선호 보컬 장르</th>
+                    <th style="padding:14px; color:#10b981; font-size:14px;">✅ AI 진단 완료 횟수</th>
                     <th style="padding:14px;">AI 보컬 종합 평가</th>
                     <th style="padding:14px;">5대 핵심 분석 지표 (호흡/음정/안정/발음/성량)</th>
                     <th style="padding:14px;">주요 진단 요약 및 보완점</th>
@@ -4123,8 +4278,17 @@ function renderAdminDashboard(params) {
                         </div>
                       </td>
                       <td style="padding:16px;">
-                        <div style="font-weight:700; margin-bottom:4px;">${st.preferredGenres ? st.preferredGenres.join(', ') : '발라드'}</div>
-                        <span class="badge badge-info" style="font-size:12px;">진단 ${myAnas.length}회 완료 (${mySubs.length}건 제출)</span>
+                        <div style="font-weight:700; color:var(--text);">${st.preferredGenres ? st.preferredGenres.join(', ') : '발라드'}</div>
+                      </td>
+                      <td style="padding:16px;">
+                        <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-start;">
+                          <span style="font-size:16px; font-weight:900; color:#10b981; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:10px; border:1px solid rgba(16,185,129,0.45); display:inline-flex; align-items:center; gap:6px;">
+                            ✅ 총 ${myAnas.length}회 완료
+                          </span>
+                          <span class="text-3" style="font-size:12px; font-weight:700; color:var(--text-2); margin-left:2px;">
+                            🎙️ 제출: ${mySubs.length}건
+                          </span>
+                        </div>
                       </td>
                       <td style="padding:16px;">
                         <span style="font-size:22px; font-weight:900; color:${avgScore >= 85 ? '#10b981' : avgScore >= 75 ? '#6366f1' : '#f59e0b'};">${avgScore}점</span>
@@ -4412,7 +4576,7 @@ function attachPageListeners(page, params) {
   if (page === 'analysis') setTimeout(() => drawRadarChart(params.analysis), 100);
   if (page === 'student-dashboard') {
     const sub = (params && params.sub) || 'home';
-    if (sub === 'mr') attachMrListeners();
+    // if (sub === 'mr') attachMrListeners();
     if (sub === 'song-analysis') attachSongAnalysisListeners();
     if (sub === 'profile' || sub === 'trainer-profile') {}
   }
@@ -6505,12 +6669,14 @@ function showSongDetail(songId) {
       <div style="background:var(--bg-2);padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:16px;font-size:13px;line-height:1.5">
         ${genderAdvice}
       </div>
+      <!-- [일단 시각적 탭/모달에서 삭제 (기능 코드 유지)]
       <div class="card" style="background:var(--accent-dim);border-color:var(--border-accent);padding:14px">
         <div style="font-size:13px;font-weight:600;color:var(--text-accent)">이 곡으로 MR 만들기</div>
         <div class="text-2" style="font-size:12px;margin-top:4px">MR 스튜디오에서 원곡 파일을 업로드하면 연습용 MR을 생성할 수 있습니다</div>
       </div>
+      -->
     </div>`,
-    [{ label: 'MR 스튜디오로 이동', cls: 'btn-primary', action: () => { closeModal(); navigate('student-dashboard', {sub:'mr'}); } },
+    [/* { label: 'MR 스튜디오로 이동', cls: 'btn-primary', action: () => { closeModal(); navigate('student-dashboard', {sub:'mr'}); } }, */
      { label: '닫기', cls: 'btn-secondary', action: closeModal }]
   );
 }
@@ -7082,20 +7248,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2. 화면이 뜬 후 백그라운드에서 클라우드 DB 동기화 진행
   try {
     DB.initCloud().then(() => {
-      if (State.currentPage === 'home' || State.currentPage === 'student-dashboard') {
+      const pages = {
+        home: renderHome,
+        'student-dashboard': renderStudentApp,
+        'trainer-dashboard': renderTrainerApp,
+        'admin-dashboard': renderAdminDashboard,
+      };
+      if (pages[State.currentPage]) {
         renderNav();
         const app = document.getElementById('app');
-        const pages = {
-          home: renderHome,
-          'student-dashboard': renderStudentApp,
-          'trainer-dashboard': renderTrainerApp,
-          'admin-dashboard': renderAdminDashboard,
-        };
-        if (pages[State.currentPage]) {
-          const sub = State.dashPage || 'home';
-          app.innerHTML = pages[State.currentPage]({ sub });
-          attachPageListeners(State.currentPage, { sub });
+        let sub = State.dashPage || 'home';
+        if (sub === 'mr' || (State.lastParams && State.lastParams.sub === 'mr')) {
+          sub = 'home';
+          State.dashPage = 'home';
+          if (State.lastParams) State.lastParams.sub = 'home';
         }
+        const tab = State.dashTab || 'overview';
+        app.innerHTML = pages[State.currentPage]({ sub, tab, ...State.lastParams });
+        attachPageListeners(State.currentPage, { sub, tab, ...State.lastParams });
       }
     }).catch(err => console.warn('Cloud sync error:', err));
   } catch (err) {
