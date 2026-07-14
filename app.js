@@ -6839,6 +6839,9 @@ function runComprehensiveSongAI() {
   const tasteSongs = tasteIds.map(id => songs.find(s => s.id === id)).filter(Boolean);
   const masteredSongs = masteredIds.map(id => songs.find(s => s.id === id)).filter(Boolean);
 
+  const prefArtists = new Set(tasteSongs.map(s => (s.artist || '').trim()).filter(Boolean));
+  const algoGender = (State.currentUser && State.currentUser.gender) || 'M';
+
   // 1. 알고리즘 취향 분석 (장르 선호도 분석)
   const genreCounts = {};
   tasteSongs.forEach(s => {
