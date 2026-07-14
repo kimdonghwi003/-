@@ -1791,7 +1791,7 @@ function renderSubmit() {
             <div style="margin-bottom:28px; padding:20px; background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(25,20,43,0.9)); border:2px solid var(--accent); border-radius:16px; box-shadow:0 8px 24px rgba(139,92,246,0.15);">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="badge" style="background:var(--accent); color:#fff; font-size:12px; font-weight:800;">[대학생 런칭 특가]</span>
+                  <span class="badge" style="background:var(--accent); color:#fff; font-size:12px; font-weight:800;">[런칭 특가]</span>
                   <strong style="font-size:16px; color:var(--text-1);">전문 트레이너 1:1 정밀 피드백 (구간 피드백 + 총괄 피드백 제공)</strong>
                 </div>
                 <div>
@@ -2317,7 +2317,7 @@ function renderAnalysis(params) {
           <div class="card mb-24" style="padding:28px; border:2px solid var(--accent); background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(25,20,43,0.9)); border-radius:18px; box-shadow:0 8px 24px rgba(139,92,246,0.15);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span class="badge" style="background:var(--accent); color:#fff; font-size:13px; font-weight:800;">[대학생 런칭 프로모션]</span>
+                <span class="badge" style="background:var(--accent); color:#fff; font-size:13px; font-weight:800;">[런칭 특가]</span>
                 <h3 style="font-size:18px; font-weight:900; color:var(--text-1); margin:0;">전문 트레이너 1:1 정밀 피드백 신청</h3>
               </div>
               <div>
