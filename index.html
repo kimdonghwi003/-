@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="description" content="내일의 보컬 – AI 기반 보컬 정밀 분석 및 트레이너 매칭 플랫폼. 로그인 없이도 보컬 분석 시작 가능." />
   <meta name="keywords" content="보컬 분석, AI 보컬, 보컬 트레이너, MR 제작, 음정 분석" />
   <title>내일의 보컬 – 보컬 정밀 분석 및 트레이닝 플랫폼</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=20260714" />
 </head>
 <body>
   <!-- Navigation -->
@@ -30,10 +33,11 @@
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="loading-spinner"></div>
     <p class="loading-text">처리 중...</p>
+    <button id="loading-cancel-btn" class="btn btn-outline" style="margin-top: 20px; padding: 8px 24px; font-size: 0.95rem; border: 1.5px solid rgba(255,255,255,0.6); color: #fff; background: rgba(255,255,255,0.15); border-radius: 25px; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(4px); font-weight: 600;" onclick="cancelCurrentWork()">✕ 분석 / 작업 취소</button>
   </div>
 
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=58"></script>
+  <script src="app.js?v=20260714_1309"></script>
 </body>
 </html>

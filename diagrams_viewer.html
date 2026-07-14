@@ -31,6 +31,7 @@
     <button class="tab-btn active" onclick="showTab('rec', this)">1. 맞춤 곡 추천 (사용자 맞춤 알고리즘)</button>
     <button class="tab-btn" onclick="showTab('ana', this)">2. 곡 분석 (원곡 분석 &amp; 연습곡 분석)</button>
     <button class="tab-btn" onclick="showTab('match', this)">3. 보컬 약점 기반 트레이너 매칭</button>
+    <button class="tab-btn" onclick="showTab('mr', this)">4. MR 스튜디오 (위상 반전 보컬 제거 &amp; 키/템포 조절)</button>
   </div>
 
   <div id="rec-diagram" class="diagram-container">
@@ -45,6 +46,10 @@
     <object data="trainer_matching_process.svg" type="image/svg+xml"></object>
   </div>
 
+  <div id="mr-diagram" class="diagram-container" style="display: none;">
+    <object data="mr_production_process.svg" type="image/svg+xml"></object>
+  </div>
+
   <script>
     function showTab(tab, btn) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -52,6 +57,7 @@
       document.getElementById('rec-diagram').style.display = tab === 'rec' ? 'block' : 'none';
       document.getElementById('ana-diagram').style.display = tab === 'ana' ? 'block' : 'none';
       document.getElementById('match-diagram').style.display = tab === 'match' ? 'block' : 'none';
+      document.getElementById('mr-diagram').style.display = tab === 'mr' ? 'block' : 'none';
     }
   </script>
 </body>

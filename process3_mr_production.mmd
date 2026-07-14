@@ -1,0 +1,28 @@
+flowchart TD
+    subgraph INPUT ["1. 원곡 오디오 업로드 및 메모리 디코딩 (Frontend Capture)"]
+        A["사용자 원곡 음원 업로드 (MP3 / WAV / M4A / FLAC)"] --> B["파일 사이즈 (최대 50MB) 및 포맷 유효성 검증"]
+        B --> C["HTML5 File API & FileReader ArrayBuffer 로드"]
+        C --> D["AudioContext.decodeAudioData (PCM 스테레오 오디오 버퍼 변환)"]
+    end
+
+    subgraph DSP ["2. 하이브리드 DSP 보컬 제거 & 위상 반전 엔진 (Vocal Removal DSP)"]
+        D --> E["85Hz Low-pass Filtering (킥 드럼/베이스 저음역대 분리 및 100% 보존)"]
+        D --> F["Mid-Side Phase Inversion (OOPS 위상 반전 알고리즘 적용)"]
+        F --> G["Center/Mid 채널 90% 감쇄 (중앙 정위 사람 목소리/보컬 제거)"]
+        F --> H["Side 스테레오 공간감 채널 1.5배 부스트 (악기 입체감 및 사운드 회복)"]
+        E & G & H --> I["12,000Hz+ High-pass 필터링 (심벌즈/하이해트 초고음역 선명도 결합)"]
+    end
+
+    subgraph PITCH_TEMPO ["3. 키(Pitch) & 템포(Tempo) 맞춤 변환 엔진 (Customization)"]
+        I --> J["사용자 조바꿈 키 설정 (반음 단위: -12키 ~ +12키 조절)"]
+        I --> K["사용자 템포 속도 설정 (0.75x 느리게 ~ 1.25x 빠르게)"]
+        J & K --> L["Web Audio DSP 피치 시프팅 & 타임 스트레칭 리샘플링 연산"]
+        L --> M["최종 MR 오디오 마스터 버퍼 생성"]
+    end
+
+    subgraph EXPORT ["4. 고음질 인코딩 & 실시간 클라우드 동기화 (Export & Persistence)"]
+        M --> N["WAV / MP3 고음질 오디오 Blob 인코딩"]
+        N --> O["URL.createObjectURL 실시간 재생 및 다운로드 스트림 생성"]
+        O --> P["Supabase Cloud Database (mr_requests 테이블 내역 동기화)"]
+        P --> Q["저작권 보호 및 불법 공유 감사 로그 기록 (mr_security_logs)"]
+    end

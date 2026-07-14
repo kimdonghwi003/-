@@ -1,0 +1,36 @@
+flowchart TD
+    subgraph SELECT ["1. 사용자 곡 선택 및 프로필 동기화"]
+        A2["취향 저격 선호 곡 최대 5곡 선택 (selectedTasteSongIds)"] --> C2["유저 프로필 데이터 결합 (State.currentUser)"]
+        B2["안정 완곡 가능 곡 최대 5곡 선택 (selectedMasteredSongIds)"] --> C2
+        C2 --> D2["LocalStorage 및 Supabase Cloud DB 동기화 (students 테이블)"]
+    end
+
+    subgraph PROFILING ["2. AI 종합 취향/실력 프로파일링 & 전역 빅데이터 집계"]
+        D2 --> E2["장르 선호도 가중치 분석 (1순위 primaryGenre 및 topGenres 추출)"]
+        D2 --> F2["선호 아티스트 풀 구성 (prefArtists Set)"]
+        D2 --> G2["실력 한계 음역대 산출 (평균 MIDI avgMidi, 최고 한계 음정 maxMidi)"]
+        D2 --> H2["평균 소화 난이도 산출 (avgDiff 1.0 ~ 10.0)"]
+        
+        I2["전역 수강생 곡 선택 DB (getStudents)"] --> J2["전역 곡 선택 빈도 가중치 맵 구축 (userSelectMap)"]
+        K2["역대 음성 분석 제출 DB (getSubmissions)"] --> J2
+        L2["역대 MR 제작 내역 DB (getMrRequests)"] --> J2
+    end
+
+    subgraph SCORING ["3. 3대 카테고리별 다요인 정밀 스코어링 엔진 (runComprehensiveSongAI)"]
+        E2 & F2 & G2 & H2 & J2 --> M2["① 취향 저격 & 안정 완곡 스코어링 엔진"]
+        E2 & F2 & G2 & H2 & J2 --> N2["② 실력 한계 돌파 도전 곡 스코어링 엔진"]
+        E2 & F2 & G2 & H2 & J2 --> O2["③ 숨은 명곡 큐레이션 스코어링 엔진"]
+
+        M2 --> M3["조건: 최고음 <= maxMidi + 1 & 미선택 곡\n점수: 가수일치(+35) + 장르일치(+25) + 안정음역 스위트스팟 maxMidi-3~maxMidi(+20) + 난이도일치(+15)"]
+        N2 --> N3["조건: 최고음 maxMidi ~ maxMidi+2 (미세 음정 상승) & 난이도 avgDiff ~ avgDiff+2.0\n점수: +1반음 상승(+35) / +2반음(+25) + 미세 난이도 상승(+25) + 장르/가수 연계(+20)"]
+        O2 --> O3["조건: 연습 가치 높은 난이도 4.0 ~ 8.5 곡\n점수: 전역 유저 선택 빈도(선택 1회당 +15점 압도적 가중치) + 선호장르(+15) + 보컬 명곡 기본 보너스(+15)"]
+    end
+
+    subgraph RENDER ["4. 큐레이션 결과 렌더링 및 맞춤 조바꿈 가이드"]
+        M3 --> P2["🎯 100% 취향 저격 & 안정 소화 추천 곡 Top 5"]
+        N3 --> Q2["🔥 실력 한계 돌파 레벨업 추천 곡 Top 5"]
+        O3 --> R2["💎 보컬 트레이너 & 유저 선정 숨은 명곡 Top 5"]
+        
+        P2 & Q2 & R2 --> S2["AI 분석 진단서 요약 카드 출력 (선호 장르 / 한계 음역 / 레벨)"]
+        S2 --> T2["성별 크로스 매칭 추천키 자동 환산 가이드 (예: 남성 추천키 -4키 / 여성 추천키 +4키)"]
+    end

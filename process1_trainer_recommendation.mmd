@@ -1,0 +1,36 @@
+flowchart TD
+    subgraph INPUT ["1. 사용자 입력 및 오디오 캐싱 (Frontend)"]
+        A["사용자 음성 파일 업로드 또는 마이크 실시간 녹음"] --> B["HTML5 File API / MediaRecorder API"]
+        B --> C["IndexedDB 오디오 Blob 저장 (VocalAudioDB)"]
+        C --> D["URL.createObjectURL Blob 스트림 생성"]
+    end
+
+    subgraph DSP ["2. 오디오 DSP & Basic-Pitch AI 주파수 분석"]
+        D --> E["AudioContext.decodeAudioData (WAV/MP3 디코딩)"]
+        E --> F["Bandpass DSP Filtering (85Hz ~ 2200Hz 인간 음성 대역 분리)"]
+        F --> G["Spotify Basic-Pitch AI Engine (HCQT 하모닉 스태킹)"]
+        G --> H["피치 타임라인, 최고음/최저음 Hz 및 MIDI 음정 추출 (예: G#4)"]
+        H --> I["보컬 안정성 점수, 비브라토/떨림 떨림폭, 음색 밸런스 산출"]
+    end
+
+    subgraph CLOUD ["3. 클라우드 AI 가사 인식 & 5대 영역 종합 진단"]
+        D --> J["OpenAI Whisper API (/whisper 음성 가사/발음 텍스트 변환)"]
+        J --> K["웹 가사 검색 API (원곡 메타데이터 Title/Artist/Genre 매칭)"]
+        I --> L["OpenAI GPT-4o 종합 보컬 프로파일링 엔진 (/analyze)"]
+        K --> L
+        L --> M["5대 영역 레이더 차트 스코어링 (음정/박자/고음/발음/감정)"]
+        M --> N["맞춤 코칭 피드백 및 발성 개선 처방전 생성"]
+    end
+
+    subgraph STORAGE ["4. 분석 데이터 저장 및 실시간 클라우드 동기화"]
+        N --> O["LocalStorage 로컬 분석 DB 저장 (vocal_analysis_results)"]
+        O --> P["Supabase Cloud Database (submissions 테이블 동기화)"]
+        P --> Q["관리자/트레이너 실시간 청람 및 감사 DB 연동"]
+    end
+
+    subgraph MATCHING ["5. 보컬 트레이너 정밀 추천 알고리즘 (Matchmaking)"]
+        O --> R["사용자 취약 영역 및 선호 장르 프로필 추출 (예: 고음 불안정 / R&B)"]
+        R --> S["승인된 트레이너 풀 필터링 (status === approved)"]
+        S --> T["트레이너 적합도 스코어링 계산 (전문 장르 + 취약점 개선 전문성 + 별점)"]
+        T --> U["Top 3 맞춤 보컬 트레이너 큐레이션 및 1:1 레슨 신청 연결"]
+    end
