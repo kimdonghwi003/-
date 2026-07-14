@@ -438,6 +438,19 @@ const DB = {
   setSchedules(v) { this._set('schedules', v); },
   getNotifications() { return this._getArr('notifications'); },
   setNotifications(v) { this._set('notifications', v); },
+  getSongRecommendations() { return this._getArr('song_recommendations'); },
+  setSongRecommendations(v) { 
+    this._set('song_recommendations', v);
+    if (window.supabaseClient && v && v.length > 0) {
+      const batch = v.map(r => ({
+        id: Number(r.id),
+        student_id: Number(r.studentId) || null,
+        created_at: r.createdAt || new Date().toISOString(),
+        json_data: JSON.stringify(r)
+      }));
+      window.supabaseClient.from('song_recommendations_history').upsert(batch, { onConflict: 'id' }).then(null, () => {});
+    }
+  },
   getCurrentSession() { return this._get('session'); },
   setCurrentSession(v) { this._set('session', v); },
   clearSession() { localStorage.removeItem('vocalai_session'); },
@@ -2707,10 +2720,52 @@ function renderStudentSongs() {
   window.selectedTasteSongIds = (u && u.selectedTasteSongIds && u.selectedTasteSongIds.length > 0) ? u.selectedTasteSongIds : (window.selectedTasteSongIds || []);
   window.selectedMasteredSongIds = (u && u.selectedMasteredSongIds && u.selectedMasteredSongIds.length > 0) ? u.selectedMasteredSongIds : (window.selectedMasteredSongIds || []);
 
+  const recHistories = DB.getSongRecommendations ? DB.getSongRecommendations().filter(r => r.studentId === (u && u.id)).sort((a,b) => b.id - a.id) : [];
+
   return `
   <div class="animate-up">
     <div class="page-title">맞춤 곡 추천</div>
-    <div class="page-sub">당신의 취향 곡 5개와 완창 가능한 곡 5개를 분석하여 최적의 사용자 맞춤 알고리즘 큐레이션을 제공합니다</div>
+    <div class="page-sub">당신의 취향 곡 5개와 완창 가능한 곡 5개를 분석하여 최적의 사용자 맞춤 알고리즘 큐레이션을 제공하고 이력을 보관할 수 있습니다</div>
+
+    <!-- 저장된 맞춤 곡 추천 진단 이력 보관함 -->
+    <div class="card mb-24" style="margin-bottom:28px; border:1px solid var(--border); padding:20px; border-radius:16px; background:var(--bg-2)">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+        <div style="font-size:16px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px">
+          <span>📋 저장된 맞춤 곡 추천 이력 보관함</span>
+          <span class="badge badge-accent" style="font-size:12px; padding:2px 8px">${recHistories.length}건</span>
+        </div>
+      </div>
+      ${recHistories.length === 0 ? `
+      <div style="text-align:center; padding:24px 12px; color:var(--text-3); font-size:13px; background:var(--bg); border-radius:12px; border:1px dashed var(--border)">
+        아직 저장된 맞춤 곡 추천 이력이 없습니다.<br/>
+        <span style="font-size:12px; color:var(--text-2); display:inline-block; margin-top:4px">아래에서 사용자 맞춤 알고리즘을 실행한 뒤 <strong>[💾 현 추천 결과 이력에 저장하기]</strong> 버튼을 눌러 보관해보세요!</span>
+      </div>` : `
+      <div style="display:flex; flex-direction:column; gap:12px; max-height:420px; overflow-y:auto; padding-right:4px">
+        ${recHistories.map(rec => `
+          <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; transition:all 0.2s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px">
+              <div style="display:flex; align-items:center; gap:8px">
+                <span style="font-size:13px; font-weight:800; color:var(--accent); background:rgba(99,102,241,0.1); padding:4px 10px; border-radius:6px">#${rec.id} 진단</span>
+                <span style="font-size:13px; font-weight:600; color:var(--text-2)">📅 ${rec.createdAt}</span>
+              </div>
+              <div style="display:flex; gap:6px">
+                <button class="btn btn-primary btn-sm" onclick="showSavedSongRecModal(${rec.id})" style="padding:4px 12px; font-size:12px; font-weight:700">🔍 추천 결과 보기</button>
+                <button class="btn btn-secondary btn-sm" onclick="deleteSavedSongRec(${rec.id})" style="padding:4px 10px; font-size:12px; color:var(--error); border-color:rgba(239,68,68,0.3)">삭제</button>
+              </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:12px; background:var(--bg-2); padding:10px 14px; border-radius:8px; margin-bottom:10px">
+              <div>🎵 선호 장르: <strong style="color:var(--text)">${rec.primaryGenre || '발라드'}</strong></div>
+              <div>📈 안정 음역대: <strong style="color:#10b981">${rec.maxNoteStr || '-'}</strong></div>
+              <div>⭐️ 실력 난이도: <strong style="color:#f59e0b">★ ${rec.avgDiff || '-'}/10</strong></div>
+            </div>
+            <div style="font-size:12px; color:var(--text-2); display:flex; flex-direction:column; gap:4px">
+              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">❤️ <strong>선택 취향곡:</strong> ${(rec.tasteSongNames || []).join(', ') || '없음'}</div>
+              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">🎤 <strong>선택 애창곡:</strong> ${(rec.masteredSongNames || []).join(', ') || '없음'}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`}
+    </div>
 
     <!-- 10곡 기반 AI 취향·실력 파악 맞춤 추천 UI -->
     <div class="card mb-24" style="margin-bottom:28px;border:2px solid var(--accent);padding:22px;border-radius:16px;background:linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.05) 100%)">
@@ -6921,8 +6976,32 @@ function runComprehensiveSongAI() {
     </div>`;
   };
 
+  window.latestComputedSongRec = {
+    tasteSongIds: tasteIds,
+    tasteSongNames: tasteSongs.map(s => `${s.artist} - ${s.title}`),
+    masteredSongIds: masteredIds,
+    masteredSongNames: masteredSongs.map(s => `${s.artist} - ${s.title}`),
+    primaryGenre,
+    maxNoteStr,
+    avgDiff,
+    safePicks,
+    challengePicks,
+    hiddenGems
+  };
+
   resDiv.style.display = 'block';
   resDiv.innerHTML = `
+    <!-- 현 진단 결과 저장 안내 배너 및 CTA 버튼 -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1)); padding:16px 20px; border-radius:12px; border:1px solid #10b981">
+      <div>
+        <div style="font-size:14px; font-weight:800; color:#10b981; display:flex; align-items:center; gap:6px">💡 분석된 맞춤 곡 추천 결과를 이력 보관함에 저장하세요!</div>
+        <div style="font-size:12px; color:var(--text-2); margin-top:2px">언제든 상단 [저장된 맞춤 곡 추천 이력 보관함]에서 당시 진단 기록과 Top 5 큐레이션을 다시 확인할 수 있습니다.</div>
+      </div>
+      <button class="btn btn-primary" onclick="saveCurrentSongRecommendation()" style="font-size:13px; font-weight:800; padding:10px 22px; border-radius:8px; background:linear-gradient(135deg,#10b981,#059669); box-shadow:0 4px 12px rgba(16,185,129,0.3); white-space:nowrap; flex-shrink:0">
+        💾 현 추천 결과 이력에 저장하기
+      </button>
+    </div>
+
     <!-- AI 분석 진단서 -->
     <div style="background:var(--bg);padding:16px;border-radius:12px;border:1px solid var(--accent);margin-bottom:24px">
       <div style="font-size:15px;font-weight:800;color:var(--accent);margin-bottom:8px">📊 AI 취향 & 실력 종합 프로파일링 진단서 (분석 기준: ${userGender === 'F' ? '여성 보컬' : '남성 보컬'})</div>
@@ -6952,6 +7031,97 @@ function runComprehensiveSongAI() {
 }
 
 function recommendByMasteredSong() { runComprehensiveSongAI(); }
+
+function saveCurrentSongRecommendation() {
+  if (!window.latestComputedSongRec) {
+    showToast('먼저 사용자 맞춤 알고리즘을 실행해주세요.', 'error');
+    return;
+  }
+  const recs = DB.getSongRecommendations ? DB.getSongRecommendations() : [];
+  const newId = DB.nextId(recs);
+  const u = State.currentUser || {};
+  const newRec = {
+    id: newId,
+    studentId: u.id || 1,
+    studentEmail: u.email || '',
+    createdAt: new Date().toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+    ...window.latestComputedSongRec
+  };
+  recs.push(newRec);
+  if (DB.setSongRecommendations) DB.setSongRecommendations(recs);
+  showToast('맞춤 곡 추천 결과가 이력 보관함에 저장되었습니다! 💾', 'success');
+  navigate('student-dashboard', { sub: 'songs' });
+}
+
+function deleteSavedSongRec(id) {
+  if (!confirm('해당 맞춤 곡 추천 이력을 삭제하시겠습니까?')) return;
+  const recs = DB.getSongRecommendations ? DB.getSongRecommendations().filter(r => r.id !== id) : [];
+  if (DB.setSongRecommendations) DB.setSongRecommendations(recs);
+  showToast('추천 이력이 삭제되었습니다.', 'info');
+  navigate('student-dashboard', { sub: 'songs' });
+}
+
+function showSavedSongRecModal(id) {
+  const recs = DB.getSongRecommendations ? DB.getSongRecommendations() : [];
+  const rec = recs.find(r => r.id === id);
+  if (!rec) return;
+
+  const renderMiniCard = (s) => `
+    <div style="padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between">
+      <div style="display:flex; align-items:center; gap:10px">
+        <span style="font-size:20px">${s.emoji || '♪'}</span>
+        <div>
+          <div style="font-size:14px; font-weight:700; color:var(--text)">${s.title} <span class="badge ${s.gender === 'F' ? 'badge-danger' : 'badge-info'}" style="font-size:10px">${s.gender === 'F' ? '여성' : '남성'}</span></div>
+          <div style="font-size:12px; color:var(--text-2)">${s.artist} · ${s.genre || ''}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <span class="badge badge-accent" style="font-size:11px">★ ${s.difficultyScore || 5}/10</span>
+        <div style="font-size:11px; color:var(--text-2); margin-top:2px">최고음: ${s.highestNote || '-'}</div>
+      </div>
+    </div>
+  `;
+
+  const content = `
+    <div style="max-height:65vh; overflow-y:auto; padding-right:6px">
+      <!-- 진단 요약 정보 -->
+      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.1) 100%); padding:16px; border-radius:12px; border:1px solid var(--accent); margin-bottom:20px">
+        <div style="font-size:14px; font-weight:800; color:var(--accent); margin-bottom:10px">📊 분석 당시 종합 프로파일링 (#${rec.id} 진단)</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; font-size:13px">
+          <div>🎵 선호 1순위 장르: <strong style="color:var(--text)">${rec.primaryGenre || '발라드'}</strong></div>
+          <div>📈 안정 음역대 한계: <strong style="color:#10b981">${rec.maxNoteStr || '-'}</strong></div>
+          <div>⭐️ 보컬 실력 레벨: <strong style="color:#f59e0b">평균 완곡 ★ ${rec.avgDiff || '-'}/10</strong></div>
+        </div>
+      </div>
+
+      <!-- 선택한 취향곡 및 애창곡 -->
+      <div style="background:var(--bg-2); padding:14px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px; font-size:13px">
+        <div style="margin-bottom:8px"><strong style="color:#ec4899">❤️ 분석 요청 취향곡:</strong> ${(rec.tasteSongNames || []).join(', ') || '없음'}</div>
+        <div><strong style="color:#3b82f6">🎤 분석 요청 완곡 가능곡:</strong> ${(rec.masteredSongNames || []).join(', ') || '없음'}</div>
+      </div>
+
+      <!-- 추천 곡 3대 영역 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:14px; font-weight:800; color:#10b981; margin-bottom:10px">🎯 100% 취향 저격 & 안정 소화 추천 곡 Top 5</div>
+        ${(rec.safePicks && rec.safePicks.length > 0) ? rec.safePicks.map(renderMiniCard).join('') : '<div style="font-size:13px; color:var(--text-3)">기록된 추천 곡이 없습니다.</div>'}
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div style="font-size:14px; font-weight:800; color:#ec4899; margin-bottom:10px">🔥 실력 한계 돌파 레벨업 도전 곡 Top 5</div>
+        ${(rec.challengePicks && rec.challengePicks.length > 0) ? rec.challengePicks.map(renderMiniCard).join('') : '<div style="font-size:13px; color:var(--text-3)">기록된 도전 곡이 없습니다.</div>'}
+      </div>
+
+      <div>
+        <div style="font-size:14px; font-weight:800; color:#3b82f6; margin-bottom:10px">✨ 놓치면 아쉬운 숨은 명곡 큐레이션 Top 5</div>
+        ${(rec.hiddenGems && rec.hiddenGems.length > 0) ? rec.hiddenGems.map(renderMiniCard).join('') : '<div style="font-size:13px; color:var(--text-3)">기록된 숨은 명곡이 없습니다.</div>'}
+      </div>
+    </div>
+  `;
+
+  showModal(`맞춤 곡 추천 진단 이력 (#${rec.id} 진단 - ${rec.createdAt})`, content, [
+    { label: '닫기', cls: 'btn-secondary', action: () => closeModal() }
+  ]);
+}
 
 function showStoredAnalysis(submissionId) {
   const analysis = DB.getAnalyses().find(a => a.submissionId === submissionId);
